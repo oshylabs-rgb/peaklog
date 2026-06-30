@@ -172,40 +172,58 @@ const TARGET_FATMASS=+(TARGET_WEIGHT-BASELINE.ffm).toFixed(1);
 const TARGETS={kcal:2000, protein:170, netCarbs:25, netCarbCeiling:30, fat:135, water:3000,
   windowStart:"12:00", windowEnd:"19:00", fastHours:16};
 
-/* 4-day recomp split (build muscle + strip fat) with core every lift day for abs.
-   wt = prescribed working weight in kg (0 = bodyweight); perHand = weight is per dumbbell.
-   These are editable, InBody-derived starting loads — tune to leave 1-2 reps in reserve.
-   Train fasted before 13:00. WFH 2-3x/week → put the 4 lifts + longer cardio on those days. */
+/* "Summer Log" — the user's InBody-built 7-day plan (PDF, 10 Jun 2026).
+   wt = target working weight in kg (0 = bodyweight); perHand = per dumbbell; added = added load (+kg).
+   prog = the PDF "move up when" trigger (double progression). note = the day's coaching cue.
+   Effort rule: last set of every lift lands at 0-2 reps in the tank.
+   Increments: DB +2 · machines/cables +2.5-5 · barbell +2.5 · added-BW +2.5. */
 const TEMPLATE={
-  0:{type:"Push + Core",cardio:{type:"Zone 2 finisher",min:12},exercises:[
-    {name:"Incline DB Press",mg:"Chest",sets:4,reps:"8-10",wt:30,perHand:true},
-    {name:"Seated DB Shoulder Press",mg:"Shoulders",sets:3,reps:"8-10",wt:22,perHand:true},
-    {name:"Cable Lateral Raise",mg:"Shoulders",sets:3,reps:"12-15",wt:10},
-    {name:"Rope Triceps Pushdown",mg:"Triceps",sets:3,reps:"12-15",wt:25},
-    {name:"Hanging Leg Raise",mg:"Core",sets:3,reps:"12-15",wt:0}]},
-  1:{type:"Lower — Quad + Core",cardio:null,exercises:[
-    {name:"Back Squat",mg:"Quads",sets:4,reps:"6-8",wt:100},
-    {name:"Romanian Deadlift",mg:"Hamstrings",sets:3,reps:"8-10",wt:90},
-    {name:"Leg Press",mg:"Quads",sets:3,reps:"10-12",wt:160},
-    {name:"Standing Calf Raise",mg:"Calves",sets:4,reps:"12-15",wt:80},
-    {name:"Cable Crunch",mg:"Core",sets:3,reps:"15",wt:35}]},
-  2:{type:"Recovery — Zone 2 + Core",cardio:{type:"Zone 2 cardio",min:35},exercises:[
-    {name:"Ab Wheel Rollout",mg:"Core",sets:3,reps:"10",wt:0},
-    {name:"Plank",mg:"Core",sets:3,reps:"45s",wt:0}]},
-  3:{type:"Pull + Core",cardio:null,exercises:[
-    {name:"Weighted Pull-up",mg:"Back",sets:4,reps:"6-8",wt:10},
-    {name:"Chest-Supported Row",mg:"Back",sets:4,reps:"8-10",wt:60},
-    {name:"Face Pull",mg:"Rear Delts",sets:3,reps:"15-20",wt:20},
-    {name:"Incline DB Curl",mg:"Biceps",sets:3,reps:"10-12",wt:14,perHand:true},
-    {name:"Cable Crunch",mg:"Core",sets:3,reps:"15",wt:35}]},
-  4:{type:"Lower — Glute/Posterior + Conditioning",cardio:{type:"Intervals (4×4 VO2)",min:24},exercises:[
-    {name:"Hip Thrust",mg:"Glutes",sets:4,reps:"8-10",wt:100},
-    {name:"Bulgarian Split Squat",mg:"Glutes",sets:3,reps:"10/leg",wt:20,perHand:true},
-    {name:"Seated Leg Curl",mg:"Hamstrings",sets:3,reps:"10-12",wt:45},
-    {name:"Seated Calf Raise",mg:"Calves",sets:4,reps:"15-20",wt:40},
-    {name:"Hanging Leg Raise",mg:"Core",sets:3,reps:"12-15",wt:0}]},
-  5:{type:"Long walk / Mobility",cardio:{type:"Long walk Zone 1-2",min:60},exercises:[]},
-  6:{type:"Rest day",cardio:null,exercises:[]}
+  0:{type:"Upper Push",note:"Lateral raises are the one place to push volume — bigger shoulder caps narrow the waist.",cardio:null,exercises:[
+    {name:"DB Bench Press",mg:"Chest",sets:4,reps:"8-10",wt:32.5,perHand:true,prog:"4×10 clean → 35"},
+    {name:"Incline DB Press",mg:"Chest",sets:3,reps:"8-12",wt:26,perHand:true,prog:"3×12 → 28"},
+    {name:"Shoulder Press Machine",mg:"Shoulders",sets:3,reps:"10-12",wt:40,prog:"3×12 → 45"},
+    {name:"Lateral Raises",mg:"Shoulders",sets:4,reps:"12-15",wt:8,perHand:true,prog:"4×15 → 9-10"},
+    {name:"Triceps Pushdowns",mg:"Triceps",sets:3,reps:"10-12",wt:17.5,prog:"3×12 → 20"}]},
+  1:{type:"Lower — Posterior",note:"Legs were your best scan gain (100→103.8%). Keep them a priority.",cardio:null,exercises:[
+    {name:"Hip Thrust",mg:"Glutes",sets:4,reps:"8-10",wt:50,prog:"4×10 → 60 (progresses fast)"},
+    {name:"DB RDL",mg:"Hamstrings",sets:3,reps:"10-12",wt:50,perHand:true,prog:"3×12 → 55"},
+    {name:"Bulgarian Split Squat",mg:"Glutes",sets:3,reps:"8-10 ea",wt:14,perHand:true,prog:"3×10 → 16"},
+    {name:"Lying Leg Curl",mg:"Hamstrings",sets:3,reps:"10-12",wt:45,prog:"3×12 → 50"}]},
+  2:{type:"Zone 2 + Core",note:"Core builds the ab muscle; the deficit strips the trunk fat over it. Both matter.",cardio:{type:"Zone 2 bike/row — HR 130-145",min:50},exercises:[
+    {name:"Hanging Leg Raise",mg:"Core",sets:3,reps:"12",wt:0,prog:"3×12 strict → add ankle weight"},
+    {name:"Cable Woodchop",mg:"Core",sets:3,reps:"12 ea",wt:17.5,prog:"3×12 ea → 20"},
+    {name:"Weighted Plank",mg:"Core",sets:3,reps:"45 sec",wt:15,prog:"3×45s → 20kg"},
+    {name:"Hollow Hold",mg:"Core",sets:3,reps:"45 sec",wt:0,prog:"3×45s → 60s"}]},
+  3:{type:"Upper Pull",note:"Wide lats + Day-1 shoulders build the V-taper — where the shape comes from as trunk fat drops.",cardio:null,exercises:[
+    {name:"Lat Pulldown",mg:"Back",sets:4,reps:"8-10",wt:75,prog:"4×10 → 80"},
+    {name:"Weighted Pull-up",mg:"Back",sets:4,reps:"6-8",wt:20,added:true,prog:"4×8 → +22.5"},
+    {name:"Seated Cable Row",mg:"Back",sets:3,reps:"10-12",wt:60,prog:"3×12 → 65"},
+    {name:"Face Pulls",mg:"Rear Delts",sets:3,reps:"12-15",wt:17.5,prog:"3×15 → 20"},
+    {name:"DB Curl",mg:"Biceps",sets:3,reps:"10-12",wt:16,perHand:true,prog:"3×12 → 18"},
+    {name:"Hammer Curl",mg:"Biceps",sets:3,reps:"10-12",wt:14,perHand:true,prog:"3×12 → 16"}]},
+  4:{type:"Lower — Anterior",cardio:null,exercises:[
+    {name:"Hack Squat / Leg Press",mg:"Quads",sets:4,reps:"8-12",wt:105,prog:"4×12 → 115"},
+    {name:"Walking Lunges",mg:"Quads",sets:3,reps:"20 steps",wt:24,prog:"all steps solid → 28 (total)"},
+    {name:"Leg Extension",mg:"Quads",sets:3,reps:"12-15",wt:55,prog:"3×15 → 60"},
+    {name:"Standing Calf Raise",mg:"Calves",sets:4,reps:"12-15",wt:75,prog:"4×15 → 85"}]},
+  5:{type:"Arms + Shoulders",cardio:{type:"4×4 VO2 intervals ~90%",min:28},exercises:[
+    {name:"Barbell Overhead Press",mg:"Shoulders",sets:3,reps:"8-10",wt:37.5,prog:"3×10 → 40"},
+    {name:"Weighted Dips",mg:"Triceps",sets:3,reps:"8-12",wt:10,added:true,prog:"3×12 → +12.5"},
+    {name:"Incline DB Curl",mg:"Biceps",sets:3,reps:"10-12",wt:12,perHand:true,prog:"3×12 → 14"},
+    {name:"Rope Triceps Extension",mg:"Triceps",sets:3,reps:"10-12",wt:17.5,prog:"3×12 → 20"},
+    {name:"Rear Delt Fly",mg:"Rear Delts",sets:3,reps:"12-15",wt:43,prog:"3×15 → 48"}]},
+  6:{type:"Long walk",cardio:{type:"Outdoor brisk walk",min:90},exercises:[]}
+};
+// program-wide guidance from the PDF, surfaced on the Plan tab
+const PLAN_RULES={
+  increments:"DB +2 kg · machines/cables +2.5-5 kg · barbell +2.5 kg · added-bodyweight +2.5 kg",
+  rules:[
+    "Effort: the last set of every lift ends at 0-2 reps in the tank. Could do 3 more clean? Too light.",
+    "Double progression: stay at a fixed weight, hit the top of the rep range on all sets, then add the increment next session.",
+    "These weights are starting points. >2 reps in the tank → jump an increment and log the real number; can't hit the bottom of the range with good form → drop one increment (that's your true working weight).",
+    "As calories drop, reps give before load. A weight that gave 10 now gives 8 — stay there. Only drop load if you fall below the range two sessions running.",
+    "Warning signal: loads dropping across the board two weeks running means muscle is at risk — fix calories before touching training."
+  ]
 };
 
 const SUPPS=[
@@ -233,7 +251,7 @@ const SEED_FOODS=[
 const KEY="peaklog.v1";
 let S=load();
 function blank(){
-  return {version:1, planRev:2, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
+  return {version:1, planRev:3, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
     bodyLog:[{date:BASELINE.date,weight:BASELINE.weight,bodyFat:BASELINE.bodyFat,note:"InBody 580 baseline"}],
     inbody:[BASELINE],
     workouts:{}, nutrition:{}, supplements:{}, liftWeights:{},
@@ -252,19 +270,23 @@ function migrate(o){ // forward-compatible defaults
   o.liftWeights=o.liftWeights||{};
   o.profile=o.profile||{};
   if(!o.planRev||o.planRev<2){
-    // goal pushed to end Aug 2026; refresh untouched future sessions to the new split
+    // goal pushed to end Aug 2026
     if(!o.profile.goalDate||o.profile.goalDate==="2026-07-31")o.profile.goalDate=GOAL.date;
+    o.planRev=2;
+  }
+  if(o.planRev<3){
+    // adopted the "Summer Log" PDF plan — refresh untouched today/future sessions
     const today=todayISO();
     for(const d in o.workouts){if(d>=today&&isPristine(o.workouts[d]))delete o.workouts[d];}
-    o.planRev=2;
+    o.planRev=3;
   }
   return o;
 }
-// a workout is "pristine" if it was auto-generated and never logged into
+// "pristine" = auto-generated and never logged into (prefilled weights don't count as logged)
 function isPristine(w){
   if(!w||w.completed||w.notes||w.rpe)return false;
   if(w.cardio&&w.cardio.actualMin)return false;
-  return (w.exercises||[]).every(e=>(e.sets||[]).every(s=>!s.reps&&!s.weight));
+  return (w.exercises||[]).every(e=>(e.sets||[]).every(s=>!s.reps));
 }
 function save(x){try{localStorage.setItem(KEY,JSON.stringify(x||S));}catch(e){toast("Storage full");}}
 
@@ -286,7 +308,7 @@ function getWorkout(date){
         const saved=S.liftWeights[e.name];
         const wt=(saved!=null&&saved!=="")?+saved:(e.wt!=null?e.wt:"");
         const fill=(wt!==""&&+wt>0)?String(wt):""; // bodyweight (0) stays blank
-        return {name:e.name,mg:e.mg,target:`${e.sets}x${e.reps}`,wt:wt,perHand:!!e.perHand,
+        return {name:e.name,mg:e.mg,target:`${e.sets}x${e.reps}`,wt:wt,perHand:!!e.perHand,added:!!e.added,prog:e.prog||"",
           sets:Array.from({length:e.sets},()=>({reps:"",weight:fill}))};
       }),
       cardio:t.cardio?{type:t.cardio.type,min:t.cardio.min,actualMin:""}:null,
@@ -472,6 +494,7 @@ function viewWorkout(root){
   const vol=workoutVolume(w);
   head.appendChild(el("div",{class:"small",style:"margin-top:8px;color:var(--mut)",
     html:`Volume today: <b style="color:var(--txt)">${round(vol.total).toLocaleString()}</b> kg lifted`}));
+  if(planned&&planned.note)head.appendChild(el("div",{class:"small",style:"margin-top:6px;color:var(--mut2);font-style:italic"},planned.note));
   root.appendChild(head);
 
   // cardio
@@ -515,7 +538,7 @@ function exerciseCard(ex,ei,w){
   const c=el("div",{class:"ex"});
   const h=el("div",{class:"exh"});
   h.append(el("div",{class:"nm"},ex.name),el("span",{class:"tag"},ex.mg),el("span",{class:"tag"},"target "+ex.target));
-  const wlabel=(ex.wt===0)?"BW":((ex.wt!==""&&ex.wt!=null)?ex.wt+"kg"+(ex.perHand?"/hand":""):null);
+  const wlabel=(ex.wt===0)?"BW":((ex.wt!==""&&ex.wt!=null)?(ex.added?"+":"")+ex.wt+"kg"+(ex.perHand?"/hand":""):null);
   if(wlabel)h.append(el("span",{class:"tag",style:"color:var(--acc);border-color:var(--line2)"},wlabel));
   const del=el("button",{class:"x"},"×");del.style.marginLeft="auto";
   del.onclick=()=>{w.exercises.splice(ei,1);save();render();};
@@ -523,13 +546,14 @@ function exerciseCard(ex,ei,w){
   // persistent working weight ("my weight" for this lift) — skips bodyweight moves
   if(ex.wt!==0){
     const ww=el("div",{class:"spread small",style:"margin:0 0 8px"});
-    ww.append(el("div",{class:"muted"},"Working weight"+(ex.perHand?" /hand":"")));
+    ww.append(el("div",{class:"muted"},"Working weight"+(ex.perHand?" /hand":ex.added?" (added)":"")));
     const wi=el("input",{type:"number",inputmode:"decimal",placeholder:"kg",style:"max-width:120px;padding:7px 9px"});
     wi.value=(ex.wt!==""&&ex.wt!=null)?ex.wt:"";
     wi.onchange=()=>{const v=wi.value;ex.wt=v===""?"":+v;if(!S.liftWeights)S.liftWeights={};S.liftWeights[ex.name]=v;
       ex.sets.forEach(s=>{if(!s.reps&&(s.weight===""||s.weight==null))s.weight=v;});save();render();};
     ww.appendChild(wi);c.appendChild(ww);
   }
+  if(ex.prog)c.appendChild(el("div",{class:"small",style:"color:var(--mut2);margin:0 0 8px"},"↑ move up: "+ex.prog));
   const hd=el("div",{class:"setrow small muted"});
   hd.append(el("div",{class:"si"},"#"),el("div",null,"Reps"),el("div",null,"Weight kg"),el("div",null,""));
   c.appendChild(hd);
@@ -711,7 +735,7 @@ function viewSupps(root){
 function viewPlan(root){
   const c=el("div",{class:"card"});
   c.appendChild(el("h2",{html:`Weekly plan <span class="sub">${GOAL.label}</span>`}));
-  c.appendChild(el("div",{class:"hint"},"4 lifts (Mon/Tue/Thu/Fri) + core every lift day · 1 Zone-2/core recovery day · weekend walk + rest. Train fasted before 13:00. You WFH 2-3 days/week — anchor the 4 lifts and the longer cardio on those days; keep office days light. Sauna post-lift; caffeine cutoff 12:00."));
+  c.appendChild(el("div",{class:"hint"},"Summer Log — 6 training days + Sunday walk. Push/Posterior/Zone2+Core/Pull/Anterior/Arms+Shoulders. Train fasted before 13:00; sauna post-lift; caffeine cutoff 12:00. You WFH 2-3 days/week — anchor the bigger sessions on those days."));
   for(let i=0;i<7;i++){
     const t=TEMPLATE[i];const isToday=i===dow(todayISO());
     const pd=el("div",{class:"plan-day"+(isToday?" today":"")});
@@ -720,10 +744,18 @@ function viewPlan(root){
     pd.appendChild(h);
     pd.appendChild(el("div",null,t.type));
     if(t.cardio)pd.appendChild(el("div",{class:"small muted"},`Cardio: ${t.cardio.type} (${t.cardio.min} min)`));
-    if(t.exercises.length)pd.appendChild(el("div",{class:"small muted"},t.exercises.map(e=>e.name+(e.wt>0?` ${e.wt}kg`:"")).join(" • ")));
+    if(t.exercises.length)pd.appendChild(el("div",{class:"small muted"},t.exercises.map(e=>e.name+(e.wt>0?` ${e.added?"+":""}${e.wt}kg${e.perHand?"/h":""}`:"")).join(" • ")));
+    if(t.note)pd.appendChild(el("div",{class:"small",style:"color:var(--mut2);margin-top:4px;font-style:italic"},t.note));
     c.appendChild(pd);
   }
   root.appendChild(c);
+
+  // progression / cut rules (from the Summer Log)
+  const cr=el("div",{class:"card"});
+  cr.appendChild(el("h2","Progression & cut rules"));
+  PLAN_RULES.rules.forEach(txt=>{const f=el("div",{class:"flag"});f.append(el("div",{class:"dot"}),el("div",null,txt));cr.appendChild(f);});
+  cr.appendChild(el("div",{class:"hint",style:"margin-top:8px"},"Increments — "+PLAN_RULES.increments));
+  root.appendChild(cr);
 
   // nutrition targets (editable)
   const cn=el("div",{class:"card"});
@@ -857,7 +889,7 @@ function viewReview(root){
   else if(nDays)flags.push(["ok","Stayed under keto net-carb ceiling all logged days."]);
   if(suppPct>=90)flags.push(["ok",`Supplement adherence ${suppPct}%.`]);
   else if(suppPct<70&&suppTaken)flags.push(["warn",`Supplement adherence ${suppPct}% — magnesium at 19:30 anchors sleep, do not skip.`]);
-  if(cardioMin<60&&sessionsPlanned)flags.push(["warn",`Only ${round(cardioMin)} min cardio logged — Zone 2 + the Friday intervals drive the fat-loss curve.`]);
+  if(cardioMin<60&&sessionsPlanned)flags.push(["warn",`Only ${round(cardioMin)} min cardio logged — the Wed Zone 2 + Sat VO2 intervals drive the fat-loss curve.`]);
   const cf=el("div",{class:"card"});
   cf.appendChild(el("h2","Flags & coaching"));
   if(!flags.length)cf.appendChild(el("div",{class:"empty"},"Log a full week to generate flags."));
