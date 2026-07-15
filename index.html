@@ -159,70 +159,70 @@ const DOW_NAMES=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","
 function daysBetween(a,b){return Math.round((parseISO(b)-parseISO(a))/86400000);}
 
 /* ---------- seeds (from project memory + InBody 10 Jun 2026) ---------- */
-const GOAL={date:"2026-08-31",bf:9.5,label:"Visible abs / 9-10% body fat by end August 2026"};
+// 4-week muscle block: 16 Jul → 12 Aug 2026. Lean-gain target ≈ +0.25-0.4 kg/wk.
+const GOAL={date:"2026-08-12",bf:null,label:"4-week muscle block — bigger chest/arms/shoulders by 12 Aug 2026"};
 
 const BASELINE={ // InBody 580, 10 Jun 2026
   date:"2026-06-10", weight:79.4, bodyFat:13.4, fatMass:10.6, smm:39.5, ffm:68.8,
   bmi:25.6, vfa:46.1, vfl:4, bmr:1856, whr:0.88, score:91
 };
-// 9.5% BF holding 68.8kg lean => target weight 68.8/(1-0.095)
-const TARGET_WEIGHT=+(BASELINE.ffm/(1-GOAL.bf/100)).toFixed(1); // ~76.0
-const TARGET_FATMASS=+(TARGET_WEIGHT-BASELINE.ffm).toFixed(1);
+// lean-bulk landing zone: ~+1.3kg over the 4-week block
+const TARGET_WEIGHT=+(BASELINE.weight+1.3).toFixed(1); // ~80.7
+const BULK_RATE={lo:0.15, hi:0.5}; // healthy kg/week gain band — above hi is mostly fat
 
-const TARGETS={kcal:2000, protein:170, netCarbs:25, netCarbCeiling:30, fat:135, water:3000,
-  windowStart:"12:00", windowEnd:"19:00", fastHours:16};
+// Lean-bulk macros: BMR 1856 → TDEE ~2450 with 6 lifting days; ~+200 surplus.
+// carbs fuel the sessions now — the keto cut is paused for this block.
+const TARGETS={kcal:2650, protein:180, netCarbs:290, netCarbCeiling:340, fat:80, water:3000,
+  windowStart:"10:00", windowEnd:"20:00", fastHours:14};
 
-/* "Summer Log" — the user's InBody-built 7-day plan (PDF, 10 Jun 2026).
-   wt = target working weight in kg (0 = bodyweight); perHand = per dumbbell; added = added load (+kg).
-   prog = the PDF "move up when" trigger (double progression). note = the day's coaching cue.
-   Effort rule: last set of every lift lands at 0-2 reps in the tank.
-   Increments: DB +2 · machines/cables +2.5-5 · barbell +2.5 · added-BW +2.5. */
+/* 4-week muscle block — Push/Pull/Legs ×2, six days, ≤35 min each.
+   13 working sets per session, rest 60-90s (big lifts 90s, isolation 60s) — that's the time cap.
+   wt = exact working weight in kg (0 = bodyweight); perHand = per dumbbell; added = added load (+kg).
+   prog = "move up when" trigger (double progression). Weights carry over from the Summer Log baselines.
+   Effort rule: last set of every lift lands at 0-2 reps in the tank. */
 const TEMPLATE={
-  0:{type:"Upper Push",note:"Lateral raises are the one place to push volume — bigger shoulder caps narrow the waist.",cardio:null,exercises:[
+  0:{type:"Push A — Chest focus",note:"Set a 35-min timer. 90s rest on presses, 60s on isolation — the clock is part of the program.",cardio:null,exercises:[
     {name:"DB Bench Press",mg:"Chest",sets:4,reps:"8-10",wt:32.5,perHand:true,prog:"4×10 clean → 35"},
-    {name:"Incline DB Press",mg:"Chest",sets:3,reps:"8-12",wt:26,perHand:true,prog:"3×12 → 28"},
     {name:"Shoulder Press Machine",mg:"Shoulders",sets:3,reps:"10-12",wt:40,prog:"3×12 → 45"},
-    {name:"Lateral Raises",mg:"Shoulders",sets:4,reps:"12-15",wt:8,perHand:true,prog:"4×15 → 9-10"},
+    {name:"Lateral Raises",mg:"Shoulders",sets:3,reps:"12-15",wt:8,perHand:true,prog:"3×15 → 9-10"},
     {name:"Triceps Pushdowns",mg:"Triceps",sets:3,reps:"10-12",wt:17.5,prog:"3×12 → 20"}]},
-  1:{type:"Lower — Posterior",note:"Legs were your best scan gain (100→103.8%). Keep them a priority.",cardio:null,exercises:[
+  1:{type:"Pull A — Width",note:"Wide lats + shoulder caps = the visual size. Rows strict, no body English.",cardio:null,exercises:[
+    {name:"Lat Pulldown",mg:"Back",sets:4,reps:"8-10",wt:75,prog:"4×10 → 80"},
+    {name:"Seated Cable Row",mg:"Back",sets:3,reps:"10-12",wt:60,prog:"3×12 → 65"},
+    {name:"Face Pulls",mg:"Rear Delts",sets:3,reps:"12-15",wt:17.5,prog:"3×15 → 20"},
+    {name:"DB Curl",mg:"Biceps",sets:3,reps:"10-12",wt:16,perHand:true,prog:"3×12 → 18"}]},
+  2:{type:"Legs A — Quad focus",note:"Legs were your best scan gain — heavy legs also drive the systemic growth signal.",cardio:null,exercises:[
+    {name:"Hack Squat / Leg Press",mg:"Quads",sets:4,reps:"8-12",wt:105,prog:"4×12 → 115"},
+    {name:"Lying Leg Curl",mg:"Hamstrings",sets:3,reps:"10-12",wt:45,prog:"3×12 → 50"},
+    {name:"Leg Extension",mg:"Quads",sets:3,reps:"12-15",wt:55,prog:"3×15 → 60"},
+    {name:"Standing Calf Raise",mg:"Calves",sets:3,reps:"12-15",wt:75,prog:"3×15 → 85"}]},
+  3:{type:"Push B — Shoulder focus",note:"OHP first while fresh. Dips: full depth, controlled down.",cardio:null,exercises:[
+    {name:"Barbell Overhead Press",mg:"Shoulders",sets:4,reps:"8-10",wt:37.5,prog:"4×10 → 40"},
+    {name:"Incline DB Press",mg:"Chest",sets:3,reps:"8-12",wt:26,perHand:true,prog:"3×12 → 28"},
+    {name:"Weighted Dips",mg:"Triceps",sets:3,reps:"8-12",wt:10,added:true,prog:"3×12 → +12.5"},
+    {name:"Rear Delt Fly",mg:"Rear Delts",sets:3,reps:"12-15",wt:43,prog:"3×15 → 48"}]},
+  4:{type:"Pull B — Thickness + arms",note:"Pull-ups while fresh. Curls slow on the way down — that half grows the arm.",cardio:null,exercises:[
+    {name:"Weighted Pull-up",mg:"Back",sets:4,reps:"6-8",wt:20,added:true,prog:"4×8 → +22.5"},
+    {name:"Seated Cable Row",mg:"Back",sets:3,reps:"10-12",wt:60,prog:"3×12 → 65"},
+    {name:"Incline DB Curl",mg:"Biceps",sets:3,reps:"10-12",wt:12,perHand:true,prog:"3×12 → 14"},
+    {name:"Hammer Curl",mg:"Biceps",sets:3,reps:"10-12",wt:14,perHand:true,prog:"3×12 → 16"}]},
+  5:{type:"Legs B — Posterior",note:"Hip thrusts progress fast — chase the increment.",cardio:null,exercises:[
     {name:"Hip Thrust",mg:"Glutes",sets:4,reps:"8-10",wt:50,prog:"4×10 → 60 (progresses fast)"},
     {name:"DB RDL",mg:"Hamstrings",sets:3,reps:"10-12",wt:50,perHand:true,prog:"3×12 → 55"},
     {name:"Bulgarian Split Squat",mg:"Glutes",sets:3,reps:"8-10 ea",wt:14,perHand:true,prog:"3×10 → 16"},
-    {name:"Lying Leg Curl",mg:"Hamstrings",sets:3,reps:"10-12",wt:45,prog:"3×12 → 50"}]},
-  2:{type:"Zone 2 + Core",note:"Core builds the ab muscle; the deficit strips the trunk fat over it. Both matter.",cardio:{type:"Zone 2 bike/row — HR 130-145",min:50},exercises:[
-    {name:"Hanging Leg Raise",mg:"Core",sets:3,reps:"12",wt:0,prog:"3×12 strict → add ankle weight"},
-    {name:"Cable Woodchop",mg:"Core",sets:3,reps:"12 ea",wt:17.5,prog:"3×12 ea → 20"},
-    {name:"Weighted Plank",mg:"Core",sets:3,reps:"45 sec",wt:15,prog:"3×45s → 20kg"},
-    {name:"Hollow Hold",mg:"Core",sets:3,reps:"45 sec",wt:0,prog:"3×45s → 60s"}]},
-  3:{type:"Upper Pull",note:"Wide lats + Day-1 shoulders build the V-taper — where the shape comes from as trunk fat drops.",cardio:null,exercises:[
-    {name:"Lat Pulldown",mg:"Back",sets:4,reps:"8-10",wt:75,prog:"4×10 → 80"},
-    {name:"Weighted Pull-up",mg:"Back",sets:4,reps:"6-8",wt:20,added:true,prog:"4×8 → +22.5"},
-    {name:"Seated Cable Row",mg:"Back",sets:3,reps:"10-12",wt:60,prog:"3×12 → 65"},
-    {name:"Face Pulls",mg:"Rear Delts",sets:3,reps:"12-15",wt:17.5,prog:"3×15 → 20"},
-    {name:"DB Curl",mg:"Biceps",sets:3,reps:"10-12",wt:16,perHand:true,prog:"3×12 → 18"},
-    {name:"Hammer Curl",mg:"Biceps",sets:3,reps:"10-12",wt:14,perHand:true,prog:"3×12 → 16"}]},
-  4:{type:"Lower — Anterior",cardio:null,exercises:[
-    {name:"Hack Squat / Leg Press",mg:"Quads",sets:4,reps:"8-12",wt:105,prog:"4×12 → 115"},
-    {name:"Walking Lunges",mg:"Quads",sets:3,reps:"20 steps",wt:24,prog:"all steps solid → 28 (total)"},
-    {name:"Leg Extension",mg:"Quads",sets:3,reps:"12-15",wt:55,prog:"3×15 → 60"},
-    {name:"Standing Calf Raise",mg:"Calves",sets:4,reps:"12-15",wt:75,prog:"4×15 → 85"}]},
-  5:{type:"Arms + Shoulders",cardio:{type:"4×4 VO2 intervals ~90%",min:28},exercises:[
-    {name:"Barbell Overhead Press",mg:"Shoulders",sets:3,reps:"8-10",wt:37.5,prog:"3×10 → 40"},
-    {name:"Weighted Dips",mg:"Triceps",sets:3,reps:"8-12",wt:10,added:true,prog:"3×12 → +12.5"},
-    {name:"Incline DB Curl",mg:"Biceps",sets:3,reps:"10-12",wt:12,perHand:true,prog:"3×12 → 14"},
-    {name:"Rope Triceps Extension",mg:"Triceps",sets:3,reps:"10-12",wt:17.5,prog:"3×12 → 20"},
-    {name:"Rear Delt Fly",mg:"Rear Delts",sets:3,reps:"12-15",wt:43,prog:"3×15 → 48"}]},
-  6:{type:"Long walk",cardio:{type:"Outdoor brisk walk",min:90},exercises:[]}
+    {name:"Seated Calf Raise",mg:"Calves",sets:3,reps:"15-20",wt:40,prog:"3×20 → 45"}]},
+  6:{type:"Rest",cardio:null,exercises:[]}
 };
-// program-wide guidance from the PDF, surfaced on the Plan tab
+// program-wide guidance, surfaced on the Plan tab
 const PLAN_RULES={
   increments:"DB +2 kg · machines/cables +2.5-5 kg · barbell +2.5 kg · added-bodyweight +2.5 kg",
   rules:[
+    "35-minute cap: 13 working sets, 90s rest on compound lifts, 60s on isolation. Running long? Cut rest, not sets.",
     "Effort: the last set of every lift ends at 0-2 reps in the tank. Could do 3 more clean? Too light.",
-    "Double progression: stay at a fixed weight, hit the top of the rep range on all sets, then add the increment next session.",
-    "These weights are starting points. >2 reps in the tank → jump an increment and log the real number; can't hit the bottom of the range with good form → drop one increment (that's your true working weight).",
-    "As calories drop, reps give before load. A weight that gave 10 now gives 8 — stay there. Only drop load if you fall below the range two sessions running.",
-    "Warning signal: loads dropping across the board two weeks running means muscle is at risk — fix calories before touching training."
+    "Double progression: stay at a fixed weight, hit the top of the rep range on all sets, then add the increment next session. In a surplus you should be moving up most weeks.",
+    "These weights are starting points. >2 reps in the tank → jump an increment and log the real number; can't hit the bottom of the range with good form → drop one increment.",
+    "Eat to grow: hit the calorie and protein targets daily. If weight isn't rising after a full week, add ~150 kcal (carbs).",
+    "Gaining faster than ~0.5 kg/week means mostly fat — pull ~150 kcal back."
   ]
 };
 
@@ -237,6 +237,16 @@ const SUPPS=[
   {id:"mag",   name:"Magnesium glycinate",       when:"Sleep wind-down",tm:"19:30"}
 ];
 
+// bulk staples — carbs are back on the menu for this block
+const BULK_FOODS=[
+  {name:"Basmati rice 250g cooked",kcal:325,protein:7,netCarbs:70,fat:1},
+  {name:"Oats 80g + whole milk 250ml",kcal:460,protein:19,netCarbs:64,fat:13},
+  {name:"Sweet potato 300g",kcal:258,protein:5,netCarbs:57,fat:0},
+  {name:"Banana (1)",kcal:105,protein:1,netCarbs:24,fat:0},
+  {name:"Wholegrain pasta 100g dry",kcal:350,protein:13,netCarbs:62,fat:2},
+  {name:"Sourdough 2 slices + honey",kcal:290,protein:8,netCarbs:56,fat:2},
+  {name:"Whey + banana + oats shake",kcal:390,protein:30,netCarbs:52,fat:5}
+];
 const SEED_FOODS=[
   {name:"Whey shake (1 scoop)",kcal:120,protein:24,netCarbs:2,fat:2},
   {name:"4 eggs",kcal:312,protein:24,netCarbs:1,fat:22},
@@ -245,13 +255,13 @@ const SEED_FOODS=[
   {name:"Avocado (1)",kcal:240,protein:3,netCarbs:3,fat:22},
   {name:"Greek yoghurt 200g (full fat)",kcal:194,protein:18,netCarbs:7,fat:10},
   {name:"Chicken breast 200g",kcal:330,protein:62,netCarbs:0,fat:7}
-];
+].concat(BULK_FOODS);
 
 /* ---------- store ---------- */
 const KEY="peaklog.v1";
 let S=load();
 function blank(){
-  return {version:1, planRev:3, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
+  return {version:1, planRev:4, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
     bodyLog:[{date:BASELINE.date,weight:BASELINE.weight,bodyFat:BASELINE.bodyFat,note:"InBody 580 baseline"}],
     inbody:[BASELINE],
     workouts:{}, nutrition:{}, supplements:{}, liftWeights:{},
@@ -279,6 +289,15 @@ function migrate(o){ // forward-compatible defaults
     const today=todayISO();
     for(const d in o.workouts){if(d>=today&&isPristine(o.workouts[d]))delete o.workouts[d];}
     o.planRev=3;
+  }
+  if(o.planRev<4){
+    // 4-week muscle block: new PPL split, lean-bulk diet replaces the keto cut
+    const today=todayISO();
+    for(const d in o.workouts){if(d>=today&&isPristine(o.workouts[d]))delete o.workouts[d];}
+    o.targets=Object.assign({},TARGETS);          // adopt bulk macros (kcal/carbs up, fat down)
+    o.profile.goalDate=GOAL.date;                  // 12 Aug 2026 block end
+    BULK_FOODS.forEach(f=>{if(!o.myFoods.some(x=>x.name===f.name))o.myFoods.push(f);});
+    o.planRev=4;
   }
   return o;
 }
@@ -400,12 +419,12 @@ function viewToday(root){
   const proj=projection();
 
   const c0=el("div",{class:"card"});
-  c0.appendChild(el("h2",{html:`Summer goal <span class="sub">${daysLeft} days left</span>`}));
+  c0.appendChild(el("h2",{html:`Muscle block <span class="sub">${daysLeft} days left</span>`}));
   const g=el("div",{class:"grid3"});
   g.append(
     stat("Weight",latest?latest.weight:"--","kg"),
     stat("Body fat",latest?latest.bodyFat:"--","%"),
-    stat("Target",TARGET_WEIGHT,"kg @ "+GOAL.bf+"%")
+    stat("Target",TARGET_WEIGHT,"kg by "+fmtNice(GOAL.date))
   );
   c0.appendChild(g);
   if(proj.ok){
@@ -432,7 +451,7 @@ function viewToday(root){
   const c2=el("div",{class:"card"});
   c2.appendChild(el("h2",{html:`Nutrition <span class="sub">${round(n.kcal)} / ${t.kcal} kcal</span>`}));
   c2.appendChild(macroBar("Protein",n.protein,t.protein,"g",false));
-  c2.appendChild(macroBar("Net carbs",n.netCarbs,t.netCarbs,"g",true,t.netCarbCeiling));
+  c2.appendChild(macroBar("Carbs",n.netCarbs,t.netCarbs,"g",true,t.netCarbCeiling));
   c2.appendChild(macroBar("Fat",n.fat,t.fat,"g",false));
   c2.appendChild(macroBar("Water",n.water,t.water,"ml",false));
   const nb=el("button",{class:"btn sm sec",style:"margin-top:6px"},"Log food / water");
@@ -584,16 +603,16 @@ function viewNutrition(root){
   const c=el("div",{class:"card"});
   c.appendChild(el("h2",{html:`Totals <span class="sub">${round(tot.kcal)} / ${t.kcal} kcal</span>`}));
   c.appendChild(macroBar("Protein",tot.protein,t.protein,"g",false));
-  c.appendChild(macroBar("Net carbs (keto)",tot.netCarbs,t.netCarbs,"g",true,t.netCarbCeiling));
+  c.appendChild(macroBar("Carbs",tot.netCarbs,t.netCarbs,"g",true,t.netCarbCeiling));
   c.appendChild(macroBar("Fat",tot.fat,t.fat,"g",false));
   if(tot.netCarbs>t.netCarbCeiling){
-    const f=el("div",{class:"flag bad"});f.append(el("div",{class:"dot"}),el("div",null,`Over keto ceiling: ${round(tot.netCarbs)}g net carbs (max ${t.netCarbCeiling}g).`));c.appendChild(f);
+    const f=el("div",{class:"flag warn"});f.append(el("div",{class:"dot"}),el("div",null,`Carbs over ceiling: ${round(tot.netCarbs)}g (cap ${t.netCarbCeiling}g) — past this the surplus turns to fat.`));c.appendChild(f);
   }
   root.appendChild(c);
 
   // fasting window
   const cf=el("div",{class:"card"});
-  cf.appendChild(el("h2",{html:`Fasting window <span class="sub">${t.fastHours}:8 — ${t.windowStart} to ${t.windowEnd}</span>`}));
+  cf.appendChild(el("h2",{html:`Eating window <span class="sub">${24-t.fastHours}h — ${t.windowStart} to ${t.windowEnd}</span>`}));
   const fr=el("div",{class:"grid2"});
   const l1=el("label",{class:"fld"});l1.appendChild(el("span",{class:"lb"},"First meal"));
   const i1=el("input",{type:"time"});i1.value=n.firstMeal||"";i1.oninput=()=>{n.firstMeal=i1.value;save();};l1.appendChild(i1);
@@ -605,7 +624,7 @@ function viewNutrition(root){
     if(n.firstMeal&&n.lastMeal){
       const eat=(toMin(n.lastMeal)-toMin(n.firstMeal))/60;const fast=24-eat;
       const ok=fast>=t.fastHours-0.25;
-      fnote.innerHTML=`Eating window ${round(eat,1)}h • fasted ${round(fast,1)}h — <span style="color:${ok?'var(--good)':'var(--warn)'}">${ok?'on target':'short of 16h'}</span>`;
+      fnote.innerHTML=`Eating window ${round(eat,1)}h • fasted ${round(fast,1)}h — <span style="color:${ok?'var(--good)':'var(--warn)'}">${ok?'on target':`short of ${t.fastHours}h fast`}</span>`;
     } else fnote.textContent="Log first and last meal to track the window.";
   }
   i1.oninput=()=>{n.firstMeal=i1.value;save();updFast();};
@@ -735,7 +754,7 @@ function viewSupps(root){
 function viewPlan(root){
   const c=el("div",{class:"card"});
   c.appendChild(el("h2",{html:`Weekly plan <span class="sub">${GOAL.label}</span>`}));
-  c.appendChild(el("div",{class:"hint"},"Summer Log — 6 training days + Sunday walk. Push/Posterior/Zone2+Core/Pull/Anterior/Arms+Shoulders. Train fasted before 13:00; sauna post-lift; caffeine cutoff 12:00. You WFH 2-3 days/week — anchor the bigger sessions on those days."));
+  c.appendChild(el("div",{class:"hint"},"4-week muscle block — Push/Pull/Legs ×2, Sunday off. Every session ≤35 min: 13 working sets, 90s rest on compounds, 60s on isolation. Lifting only, no cardio this block. WFH days: train at lunch; office days: the 35-min cap makes mornings easy."));
   for(let i=0;i<7;i++){
     const t=TEMPLATE[i];const isToday=i===dow(todayISO());
     const pd=el("div",{class:"plan-day"+(isToday?" today":"")});
@@ -750,18 +769,18 @@ function viewPlan(root){
   }
   root.appendChild(c);
 
-  // progression / cut rules (from the Summer Log)
+  // progression / bulk rules
   const cr=el("div",{class:"card"});
-  cr.appendChild(el("h2","Progression & cut rules"));
+  cr.appendChild(el("h2","Progression & bulk rules"));
   PLAN_RULES.rules.forEach(txt=>{const f=el("div",{class:"flag"});f.append(el("div",{class:"dot"}),el("div",null,txt));cr.appendChild(f);});
   cr.appendChild(el("div",{class:"hint",style:"margin-top:8px"},"Increments — "+PLAN_RULES.increments));
   root.appendChild(cr);
 
   // nutrition targets (editable)
   const cn=el("div",{class:"card"});
-  cn.appendChild(el("h2","Nutrition targets (keto cut)"));
+  cn.appendChild(el("h2","Nutrition targets (lean bulk)"));
   const t=S.targets;
-  const fields=[["kcal","Calories"],["protein","Protein g"],["netCarbs","Net carbs g"],["netCarbCeiling","Net carb ceiling g"],["fat","Fat g"],["water","Water ml"]];
+  const fields=[["kcal","Calories"],["protein","Protein g"],["netCarbs","Carbs g"],["netCarbCeiling","Carb ceiling g"],["fat","Fat g"],["water","Water ml"]];
   const grid=el("div",{class:"grid2"});
   fields.forEach(([k,lab])=>{
     const l=el("label",{class:"fld"});l.appendChild(el("span",{class:"lb"},lab));
@@ -769,7 +788,7 @@ function viewPlan(root){
     i.oninput=()=>{t[k]=num(i.value);save();};l.appendChild(i);grid.appendChild(l);
   });
   cn.appendChild(grid);
-  cn.appendChild(el("div",{class:"hint"},`Baseline BMR ${BASELINE.bmr} kcal. Target holds lean mass ${BASELINE.ffm}kg; ${GOAL.bf}% body fat ≈ ${TARGET_WEIGHT}kg.`));
+  cn.appendChild(el("div",{class:"hint"},`BMR ${BASELINE.bmr} kcal → TDEE ~2450 on 6 lifting days; 2650 = ~200 kcal surplus. Eat protein every meal (~40g × 4-5), carbs biggest around training. Target ~${TARGET_WEIGHT}kg by ${fmtNice(GOAL.date)} (+0.25-0.4 kg/wk lean band).`));
   root.appendChild(cn);
 
   // supplement reference
@@ -884,12 +903,12 @@ function viewReview(root){
   const flags=[];
   if(sessionsPlanned&&sessionsDone>=sessionsPlanned)flags.push(["ok",`All ${sessionsPlanned} lifting sessions completed. Strong week.`]);
   else if(sessionsPlanned)flags.push([sessionsDone>=sessionsPlanned-1?"warn":"bad",`${sessionsDone} of ${sessionsPlanned} lifting sessions done.`]);
-  if(proteinMiss)flags.push(["warn",`Protein under target on ${proteinMiss} of ${nDays} logged day${proteinMiss===1?"":"s"}. Lean mass needs it during the cut.`]);
-  if(carbBreach)flags.push(["bad",`Net-carb keto ceiling breached on ${carbBreach} day${carbBreach===1?"":"s"}.`]);
-  else if(nDays)flags.push(["ok","Stayed under keto net-carb ceiling all logged days."]);
+  if(proteinMiss)flags.push(["warn",`Protein under target on ${proteinMiss} of ${nDays} logged day${proteinMiss===1?"":"s"}. Protein is the raw material — muscle won't grow without it.`]);
+  if(carbBreach)flags.push(["warn",`Carb ceiling passed on ${carbBreach} day${carbBreach===1?"":"s"} — past ~${t.netCarbCeiling}g the surplus turns to fat.`]);
+  if(nDays&&sumK/nDays<t.kcal*0.92)flags.push(["warn",`Averaging ${round(sumK/nDays)} kcal vs ${t.kcal} target — you can't build muscle under-fed. Eat the surplus.`]);
+  else if(nDays)flags.push(["ok","Calories on target — the surplus is doing its job."]);
   if(suppPct>=90)flags.push(["ok",`Supplement adherence ${suppPct}%.`]);
-  else if(suppPct<70&&suppTaken)flags.push(["warn",`Supplement adherence ${suppPct}% — magnesium at 19:30 anchors sleep, do not skip.`]);
-  if(cardioMin<60&&sessionsPlanned)flags.push(["warn",`Only ${round(cardioMin)} min cardio logged — the Wed Zone 2 + Sat VO2 intervals drive the fat-loss curve.`]);
+  else if(suppPct<70&&suppTaken)flags.push(["warn",`Supplement adherence ${suppPct}% — creatine daily matters most this block; magnesium at 19:30 anchors sleep.`]);
   const cf=el("div",{class:"card"});
   cf.appendChild(el("h2","Flags & coaching"));
   if(!flags.length)cf.appendChild(el("div",{class:"empty"},"Log a full week to generate flags."));
@@ -906,22 +925,18 @@ function projection(){
   const n=pts.length;let sx=0,sy=0,sxy=0,sxx=0;
   pts.forEach(p=>{sx+=p.x;sy+=p.y;sxy+=p.x*p.y;sxx+=p.x*p.x;});
   const slope=(n*sxy-sx*sy)/(n*sxx-sx*sx);const intercept=(sy-slope*sx)/n;
-  const last=pts[pts.length-1];const ratePerWeek=slope*7;
+  const ratePerWeek=slope*7;
   const goalDayIdx=daysBetween(BASELINE.date,S.profile.goalDate);
   const projWeightAtGoal=slope*goalDayIdx+intercept;
-  const projBF=BASELINE.ffm>0?round((1-BASELINE.ffm/projWeightAtGoal)*100,1):null;
+  // bulk mode: gaining inside the lean band is the win; flat means eat more; fast means fat
   let msg,cls;
-  if(slope>=0){cls="bad";msg=`Weight trend flat/up (${ratePerWeek>=0?"+":""}${round(ratePerWeek,2)} kg/wk). Not on track for ${GOAL.bf}% by ${fmtNice(S.profile.goalDate)} — tighten the deficit.`;}
-  else{
-    // days to reach target weight from last point
-    const daysToTarget=(TARGET_WEIGHT-intercept)/slope; // x where y=target
-    const hitISO=addDays(BASELINE.date,Math.round(daysToTarget));
-    const onTrack=daysToTarget<=goalDayIdx+3;
-    cls=onTrack?"ok":"warn";
-    msg=`Losing ${round(-ratePerWeek,2)} kg/wk. Projected ${round(projWeightAtGoal,1)}kg (~${projBF}% BF) by ${fmtNice(S.profile.goalDate)}. `+
-        (onTrack?`On track to hit ${TARGET_WEIGHT}kg around ${fmtNice(hitISO)}.`:`At this rate ${TARGET_WEIGHT}kg lands ~${fmtNice(hitISO)}, slightly past goal — small extra deficit closes it.`);
-  }
-  return {ok:true,cls,msg,slope,ratePerWeek,projWeightAtGoal,projBF};
+  if(ratePerWeek<BULK_RATE.lo){cls="warn";
+    msg=`Weight trend ${ratePerWeek>=0?"+":""}${round(ratePerWeek,2)} kg/wk — too flat to grow. Add ~150 kcal of carbs and keep lifting; projected ${round(projWeightAtGoal,1)}kg by ${fmtNice(S.profile.goalDate)}.`;}
+  else if(ratePerWeek<=BULK_RATE.hi){cls="ok";
+    msg=`Gaining ${round(ratePerWeek,2)} kg/wk — inside the lean-gain band (${BULK_RATE.lo}-${BULK_RATE.hi}). Projected ${round(projWeightAtGoal,1)}kg by ${fmtNice(S.profile.goalDate)}; target ~${TARGET_WEIGHT}kg.`;}
+  else{cls="warn";
+    msg=`Gaining ${round(ratePerWeek,2)} kg/wk — faster than the lean band (max ${BULK_RATE.hi}); the excess is mostly fat. Pull ~150 kcal back.`;}
+  return {ok:true,cls,msg,slope,ratePerWeek,projWeightAtGoal};
 }
 
 /* ============================================================
