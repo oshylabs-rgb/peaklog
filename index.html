@@ -175,6 +175,40 @@ const BULK_RATE={lo:0.15, hi:0.5}; // healthy kg/week gain band — above hi is 
 const TARGETS={kcal:2650, protein:180, netCarbs:290, netCarbCeiling:340, fat:80, water:3000,
   windowStart:"10:00", windowEnd:"20:00", fastHours:14};
 
+/* ---------- phase plan (structured — add future phases to this array) ----------
+   Each phase: start/end (ISO), label, daily macro targets, fasting protocol,
+   weekly split (lift:true days accept the volumeIncrease flag). Read-only
+   reference — sessions are logged in the Workout tab as usual. */
+const PHASES=[
+  {id:"p1", label:"Fat Loss Sprint", start:"2026-07-16", end:"2026-08-07", mode:"cut",
+    targets:{kcal:2000, protein:195, fat:130, carbs:20, carbCeiling:30},
+    window:{windowStart:"12:00", windowEnd:"18:00", fastHours:18},
+    fasting:"Weekdays 12:00–18:00 eating window · Sunday extended fast 20-24h, ending 19:00",
+    volumeIncrease:false,
+    split:[{d:"Mon",s:"Push",lift:true},{d:"Tue",s:"Pull",lift:true},{d:"Wed",s:"Legs + core",lift:true},
+           {d:"Thu",s:"Zone 2 cardio",lift:false},{d:"Fri",s:"Upper hypertrophy",lift:true},
+           {d:"Sat",s:"Legs / full body + core",lift:true},{d:"Sun",s:"Rest + fast",lift:false}]},
+  {id:"p2", label:"Hold and Nudge", start:"2026-08-08", end:"2026-09-03", mode:"hold",
+    targets:{kcal:2350, protein:195, fat:110, carbs:145, carbCeiling:170},
+    window:{windowStart:"12:00", windowEnd:"19:00", fastHours:16},
+    fasting:"Standard 16:8 — 12:00 to 19:00",
+    volumeIncrease:true,
+    split:[{d:"Mon",s:"Push",lift:true},{d:"Tue",s:"Pull",lift:true},{d:"Wed",s:"Legs + core",lift:true},
+           {d:"Thu",s:"Zone 2 cardio",lift:false},{d:"Fri",s:"Upper hypertrophy",lift:true},
+           {d:"Sat",s:"Legs / full body + core",lift:true},{d:"Sun",s:"Rest + fast",lift:false}]}
+];
+const PHASE_START_BODY={date:"2026-07-16", weight:80, bodyFat:null, note:"Phase 1 start — Fat Loss Sprint"};
+function activePhase(date){return PHASES.find(p=>date>=p.start&&date<=p.end)||null;}
+// the active phase drives the operative nutrition targets; manual edits on the
+// Plan tab persist until the phase changes (keyed by S.appliedPhase)
+function applyPhaseTargets(){
+  const p=activePhase(todayISO());
+  if(!p||S.appliedPhase===p.id)return;
+  Object.assign(S.targets,{kcal:p.targets.kcal,protein:p.targets.protein,fat:p.targets.fat,
+    netCarbs:p.targets.carbs,netCarbCeiling:p.targets.carbCeiling},p.window||{});
+  S.appliedPhase=p.id;save();
+}
+
 /* 4-week muscle block — Push/Pull/Legs ×2, six days, ≤35 min each.
    13 working sets per session, rest 60-90s (big lifts 90s, isolation 60s) — that's the time cap.
    wt = exact working weight in kg (0 = bodyweight); perHand = per dumbbell; added = added load (+kg).
@@ -261,8 +295,9 @@ const SEED_FOODS=[
 const KEY="peaklog.v1";
 let S=load();
 function blank(){
-  return {version:1, planRev:4, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
-    bodyLog:[{date:BASELINE.date,weight:BASELINE.weight,bodyFat:BASELINE.bodyFat,note:"InBody 580 baseline"}],
+  return {version:1, planRev:5, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
+    bodyLog:[{date:BASELINE.date,weight:BASELINE.weight,bodyFat:BASELINE.bodyFat,note:"InBody 580 baseline"},
+             Object.assign({},PHASE_START_BODY)],
     inbody:[BASELINE],
     workouts:{}, nutrition:{}, supplements:{}, liftWeights:{},
     myFoods:SEED_FOODS.slice(),
@@ -298,6 +333,12 @@ function migrate(o){ // forward-compatible defaults
     o.profile.goalDate=GOAL.date;                  // 12 Aug 2026 block end
     BULK_FOODS.forEach(f=>{if(!o.myFoods.some(x=>x.name===f.name))o.myFoods.push(f);});
     o.planRev=4;
+  }
+  if(o.planRev<5){
+    // phase plan: seed the Phase 1 starting body point (80kg, 16 Jul 2026) into the existing bodyLog
+    if(!o.bodyLog.some(b=>b.date===PHASE_START_BODY.date))o.bodyLog.push(Object.assign({},PHASE_START_BODY));
+    o.bodyLog.sort((a,b)=>a.date<b.date?-1:1);
+    o.planRev=5;
   }
   return o;
 }
@@ -383,6 +424,7 @@ function renderTabs(){
   });
 }
 function render(){
+  applyPhaseTargets();
   $("#headDate").textContent=fmtNice(todayISO());
   renderTabs();
   const r=$("#root");r.innerHTML="";
@@ -419,7 +461,7 @@ function viewToday(root){
   const proj=projection();
 
   const c0=el("div",{class:"card"});
-  c0.appendChild(el("h2",{html:`Muscle block <span class="sub">${daysLeft} days left</span>`}));
+  c0.appendChild(el("h2",{html:`Goal <span class="sub">${daysLeft} days left</span>`}));
   const g=el("div",{class:"grid3"});
   g.append(
     stat("Weight",latest?latest.weight:"--","kg"),
@@ -433,6 +475,20 @@ function viewToday(root){
     c0.appendChild(f);
   }
   root.appendChild(c0);
+
+  // active phase (phase plan)
+  const ph=activePhase(date);
+  if(ph){
+    const di=daysBetween(ph.start,date)+1, dtot=daysBetween(ph.start,ph.end)+1;
+    const cp=el("div",{class:"card"});
+    cp.appendChild(el("h2",{html:`Phase — ${ph.label} <span class="sub">day ${di} of ${dtot}</span>`}));
+    const pg=el("div",{class:"grid2"});
+    pg.append(stat("Calories",ph.targets.kcal,"kcal"),stat("Protein",ph.targets.protein,"g"),
+              stat("Carbs",ph.targets.carbs,"g"),stat("Fat",ph.targets.fat,"g"));
+    cp.appendChild(pg);
+    cp.appendChild(el("div",{class:"small muted",style:"margin-top:8px"},"Fasting: "+ph.fasting));
+    root.appendChild(cp);
+  }
 
   // today's session
   const c1=el("div",{class:"card"});
@@ -769,6 +825,29 @@ function viewPlan(root){
   }
   root.appendChild(c);
 
+  // phase plan reference (read-only — log sessions in the Workout tab)
+  const cph=el("div",{class:"card"});
+  cph.appendChild(el("h2",{html:`Phase plan <span class="sub">${PHASES.length} phases</span>`}));
+  PHASES.forEach(p=>{
+    const act=!!activePhase(todayISO())&&activePhase(todayISO()).id===p.id;
+    const pd=el("div",{class:"plan-day"+(act?" today":"")});
+    const h=el("div",{class:"pd-h"});
+    h.append(el("div",{class:"dn"},p.label),el("div",{class:"tp"},act?"ACTIVE":""));
+    pd.appendChild(h);
+    pd.appendChild(el("div",{class:"small muted"},`${fmtNice(p.start)} → ${fmtNice(p.end)}`));
+    pd.appendChild(el("div",{class:"small",style:"margin:4px 0"},
+      `${p.targets.kcal} kcal · P ${p.targets.protein}g · C ${p.targets.carbs}g · F ${p.targets.fat}g`));
+    pd.appendChild(el("div",{class:"small muted"},"Fasting: "+p.fasting));
+    const sp=el("div",{class:"small muted",style:"margin-top:6px"});
+    sp.innerHTML=p.split.map(x=>`${x.d} ${x.s}${p.volumeIncrease&&x.lift?' <span class="tag" style="color:var(--acc)">⬆ volume</span>':""}`).join(" • ");
+    pd.appendChild(sp);
+    cph.appendChild(pd);
+  });
+  const goW=el("button",{class:"btn sm sec"},"Log today's session →");
+  goW.onclick=()=>{cursor=todayISO();route="workout";render();};
+  cph.appendChild(goW);
+  root.appendChild(cph);
+
   // progression / bulk rules
   const cr=el("div",{class:"card"});
   cr.appendChild(el("h2","Progression & bulk rules"));
@@ -778,7 +857,7 @@ function viewPlan(root){
 
   // nutrition targets (editable)
   const cn=el("div",{class:"card"});
-  cn.appendChild(el("h2","Nutrition targets (lean bulk)"));
+  cn.appendChild(el("h2",{html:`Nutrition targets <span class="sub">${(activePhase(todayISO())||{}).label||"no active phase"}</span>`}));
   const t=S.targets;
   const fields=[["kcal","Calories"],["protein","Protein g"],["netCarbs","Carbs g"],["netCarbCeiling","Carb ceiling g"],["fat","Fat g"],["water","Water ml"]];
   const grid=el("div",{class:"grid2"});
@@ -788,7 +867,7 @@ function viewPlan(root){
     i.oninput=()=>{t[k]=num(i.value);save();};l.appendChild(i);grid.appendChild(l);
   });
   cn.appendChild(grid);
-  cn.appendChild(el("div",{class:"hint"},`BMR ${BASELINE.bmr} kcal → TDEE ~2450 on 6 lifting days; 2650 = ~200 kcal surplus. Eat protein every meal (~40g × 4-5), carbs biggest around training. Target ~${TARGET_WEIGHT}kg by ${fmtNice(GOAL.date)} (+0.25-0.4 kg/wk lean band).`));
+  cn.appendChild(el("div",{class:"hint"},`Targets follow the active phase (see Phase plan below) and switch automatically on phase change. Manual edits here stick until the next phase starts. BMR ${BASELINE.bmr} kcal.`));
   root.appendChild(cn);
 
   // supplement reference
@@ -928,14 +1007,27 @@ function projection(){
   const ratePerWeek=slope*7;
   const goalDayIdx=daysBetween(BASELINE.date,S.profile.goalDate);
   const projWeightAtGoal=slope*goalDayIdx+intercept;
-  // bulk mode: gaining inside the lean band is the win; flat means eat more; fast means fat
+  const rateTxt=`${ratePerWeek>=0?"+":""}${round(ratePerWeek,2)} kg/wk`;
+  const ph=activePhase(todayISO());
+  const mode=ph?ph.mode:"gain";
   let msg,cls;
-  if(ratePerWeek<BULK_RATE.lo){cls="warn";
-    msg=`Weight trend ${ratePerWeek>=0?"+":""}${round(ratePerWeek,2)} kg/wk — too flat to grow. Add ~150 kcal of carbs and keep lifting; projected ${round(projWeightAtGoal,1)}kg by ${fmtNice(S.profile.goalDate)}.`;}
-  else if(ratePerWeek<=BULK_RATE.hi){cls="ok";
-    msg=`Gaining ${round(ratePerWeek,2)} kg/wk — inside the lean-gain band (${BULK_RATE.lo}-${BULK_RATE.hi}). Projected ${round(projWeightAtGoal,1)}kg by ${fmtNice(S.profile.goalDate)}; target ~${TARGET_WEIGHT}kg.`;}
-  else{cls="warn";
-    msg=`Gaining ${round(ratePerWeek,2)} kg/wk — faster than the lean band (max ${BULK_RATE.hi}); the excess is mostly fat. Pull ~150 kcal back.`;}
+  if(mode==="cut"){
+    // cut: losing 0.3-1.0 kg/wk is the win; flat/up means tighten
+    if(ratePerWeek>-0.05){cls="bad";msg=`Weight trend ${rateTxt} — flat/up during ${ph.label}. Tighten the deficit: cut ~200 kcal or add a walk.`;}
+    else if(ratePerWeek>-0.3){cls="warn";msg=`Losing ${round(-ratePerWeek,2)} kg/wk — slower than the 0.3-1.0 sprint band. A small extra deficit speeds it up.`;}
+    else if(ratePerWeek>=-1.0){cls="ok";msg=`Losing ${round(-ratePerWeek,2)} kg/wk — inside the sprint band (0.3-1.0). Projected ${round(projWeightAtGoal,1)}kg by ${fmtNice(S.profile.goalDate)}.`;}
+    else{cls="warn";msg=`Losing ${round(-ratePerWeek,2)} kg/wk — faster than 1.0; muscle is at risk. Add ~150 kcal (protein first).`;}
+  } else if(mode==="hold"){
+    // hold: stay within ±0.25 kg/wk
+    if(Math.abs(ratePerWeek)<=0.25){cls="ok";msg=`Weight trend ${rateTxt} — holding steady, exactly the ${ph.label} brief.`;}
+    else if(ratePerWeek>0.25){cls="warn";msg=`Gaining ${round(ratePerWeek,2)} kg/wk — more than a nudge. Pull ~150 kcal back.`;}
+    else{cls="warn";msg=`Losing ${round(-ratePerWeek,2)} kg/wk — drifting into a cut. Add ~150 kcal to hold.`;}
+  } else {
+    // gain: lean-bulk band
+    if(ratePerWeek<BULK_RATE.lo){cls="warn";msg=`Weight trend ${rateTxt} — too flat to grow. Add ~150 kcal of carbs and keep lifting; projected ${round(projWeightAtGoal,1)}kg by ${fmtNice(S.profile.goalDate)}.`;}
+    else if(ratePerWeek<=BULK_RATE.hi){cls="ok";msg=`Gaining ${round(ratePerWeek,2)} kg/wk — inside the lean-gain band (${BULK_RATE.lo}-${BULK_RATE.hi}). Projected ${round(projWeightAtGoal,1)}kg by ${fmtNice(S.profile.goalDate)}; target ~${TARGET_WEIGHT}kg.`;}
+    else{cls="warn";msg=`Gaining ${round(ratePerWeek,2)} kg/wk — faster than the lean band (max ${BULK_RATE.hi}); the excess is mostly fat. Pull ~150 kcal back.`;}
+  }
   return {ok:true,cls,msg,slope,ratePerWeek,projWeightAtGoal};
 }
 
