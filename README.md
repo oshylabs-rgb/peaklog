@@ -7,7 +7,7 @@ Personal, local-first tracker for training, supplements and nutrition, with an a
 - **Today** — goal countdown, today's planned session, nutrition progress bars, one-tap supplement checklist.
 - **Workout** — preloaded 5-day hypertrophy split (push / hamstring-glute / pull / quad / arms-shoulders) plus Zone 2 and Friday VO2 max. Log sets, reps, weight and cardio; auto volume calculation.
 - **Nutrition** — calories, protein, net carbs (keto ceiling), fat, water; 16:8 fasting window timer; saved "my foods" quick-pick.
-- **Supplements** — full stack with timing (Rainbow Dust + creatine, Hydro Dust, collagen, D3+K2, omega-3, Aduna cacao, magnesium glycinate, ACV) and adherence streak.
+- **Supplements** — full stack with timing (Rainbow Dust + creatine, Salte Electrolytes, collagen, D3+K2, omega-3, Aduna cacao, magnesium glycinate, ACV) and adherence streak.
 - **Plan** — the weekly training template and editable keto targets.
 - **Weekly Review** — every Monday-to-Sunday: sessions done vs planned, volume per muscle group, supplement adherence, macro averages vs target, body trajectory and a linear projection toward the end-July goal, plus plain-language flags.
 - **Trends** — weight, body fat, weekly volume, protein adherence charts.
