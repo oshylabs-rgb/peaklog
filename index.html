@@ -260,32 +260,41 @@ const PLAN_RULES={
   ]
 };
 
-/* ---------- 2-week fat-loss block (separate, standalone reference plan) ----------
+/* ---------- 5-week progressive cut (separate, standalone reference plan) ----------
    Standard commercial gym only: rowing machine (erg), treadmill, and the weights
-   floor (machines / dumbbells / barbell). A high-output 14-day cut aimed at
-   stripping subcutaneous fat by pairing a hard calorie deficit with muscle-sparing
-   resistance work and daily cardio. Read-only reference — this does NOT change the
-   logged Workout tab or the phase nutrition targets. */
+   floor (machines / dumbbells / barbell). A 5-week cut that keeps the same 6-day
+   training week throughout while the cardio volume and the deficit ramp week to
+   week (base → build → push → peak → finish), stripping subcutaneous fat while the
+   weights hold onto muscle. Read-only reference — this does NOT change the logged
+   Workout tab or the phase nutrition targets. */
 const CUT_PLAN={
-  title:"2-Week Fat-Loss Block",
+  title:"5-Week Progressive Cut",
   sub:"Rower · Treadmill · Weights",
-  frame:"14 days, 6 sessions a week, standard gym only. You can't spot-reduce, so this drives the whole-body calorie deficit that subcutaneous fat actually comes off with: heavy burn from the rower and treadmill, weights to hold onto muscle so the loss shows. Realistic over two weeks is ~1–2 kg and a few cm off the waist — the deficit (see the fuel rules) is where it's won or lost, not the sessions alone.",
-  cycleNote:"Run this 7-day cycle twice = 14 days. Day 14 is the last hard day; deload or ease off after.",
+  frame:"5 weeks, 6 sessions a week, standard gym only. The training week stays the same; the cardio volume and the calorie deficit escalate each week (see the progression). You can't spot-reduce, so it's the ramping whole-body deficit that pulls subcutaneous fat off — the weights keep the muscle so you end up leaner, not just smaller. Realistic over five weeks is ~3–5 kg and a visibly tighter waist, deficit-driven.",
+  cycleNote:"Same 7-day week every week — only the cardio length and the deficit change. Ramp weeks 1→4, then ease the intensity in week 5 so fatigue and water drop and the leanness shows.",
+  weeks:[
+    {wk:"Week 1",theme:"Base — set the deficit",deficit:"~400–500 kcal under maintenance",cardio:"Intervals ~15 min · Zone-2 row 25 min · long walk 30 min",note:"Ease in. Groove the routine, lock protein ≥2 g/kg, don't red-line yet."},
+    {wk:"Week 2",theme:"Build",deficit:"~500 kcal",cardio:"Intervals ~18 min · Zone-2 row 30 min · long walk 40 min",note:"Add a little volume everywhere. Weights stay heavy to hold muscle."},
+    {wk:"Week 3",theme:"Push",deficit:"~500–600 kcal",cardio:"Intervals ~22 min · Zone-2 row 35 min · long walk 45 min",note:"Cardio steps up. If the scale stalls 5+ days, tighten the diet before adding more cardio."},
+    {wk:"Week 4",theme:"Peak — highest output",deficit:"~600–750 kcal",cardio:"Intervals ~25 min · Zone-2 row 40 min · long walk 60 min · optional AM walk",note:"The hardest week. Extra low-intensity steps do the heavy lifting — watch recovery and sleep."},
+    {wk:"Week 5",theme:"Finish & reveal — ease off",deficit:"~500 kcal",cardio:"One short HIIT only · keep Zone-2 row 30 min · keep 10k+ steps",note:"Pull the hard intervals back so fatigue and water clear and the leanness shows. Reassess at the end — hold or re-run from week 1."}
+  ],
   rules:[
-    "Deficit is the lever: eat ~500–750 kcal under maintenance and keep protein ≥2 g/kg to protect muscle. Cardio widens the deficit, it doesn't replace the diet.",
-    "Weights first, cardio second on lifting days — lift while fresh so you keep the muscle that makes the fat loss visible.",
-    "Rower intervals: hard 250–500 m pushes with an easy paddle between. Chase watts, not just minutes.",
-    "Treadmill incline walks are the engine of this block: 5–8% incline, brisk conversational pace, most days. Cheap fat-burn, easy to recover from.",
-    "One full rest day a week is not optional on a deficit this size — it's how you keep training hard for all 14 days.",
-    "Outside the gym: 10k+ steps on top of sessions. NEAT quietly out-burns any single workout."
+    "Deficit is the lever, and it ramps: ~400–500 kcal under in week 1 up to ~600–750 by week 4, then back to ~500 in week 5. Keep protein ≥2 g/kg the whole way to protect muscle.",
+    "Cardio escalates, weights hold: keep the lifts heavy across all 5 weeks — that's what keeps the muscle so the fat loss reads as leaner, not smaller.",
+    "Weights first, cardio second on lifting days — lift while fresh.",
+    "Rower intervals: hard 250–500 m pushes with an easy paddle between. Chase watts, not just minutes; extend the total as the weeks progress.",
+    "Treadmill incline walks are the engine of this block: 5–8% incline, brisk conversational pace, most days. Cheap fat-burn that scales with almost no recovery cost.",
+    "One full rest day every week — non-negotiable on an escalating deficit; it's how you keep training hard for all 5 weeks.",
+    "Outside the gym: 10k+ steps on top of sessions, rising toward week 4. NEAT quietly out-burns any single workout."
   ],
   days:[
-    {d:"Day 1",focus:"Full-body weights + rower intervals",cardio:"Rower — 8 × 250 m hard / 90s easy (~15 min)",lifts:["Leg Press 3×12","Lat Pulldown 3×12","Incline DB Press 3×12","Seated Cable Row 3×12","Cable Woodchop 3×15/side"],note:"Full-body strength base. Moderate load, short rest (45–60s) to keep the heart rate up."},
-    {d:"Day 2",focus:"Treadmill HIIT + core",cardio:"Treadmill — 5-min warm-up, 10 × 30s fast run / 60s walk, 5-min cool-down (~25 min)",lifts:["Hanging Leg Raise 3×12","Plank 3×45s","Cable Crunch 3×15","Russian Twist 3×20"],note:"Highest calorie-burn day — push the fast intervals genuinely hard."},
-    {d:"Day 3",focus:"Full-body weights + incline walk",cardio:"Treadmill — 20 min brisk walk at 6–8% incline",lifts:["Goblet Squat 3×12","Chest Press Machine 3×12","DB RDL 3×12","Shoulder Press Machine 3×12","Face Pull 3×15"],note:"Second strength session, opposite emphasis. Finish on the incline walk at a conversational pace."},
-    {d:"Day 4",focus:"Rower steady-state (Zone 2) + core",cardio:"Rower — 30–40 min steady, conversational pace (~70% effort)",lifts:["Plank 3×60s","Side Plank 3×30s/side","Dead Bug 3×12"],note:"Recovery-paced but long — big fat-burn with low fatigue. Keep the stroke smooth."},
-    {d:"Day 5",focus:"Full-body weights (legs) + rower intervals",cardio:"Rower — 6 × 500 m hard / 2 min easy (~20 min)",lifts:["Leg Press 4×12","Lying Leg Curl 3×12","Walking Lunge 3×12/leg","Standing Calf Raise 3×15","Cable Crunch 3×15"],note:"Legs are the biggest muscles — training them hard spikes the day's calorie burn."},
-    {d:"Day 6",focus:"Long incline walk (low intensity)",cardio:"Treadmill — 45–60 min incline walk, 5–8%, fasted if it suits you",lifts:[],note:"Pure fat-burn, no weights. Podcast pace. A lot of the subcutaneous fat quietly comes off on days like this."},
+    {d:"Day 1",focus:"Full-body weights + rower intervals",cardio:"Rower intervals — hard 250–500 m pushes / easy paddle (length scales by week)",lifts:["Leg Press 3×12","Lat Pulldown 3×12","Incline DB Press 3×12","Seated Cable Row 3×12","Cable Woodchop 3×15/side"],note:"Full-body strength base. Moderate load, short rest (45–60s) to keep the heart rate up."},
+    {d:"Day 2",focus:"Treadmill HIIT + core",cardio:"Treadmill — 5-min warm-up, 30s fast run / 60s walk intervals, 5-min cool-down (reps scale by week)",lifts:["Hanging Leg Raise 3×12","Plank 3×45s","Cable Crunch 3×15","Russian Twist 3×20"],note:"Highest-intensity cardio day — push the fast intervals genuinely hard."},
+    {d:"Day 3",focus:"Full-body weights + incline walk",cardio:"Treadmill — brisk incline walk at 6–8% (duration scales by week)",lifts:["Goblet Squat 3×12","Chest Press Machine 3×12","DB RDL 3×12","Shoulder Press Machine 3×12","Face Pull 3×15"],note:"Second strength session, opposite emphasis. Finish on the incline walk at a conversational pace."},
+    {d:"Day 4",focus:"Rower steady-state (Zone 2) + core",cardio:"Rower — steady conversational pace, ~70% effort (duration scales by week)",lifts:["Plank 3×60s","Side Plank 3×30s/side","Dead Bug 3×12"],note:"Recovery-paced but long — big fat-burn with low fatigue. Keep the stroke smooth."},
+    {d:"Day 5",focus:"Full-body weights (legs) + rower intervals",cardio:"Rower intervals — hard 500 m pushes / easy paddle (length scales by week)",lifts:["Leg Press 4×12","Lying Leg Curl 3×12","Walking Lunge 3×12/leg","Standing Calf Raise 3×15","Cable Crunch 3×15"],note:"Legs are the biggest muscles — training them hard spikes the day's calorie burn."},
+    {d:"Day 6",focus:"Long incline walk (low intensity)",cardio:"Treadmill — incline walk, 5–8%, fasted if it suits you (duration scales by week)",lifts:[],note:"Pure fat-burn, no weights. Podcast pace. A lot of the subcutaneous fat quietly comes off on days like this."},
     {d:"Day 7",focus:"Rest",cardio:"Optional easy 20–30 min flat walk + mobility",lifts:[],note:"Full rest / active recovery. Sleep 7–9h — recovery is when the fat loss banks."}
   ]
 };
@@ -442,7 +451,7 @@ const TABS=[
 let route="today";
 let cursor=todayISO();      // workout/nutrition/supps day cursor
 let weekCursor=mondayOf(todayISO());
-let planTab="block";        // Plan tab: "block" (muscle block) | "cut" (2-week fat-loss)
+let planTab="block";        // Plan tab: "block" (muscle block) | "cut" (5-week progressive cut)
 
 function renderTabs(){
   const t=$("#tabs");t.innerHTML="";
@@ -839,9 +848,9 @@ function viewSupps(root){
    PLAN
    ============================================================ */
 function viewPlan(root){
-  // separate plans — the muscle block (default) and the standalone 2-week cut
+  // separate plans — the muscle block (default) and the standalone 5-week progressive cut
   const seg=el("div",{class:"seg"});
-  [["block","Muscle block"],["cut","2-Week Cut"]].forEach(([id,lab])=>{
+  [["block","Muscle block"],["cut","5-Week Cut"]].forEach(([id,lab])=>{
     const b=el("button",{class:planTab===id?"on":""},lab);
     b.onclick=()=>{planTab=id;render();};
     seg.appendChild(b);
@@ -920,7 +929,7 @@ function viewPlan(root){
   root.appendChild(cs);
 }
 
-/* ---------- 2-week fat-loss block (standalone plan on the Plan tab) ---------- */
+/* ---------- 5-week progressive cut (standalone plan on the Plan tab) ---------- */
 function viewPlanCut(root){
   const P=CUT_PLAN;
   const c=el("div",{class:"card"});
@@ -929,6 +938,28 @@ function viewPlanCut(root){
   const cyc=el("div",{class:"flag warn"});
   cyc.append(el("div",{class:"dot"}),el("div",null,P.cycleNote));
   c.appendChild(cyc);
+  root.appendChild(c);
+
+  // week-by-week progression — the escalating cardio + deficit
+  const cw=el("div",{class:"card"});
+  cw.appendChild(el("h2",{html:`Weekly progression <span class="sub">cardio & deficit ramp</span>`}));
+  const curWk=cutWeekIndex(todayISO());
+  P.weeks.forEach((w,i)=>{
+    const active=(i===curWk);
+    const pd=el("div",{class:"plan-day"+(active?" today":"")});
+    const h=el("div",{class:"pd-h"});
+    h.append(el("div",{class:"dn"},`${w.wk} — ${w.theme}`),el("div",{class:"tp"},active?"THIS WEEK":""));
+    pd.appendChild(h);
+    pd.appendChild(el("div",{class:"small muted",style:"margin-top:2px"},"Deficit: "+w.deficit));
+    pd.appendChild(el("div",{class:"small muted",style:"margin-top:2px"},"Cardio: "+w.cardio));
+    pd.appendChild(el("div",{class:"small",style:"color:var(--mut2);margin-top:4px;font-style:italic"},w.note));
+    cw.appendChild(pd);
+  });
+  root.appendChild(cw);
+
+  // the fixed training week
+  const ct=el("div",{class:"card"});
+  ct.appendChild(el("h2",{html:`The training week <span class="sub">same every week</span>`}));
   P.days.forEach(day=>{
     const pd=el("div",{class:"plan-day"});
     const h=el("div",{class:"pd-h"});
@@ -938,14 +969,21 @@ function viewPlanCut(root){
     if(day.cardio)pd.appendChild(el("div",{class:"small muted",style:"margin-top:3px"},"Cardio: "+day.cardio));
     if(day.lifts.length)pd.appendChild(el("div",{class:"small muted",style:"margin-top:3px"},"Weights: "+day.lifts.join(" • ")));
     if(day.note)pd.appendChild(el("div",{class:"small",style:"color:var(--mut2);margin-top:4px;font-style:italic"},day.note));
-    c.appendChild(pd);
+    ct.appendChild(pd);
   });
-  root.appendChild(c);
+  root.appendChild(ct);
 
   const cr=el("div",{class:"card"});
   cr.appendChild(el("h2",null,"How this strips subcutaneous fat"));
   P.rules.forEach(txt=>{const f=el("div",{class:"flag"});f.append(el("div",{class:"dot"}),el("div",null,txt));cr.appendChild(f);});
   root.appendChild(cr);
+}
+// which week of the cut today falls in, anchored to the active phase start (or null)
+function cutWeekIndex(date){
+  const ph=activePhase(date);
+  if(!ph)return -1;
+  const wk=Math.floor(daysBetween(ph.start,date)/7);
+  return (wk>=0&&wk<CUT_PLAN.weeks.length)?wk:-1;
 }
 
 /* ============================================================
