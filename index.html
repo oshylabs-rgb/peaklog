@@ -208,17 +208,17 @@ const PHASES=[
     window:{windowStart:"12:00", windowEnd:"18:00", fastHours:18},
     fasting:"Weekdays 12:00–18:00 eating window · Sunday extended fast 20-24h, ending 19:00",
     volumeIncrease:false,
-    split:[{d:"Mon",s:"Push",lift:true},{d:"Tue",s:"Pull",lift:true},{d:"Wed",s:"Legs + core",lift:true},
-           {d:"Thu",s:"Zone 2 cardio",lift:false},{d:"Fri",s:"Upper hypertrophy",lift:true},
-           {d:"Sat",s:"Legs / full body + core",lift:true},{d:"Sun",s:"Rest + fast",lift:false}]},
+    split:[{d:"Mon",s:"Push A",lift:true},{d:"Tue",s:"Pull A",lift:true},{d:"Wed",s:"Legs A + Core A",lift:true},
+           {d:"Thu",s:"Push B",lift:true},{d:"Fri",s:"Pull B",lift:true},
+           {d:"Sat",s:"Legs B + Core B",lift:true},{d:"Sun",s:"Rest + fast",lift:false}]},
   {id:"p2", label:"Hold and Nudge", start:"2026-08-08", end:"2026-09-03", mode:"hold",
     targets:{kcal:2350, protein:195, fat:110, carbs:145, carbCeiling:170},
     window:{windowStart:"12:00", windowEnd:"19:00", fastHours:16},
     fasting:"Standard 16:8 — 12:00 to 19:00",
     volumeIncrease:true,
-    split:[{d:"Mon",s:"Push",lift:true},{d:"Tue",s:"Pull",lift:true},{d:"Wed",s:"Legs + core",lift:true},
-           {d:"Thu",s:"Zone 2 cardio",lift:false},{d:"Fri",s:"Upper hypertrophy",lift:true},
-           {d:"Sat",s:"Legs / full body + core",lift:true},{d:"Sun",s:"Rest + fast",lift:false}]}
+    split:[{d:"Mon",s:"Push A",lift:true},{d:"Tue",s:"Pull A",lift:true},{d:"Wed",s:"Legs A + Core A",lift:true},
+           {d:"Thu",s:"Push B",lift:true},{d:"Fri",s:"Pull B",lift:true},
+           {d:"Sat",s:"Legs B + Core B",lift:true},{d:"Sun",s:"Rest + fast",lift:false}]}
 ];
 const PHASE_START_BODY={date:"2026-07-16", weight:80, bodyFat:null, note:"Phase 1 start — Fat Loss Sprint"};
 function activePhase(date){return PHASES.find(p=>date>=p.start&&date<=p.end)||null;}
@@ -248,11 +248,14 @@ const TEMPLATE={
     {name:"Seated Cable Row",mg:"Back",sets:3,reps:"10-12",wt:60,prog:"3×12 → 65"},
     {name:"Face Pulls",mg:"Rear Delts",sets:3,reps:"12-15",wt:17.5,prog:"3×15 → 20"},
     {name:"DB Curl",mg:"Biceps",sets:3,reps:"10-12",wt:16,perHand:true,prog:"3×12 → 18"}]},
-  2:{type:"Legs A — Quad focus",note:"Legs were your best scan gain — heavy legs also drive the systemic growth signal.",cardio:null,exercises:[
+  2:{type:"Legs A + Core A",note:"Legs were your best scan gain — heavy legs also drive the systemic growth signal. Core A on the end: 3 lifts, 45s rest, about 7 extra minutes. Log the hold in seconds in the reps box.",cardio:null,exercises:[
     {name:"Hack Squat / Leg Press",mg:"Quads",sets:4,reps:"8-12",wt:105,prog:"4×12 → 115"},
     {name:"Lying Leg Curl",mg:"Hamstrings",sets:3,reps:"10-12",wt:45,prog:"3×12 → 50"},
     {name:"Leg Extension",mg:"Quads",sets:3,reps:"12-15",wt:55,prog:"3×15 → 60"},
-    {name:"Standing Calf Raise",mg:"Calves",sets:3,reps:"12-15",wt:75,prog:"3×15 → 85"}]},
+    {name:"Standing Calf Raise",mg:"Calves",sets:3,reps:"12-15",wt:75,prog:"3×15 → 85"},
+    {name:"Cable Crunch",mg:"Core",sets:3,reps:"10-12",wt:35,prog:"3×12 hips locked → 40"},
+    {name:"Hanging Leg Raise",mg:"Core",sets:3,reps:"8-12",wt:0,prog:"3×12 strict straight-leg → +2kg between the feet"},
+    {name:"Pallof Press",mg:"Core",sets:3,reps:"10-12 ea",wt:15,prog:"3×12/side with zero rotation → 20"}]},
   3:{type:"Push B — Shoulder focus",note:"OHP first while fresh. Dips: full depth, controlled down.",cardio:null,exercises:[
     {name:"Barbell Overhead Press",mg:"Shoulders",sets:4,reps:"8-10",wt:37.5,prog:"4×10 → 40"},
     {name:"Incline DB Press",mg:"Chest",sets:3,reps:"8-12",wt:26,perHand:true,prog:"3×12 → 28"},
@@ -263,11 +266,14 @@ const TEMPLATE={
     {name:"Seated Cable Row",mg:"Back",sets:3,reps:"10-12",wt:60,prog:"3×12 → 65"},
     {name:"Incline DB Curl",mg:"Biceps",sets:3,reps:"10-12",wt:12,perHand:true,prog:"3×12 → 14"},
     {name:"Hammer Curl",mg:"Biceps",sets:3,reps:"10-12",wt:14,perHand:true,prog:"3×12 → 16"}]},
-  5:{type:"Legs B — Posterior",note:"Hip thrusts progress fast — chase the increment.",cardio:null,exercises:[
+  5:{type:"Legs B + Core B",note:"Hip thrusts progress fast — chase the increment. Core B on the end: anti-movement work, 45s rest, about 6 extra minutes. Log the hold in seconds in the reps box.",cardio:null,exercises:[
     {name:"Hip Thrust",mg:"Glutes",sets:4,reps:"8-10",wt:50,prog:"4×10 → 60 (progresses fast)"},
     {name:"DB RDL",mg:"Hamstrings",sets:3,reps:"10-12",wt:50,perHand:true,prog:"3×12 → 55"},
     {name:"Bulgarian Split Squat",mg:"Glutes",sets:3,reps:"8-10 ea",wt:14,perHand:true,prog:"3×10 → 16"},
-    {name:"Seated Calf Raise",mg:"Calves",sets:3,reps:"15-20",wt:40,prog:"3×20 → 45"}]},
+    {name:"Seated Calf Raise",mg:"Calves",sets:3,reps:"15-20",wt:40,prog:"3×20 → 45"},
+    {name:"Weighted Plank",mg:"Core",sets:3,reps:"30-45s",wt:0,prog:"45s perfect → +5kg plate on the back, reset to 30s"},
+    {name:"Ab Wheel Rollout",mg:"Core",sets:3,reps:"8-12",wt:0,prog:"3×12 near-full range → knees further back"},
+    {name:"Side Plank",mg:"Core",sets:3,reps:"30s ea",wt:0,prog:"45s clean each side → +5kg on the top hip"}]},
   6:{type:"Rest",cardio:null,exercises:[]}
 };
 // program-wide guidance, surfaced on the Plan tab
@@ -448,6 +454,85 @@ const CARDIO={
   ]
 };
 
+/* ---------- core / abs prescriptions ----------
+   Same treatment as the lifts: a load, a rep range, a progression trigger and
+   the one cue that decides whether the set works. Two loaded sessions a week,
+   bolted onto the two leg days as finishers. */
+const CORE={
+  title:"Core & abs — exact prescriptions",
+  sub:"Loaded flexion · Anti-movement",
+  frame:"Abs are a muscle and they respond to load, not to repetition. Three sets of 25 bodyweight crunches stopped being training some time in your first month of lifting. Every set below is either carrying weight or being progressed toward weight.",
+  truth:"Thickness and visibility are two separate jobs. Loaded core work builds the muscle so it stands proud at a given body fat — that is what these sessions do. Whether it actually shows is decided by the deficit, which is the cut plan's job. Neither one substitutes for the other, and no amount of crunches does the second job.",
+  order:"Order inside a session is always: heavy lifts → core finisher → Zone 2 cardio if you're doing it the same day. Core never goes first — a pre-fatigued trunk under a heavy squat or RDL is the single most reliable way to hurt your back.",
+  cats:[
+    {n:"Loaded flexion",d:"Cable crunch, hanging leg raise. Ribs toward pelvis under resistance — this is the part that builds visible thickness.",s:"Core A"},
+    {n:"Anti-extension",d:"Plank, ab wheel. Stopping the spine from arching under load. Builds the brace that holds a neutral spine.",s:"Core B"},
+    {n:"Anti-rotation / anti-lateral flexion",d:"Pallof press, side plank. Resisting twist and side-bend. This is what transfers to squats, presses and carries.",s:"Both"}
+  ],
+  sessions:[
+    {id:"coreA",name:"Core A — loaded flexion",when:"Wednesday, straight after Legs A",dur:"~7 min · 45s rest",
+     exercises:[
+       {name:"Cable Crunch",target:"3 × 10–12",load:"35 kg",
+        how:["Kneel about an arm's length back from the high pulley, rope either side of your head, hands locked at your ears.",
+             "Set your hips and do not let them travel. The only thing that moves is your spine.",
+             "Crunch by rounding down — ribs toward pelvis — until your elbows pass your knees.",
+             "Two seconds back up. Never let the stack slam at the top."],
+        prog:"3×12 with the hips completely still → +5 kg",
+        err:"Hinging at the hip and pulling with the arms. If your hips move, you're doing a lat pulldown on your knees and your abs are along for the ride."},
+       {name:"Hanging Leg Raise",target:"3 × 8–12",load:"Bodyweight",
+        how:["Hang from the bar with the shoulders active — pull them down away from your ears, don't dangle.",
+             "Curl your tailbone up FIRST (posterior pelvic tilt), then raise the legs. Skip that and it's a hip flexor exercise.",
+             "Straight legs if you can keep them still. Knees tucked the moment you start swinging.",
+             "Three seconds down, dead stop at the bottom, no rebound into the next rep."],
+        prog:"3×12 strict and straight-legged → hold a dumbbell between the feet, start at +2 kg",
+        err:"Letting the lower back arch and the hips do the lifting. That's hip flexors, and it's how the back starts aching. Drop to a captain's chair knee raise if that's happening."},
+       {name:"Pallof Press",target:"3 × 10–12 per side",load:"15 kg",
+        how:["Stand side-on to the cable, handle at sternum height, feet shoulder width, knees soft.",
+             "Press the handle straight out and hold two seconds while the cable tries to rotate you.",
+             "Nothing turns — not the shoulders, not the hips. Back to the chest under control."],
+        prog:"3×12 per side with zero rotation → +5 kg",
+        err:"Drifting the press off-centre or letting the ribs flare. If your torso rotates even slightly, the weight is too heavy for what this is training."}
+     ]},
+    {id:"coreB",name:"Core B — anti-movement",when:"Saturday, straight after Legs B",dur:"~6 min · 45s rest",
+     exercises:[
+       {name:"Weighted Plank",target:"3 × 30–45 s",load:"Bodyweight → plate on the upper back",
+        how:["Elbows directly under the shoulders, forearms flat on the floor.",
+             "Squeeze the glutes hard, tuck the tailbone under, pull the ribs down. Brace like you're about to take a punch.",
+             "Straight line from ear to ankle. Breathe shallow and steady — don't hold your breath."],
+        prog:"45 s with the position perfect → put a 5 kg plate on the upper back and reset to 30 s",
+        err:"Adding time forever. Past 60 seconds a plank is a patience test, not a strength stimulus — load it instead. And watch the hips: sagging puts it in your lower back, piking takes the abs out entirely."},
+       {name:"Ab Wheel Rollout",target:"3 × 8–12 from the knees",load:"Bodyweight",
+        how:["Knees on a pad, wheel under the shoulders, tailbone tucked before you move an inch.",
+             "Roll out only as far as you can go without the lower back arching. That point is your range today, and it extends over weeks.",
+             "Pull back with the abs, not by yanking with the hip flexors."],
+        prog:"3×12 to near-full extension → shift the knees further back, then eventually from standing",
+        err:"Going deeper than your brace can hold. The moment the lower back dips, the set is over — that rep is loading your spine, not your abs. Swap in a dead bug 3×12/side if the wheel bothers your back at all."},
+       {name:"Side Plank",target:"3 × 30 s per side",load:"Bodyweight",
+        how:["Elbow under the shoulder, hips stacked one directly above the other, body in a straight line.",
+             "Push the bottom shoulder away from the floor and squeeze the glutes.",
+             "Top hand on the hip, not propped on the floor."],
+        prog:"45 s clean on each side → rest a 5 kg dumbbell on the top hip",
+        err:"Letting the hips rotate toward the floor or sag down. Stacked hips or it isn't a side plank."}
+     ]}
+  ],
+  rules:[
+    "Two loaded sessions a week is the whole dose. Abs recover in about 48 hours, and every heavy squat, RDL, overhead press and split squat already trains them isometrically — they are not an untrained muscle on this program.",
+    "Train them like any other muscle: 8–15 reps against real resistance. If you can do 20+ of something, that was a warm-up set — add weight.",
+    "Timed holds cap at 60 seconds. Past that you add load, never more time.",
+    "Core goes last in the session, always. Never before the compound lifts.",
+    "Rest 45 seconds between core sets — long enough to hold form, short enough to keep the finisher inside 7 minutes.",
+    "Daily ab training is not the missing variable. Frequency isn't what's between you and visible abs; the deficit is.",
+    "If your lower back is what's tired after a core session rather than your abs, the form broke down somewhere. Drop the load and re-read the cues."
+  ],
+  mistakes:[
+    "Endless unloaded reps. Three sets of 25 bodyweight crunches every day builds nothing after the first month — abs need progressive overload exactly like your chest does.",
+    "Hip flexors doing the leg raises. If the lower back arches off and the hips do the lifting, you're training hip flexors and buying back pain.",
+    "Chasing longer planks. A three-minute plank proves patience, not strength. Load it and cut the time.",
+    "Core before the big lifts. It fatigues the exact bracing that keeps your spine neutral under a heavy squat.",
+    "Expecting core work to reveal abs. It builds them; the deficit uncovers them. Doing more of the first will not fix a shortfall in the second."
+  ]
+};
+
 const SUPPS=[
   {id:"acv",   name:"Apple cider vinegar",       when:"Morning",        tm:"~07:00"},
   {id:"rdust", name:"Rainbow Dust + creatine",   when:"Morning stack",  tm:"~07:30"},
@@ -483,7 +568,7 @@ const SEED_FOODS=[
 const KEY="peaklog.v1";
 let S=load();
 function blank(){
-  return {version:1, planRev:5, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
+  return {version:1, planRev:6, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
     bodyLog:[{date:BASELINE.date,weight:BASELINE.weight,bodyFat:BASELINE.bodyFat,note:"InBody 580 baseline"},
              Object.assign({},PHASE_START_BODY)],
     inbody:[BASELINE],
@@ -527,6 +612,12 @@ function migrate(o){ // forward-compatible defaults
     if(!o.bodyLog.some(b=>b.date===PHASE_START_BODY.date))o.bodyLog.push(Object.assign({},PHASE_START_BODY));
     o.bodyLog.sort((a,b)=>a.date<b.date?-1:1);
     o.planRev=5;
+  }
+  if(o.planRev<6){
+    // core finishers added to the two leg days — refresh untouched today/future sessions
+    const today=todayISO();
+    for(const d in o.workouts){if(d>=today&&isPristine(o.workouts[d]))delete o.workouts[d];}
+    o.planRev=6;
   }
   return o;
 }
@@ -999,7 +1090,7 @@ function viewSupps(root){
 function viewPlan(root){
   // separate plans — the muscle block (default) and the standalone 5-week progressive cut
   const seg=el("div",{class:"seg"});
-  [["block","Muscle block"],["cut","5-Week Cut"],["cardio","Cardio"]].forEach(([id,lab])=>{
+  [["block","Muscle block"],["cut","5-Week Cut"],["cardio","Cardio"],["core","Core"]].forEach(([id,lab])=>{
     const b=el("button",{class:planTab===id?"on":""},lab);
     b.onclick=()=>{planTab=id;render();};
     seg.appendChild(b);
@@ -1007,10 +1098,11 @@ function viewPlan(root){
   root.appendChild(seg);
   if(planTab==="cut"){viewPlanCut(root);return;}
   if(planTab==="cardio"){viewPlanCardio(root);return;}
+  if(planTab==="core"){viewPlanCore(root);return;}
 
   const c=el("div",{class:"card"});
   c.appendChild(el("h2",{html:`Weekly plan <span class="sub">${GOAL.label}</span>`}));
-  c.appendChild(el("div",{class:"hint"},"4-week muscle block — Push/Pull/Legs ×2, Sunday off. Every session ≤35 min: 13 working sets, 90s rest on compounds, 60s on isolation. Lifting only, no cardio this block. WFH days: train at lunch; office days: the 35-min cap makes mornings easy."));
+  c.appendChild(el("div",{class:"hint"},"4-week muscle block — Push/Pull/Legs ×2, Sunday off. Lifting is ≤35 min: 13 working sets, 90s rest on compounds, 60s on isolation. No cardio in this block. The two leg days carry a core finisher on the end (+6-7 min) — see the Core tab. WFH days: train at lunch; office days: the 35-min cap makes mornings easy."));
   for(let i=0;i<7;i++){
     const t=TEMPLATE[i];const isToday=i===dow(todayISO());
     const pd=el("div",{class:"plan-day"+(isToday?" today":"")});
@@ -1246,6 +1338,104 @@ function viewPlanCardio(root){
   root.appendChild(cr);
 
   // mistakes
+  const cx=el("div",{class:"card"});
+  cx.appendChild(el("h2",null,"The five ways this goes wrong"));
+  C.mistakes.forEach(t=>{const f=el("div",{class:"flag bad"});f.append(el("div",{class:"dot"}),el("div",null,t));cx.appendChild(f);});
+  root.appendChild(cx);
+}
+
+/* ---------- core / abs: the exact prescriptions (Plan tab) ---------- */
+function viewPlanCore(root){
+  const C=CORE;
+
+  const c=el("div",{class:"card"});
+  c.appendChild(el("h2",{html:`${C.title} <span class="sub">${C.sub}</span>`}));
+  c.appendChild(el("div",{class:"hint"},C.frame));
+  const tf=el("div",{class:"flag warn"});
+  tf.append(el("div",{class:"dot"}),el("div",null,C.truth));
+  c.appendChild(tf);
+  root.appendChild(c);
+
+  // the same-day question, answered as a timetable
+  const cwk=el("div",{class:"card"});
+  cwk.appendChild(el("h2",{html:`Your week <span class="sub">what stacks on what day</span>`}));
+  cwk.appendChild(el("div",{class:"sublab"},"Muscle block — what the Workout tab logs"));
+  const sc=el("div",{class:"tscroll"});
+  const t1=el("table",{class:"ztab"});const tb1=el("tbody");
+  const h1=el("tr");["Day","Session","Cardio","Core"].forEach(h=>h1.appendChild(el("th",null,h)));tb1.appendChild(h1);
+  [["Mon","Push A","—","—"],["Tue","Pull A","—","—"],["Wed","Legs A","—","Core A"],
+   ["Thu","Push B","—","—"],["Fri","Pull B","—","—"],["Sat","Legs B","—","Core B"],
+   ["Sun","Rest","—","—"]].forEach((r,i)=>{
+    const tr=el("tr",{class:i===dow(todayISO())?"hi":""});
+    r.forEach(v=>tr.appendChild(el("td",null,v)));tb1.appendChild(tr);
+  });
+  t1.appendChild(tb1);sc.appendChild(t1);cwk.appendChild(sc);
+  const f1=el("div",{class:"flag ok",style:"margin-top:9px"});
+  f1.append(el("div",{class:"dot"}),el("div",null,"No cardio at all in this block — six lifting days, Sunday off. Core is a finisher on the two leg days, so it never collides with a heavy upper session."));
+  cwk.appendChild(f1);
+
+  cwk.appendChild(el("div",{class:"sublab"},"5-Week Cut — the other plan"));
+  const sc2=el("div",{class:"tscroll"});
+  const t2=el("table",{class:"ztab"});const tb2=el("tbody");
+  const h2b=el("tr");["Day","Weights","Cardio","Core"].forEach(h=>h2b.appendChild(el("th",null,h)));tb2.appendChild(h2b);
+  [["Day 1","Full body","Rower intervals","Woodchop"],["Day 2","—","Treadmill HIIT","Full session"],
+   ["Day 3","Full body","Incline walk","—"],["Day 4","—","Zone 2 row","Full session"],
+   ["Day 5","Legs","Rower intervals","Cable crunch"],["Day 6","—","Long incline walk","—"],
+   ["Day 7","Rest","Optional walk","—"]].forEach(r=>{
+    const tr=el("tr");r.forEach(v=>tr.appendChild(el("td",null,v)));tb2.appendChild(tr);
+  });
+  t2.appendChild(tb2);sc2.appendChild(t2);cwk.appendChild(sc2);
+  const f2=el("div",{class:"flag warn",style:"margin-top:9px"});
+  f2.append(el("div",{class:"dot"}),el("div",null,"Here you do stack them: four of the seven days pair weights with cardio. Weights always go first — lift while you're fresh, then the cardio."));
+  cwk.appendChild(f2);
+  const f3=el("div",{class:"flag"});
+  f3.append(el("div",{class:"dot"}),el("div",null,C.order));
+  cwk.appendChild(f3);
+  root.appendChild(cwk);
+
+  // what the three categories are
+  const cc=el("div",{class:"card"});
+  cc.appendChild(el("h2",{html:`The three jobs <span class="sub">why it's split this way</span>`}));
+  C.cats.forEach(k=>{
+    const pd=el("div",{class:"plan-day"});
+    const h=el("div",{class:"pd-h"});
+    h.append(el("div",{class:"dn"},k.n),el("div",{class:"tp"},k.s));
+    pd.appendChild(h);
+    pd.appendChild(el("div",{class:"small muted"},k.d));
+    cc.appendChild(pd);
+  });
+  root.appendChild(cc);
+
+  // the two sessions, exercise by exercise
+  C.sessions.forEach(s=>{
+    const cs=el("div",{class:"card"});
+    const h=el("h2");h.innerHTML=`${s.name} <span class="sub">${s.dur}</span>`;
+    cs.appendChild(h);
+    cs.appendChild(el("div",{class:"small",style:"color:var(--acc);margin:-4px 0 10px"},s.when));
+    s.exercises.forEach(ex=>{
+      const b=el("div",{class:"sesh"});
+      const sh=el("div",{class:"sh"});
+      sh.append(el("div",{class:"nm"},ex.name),el("span",{class:"tag"},ex.target),el("div",{class:"wh"},ex.load));
+      b.appendChild(sh);
+      const ul=el("ul",{class:"tight"});
+      ex.how.forEach(t=>ul.appendChild(el("li",null,t)));
+      b.appendChild(ul);
+      const pf=el("div",{class:"flag ok",style:"margin-top:9px"});
+      pf.append(el("div",{class:"dot"}),el("div",{html:"<b>Move up when:</b> "+ex.prog}));
+      b.appendChild(pf);
+      const ef=el("div",{class:"flag bad"});
+      ef.append(el("div",{class:"dot"}),el("div",{html:"<b>Most common error:</b> "+ex.err}));
+      b.appendChild(ef);
+      cs.appendChild(b);
+    });
+    root.appendChild(cs);
+  });
+
+  const cr=el("div",{class:"card"});
+  cr.appendChild(el("h2",null,"How to train them"));
+  C.rules.forEach(t=>{const f=el("div",{class:"flag"});f.append(el("div",{class:"dot"}),el("div",null,t));cr.appendChild(f);});
+  root.appendChild(cr);
+
   const cx=el("div",{class:"card"});
   cx.appendChild(el("h2",null,"The five ways this goes wrong"));
   C.mistakes.forEach(t=>{const f=el("div",{class:"flag bad"});f.append(el("div",{class:"dot"}),el("div",null,t));cx.appendChild(f);});
