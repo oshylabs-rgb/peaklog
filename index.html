@@ -260,6 +260,36 @@ const PLAN_RULES={
   ]
 };
 
+/* ---------- 2-week fat-loss block (separate, standalone reference plan) ----------
+   Standard commercial gym only: rowing machine (erg), treadmill, and the weights
+   floor (machines / dumbbells / barbell). A high-output 14-day cut aimed at
+   stripping subcutaneous fat by pairing a hard calorie deficit with muscle-sparing
+   resistance work and daily cardio. Read-only reference — this does NOT change the
+   logged Workout tab or the phase nutrition targets. */
+const CUT_PLAN={
+  title:"2-Week Fat-Loss Block",
+  sub:"Rower · Treadmill · Weights",
+  frame:"14 days, 6 sessions a week, standard gym only. You can't spot-reduce, so this drives the whole-body calorie deficit that subcutaneous fat actually comes off with: heavy burn from the rower and treadmill, weights to hold onto muscle so the loss shows. Realistic over two weeks is ~1–2 kg and a few cm off the waist — the deficit (see the fuel rules) is where it's won or lost, not the sessions alone.",
+  cycleNote:"Run this 7-day cycle twice = 14 days. Day 14 is the last hard day; deload or ease off after.",
+  rules:[
+    "Deficit is the lever: eat ~500–750 kcal under maintenance and keep protein ≥2 g/kg to protect muscle. Cardio widens the deficit, it doesn't replace the diet.",
+    "Weights first, cardio second on lifting days — lift while fresh so you keep the muscle that makes the fat loss visible.",
+    "Rower intervals: hard 250–500 m pushes with an easy paddle between. Chase watts, not just minutes.",
+    "Treadmill incline walks are the engine of this block: 5–8% incline, brisk conversational pace, most days. Cheap fat-burn, easy to recover from.",
+    "One full rest day a week is not optional on a deficit this size — it's how you keep training hard for all 14 days.",
+    "Outside the gym: 10k+ steps on top of sessions. NEAT quietly out-burns any single workout."
+  ],
+  days:[
+    {d:"Day 1",focus:"Full-body weights + rower intervals",cardio:"Rower — 8 × 250 m hard / 90s easy (~15 min)",lifts:["Leg Press 3×12","Lat Pulldown 3×12","Incline DB Press 3×12","Seated Cable Row 3×12","Cable Woodchop 3×15/side"],note:"Full-body strength base. Moderate load, short rest (45–60s) to keep the heart rate up."},
+    {d:"Day 2",focus:"Treadmill HIIT + core",cardio:"Treadmill — 5-min warm-up, 10 × 30s fast run / 60s walk, 5-min cool-down (~25 min)",lifts:["Hanging Leg Raise 3×12","Plank 3×45s","Cable Crunch 3×15","Russian Twist 3×20"],note:"Highest calorie-burn day — push the fast intervals genuinely hard."},
+    {d:"Day 3",focus:"Full-body weights + incline walk",cardio:"Treadmill — 20 min brisk walk at 6–8% incline",lifts:["Goblet Squat 3×12","Chest Press Machine 3×12","DB RDL 3×12","Shoulder Press Machine 3×12","Face Pull 3×15"],note:"Second strength session, opposite emphasis. Finish on the incline walk at a conversational pace."},
+    {d:"Day 4",focus:"Rower steady-state (Zone 2) + core",cardio:"Rower — 30–40 min steady, conversational pace (~70% effort)",lifts:["Plank 3×60s","Side Plank 3×30s/side","Dead Bug 3×12"],note:"Recovery-paced but long — big fat-burn with low fatigue. Keep the stroke smooth."},
+    {d:"Day 5",focus:"Full-body weights (legs) + rower intervals",cardio:"Rower — 6 × 500 m hard / 2 min easy (~20 min)",lifts:["Leg Press 4×12","Lying Leg Curl 3×12","Walking Lunge 3×12/leg","Standing Calf Raise 3×15","Cable Crunch 3×15"],note:"Legs are the biggest muscles — training them hard spikes the day's calorie burn."},
+    {d:"Day 6",focus:"Long incline walk (low intensity)",cardio:"Treadmill — 45–60 min incline walk, 5–8%, fasted if it suits you",lifts:[],note:"Pure fat-burn, no weights. Podcast pace. A lot of the subcutaneous fat quietly comes off on days like this."},
+    {d:"Day 7",focus:"Rest",cardio:"Optional easy 20–30 min flat walk + mobility",lifts:[],note:"Full rest / active recovery. Sleep 7–9h — recovery is when the fat loss banks."}
+  ]
+};
+
 const SUPPS=[
   {id:"acv",   name:"Apple cider vinegar",       when:"Morning",        tm:"~07:00"},
   {id:"rdust", name:"Rainbow Dust + creatine",   when:"Morning stack",  tm:"~07:30"},
@@ -412,6 +442,7 @@ const TABS=[
 let route="today";
 let cursor=todayISO();      // workout/nutrition/supps day cursor
 let weekCursor=mondayOf(todayISO());
+let planTab="block";        // Plan tab: "block" (muscle block) | "cut" (2-week fat-loss)
 
 function renderTabs(){
   const t=$("#tabs");t.innerHTML="";
@@ -703,7 +734,7 @@ function viewNutrition(root){
 
   // quick add from my foods
   const cq=el("div",{class:"card"});
-  cq.appendChild(el("h2","Quick add — my foods"));
+  cq.appendChild(el("h2",null,"Quick add — my foods"));
   const chips=el("div");
   S.myFoods.forEach(f=>{
     const ch=el("button",{class:"foodchip",html:`${f.name} <b>${f.kcal}</b>`});
@@ -715,7 +746,7 @@ function viewNutrition(root){
 
   // custom add
   const ca=el("div",{class:"card"});
-  ca.appendChild(el("h2","Add a meal"));
+  ca.appendChild(el("h2",null,"Add a meal"));
   const form=el("div",{class:"addmeal"});
   const fName=mini("Food","text","e.g. Beef bowl");
   const fK=mini("kcal","number","0");
@@ -760,7 +791,7 @@ function nowHM(){const d=new Date();return pad(d.getHours())+":"+pad(d.getMinute
 
 function bodyQuickCard(date){
   const c=el("div",{class:"card"});
-  c.appendChild(el("h2","Body — log weight"));
+  c.appendChild(el("h2",null,"Body — log weight"));
   const existing=S.bodyLog.find(b=>b.date===date);
   const g=el("div",{class:"grid2"});
   const w=mini("Weight kg","number","79.4");const bf=mini("Body fat %","number","13.4");
@@ -796,7 +827,7 @@ function viewSupps(root){
 
   // streak
   const cs=el("div",{class:"card"});
-  cs.appendChild(el("h2","Adherence streak"));
+  cs.appendChild(el("h2",null,"Adherence streak"));
   let streak=0;let d=todayISO();
   for(let i=0;i<60;i++){const s=S.supplements[d];const tk=s?Object.values(s.taken).filter(Boolean).length:0;
     if(tk>=Math.ceil(SUPPS.length*0.8))streak++;else break;d=addDays(d,-1);}
@@ -808,6 +839,16 @@ function viewSupps(root){
    PLAN
    ============================================================ */
 function viewPlan(root){
+  // separate plans — the muscle block (default) and the standalone 2-week cut
+  const seg=el("div",{class:"seg"});
+  [["block","Muscle block"],["cut","2-Week Cut"]].forEach(([id,lab])=>{
+    const b=el("button",{class:planTab===id?"on":""},lab);
+    b.onclick=()=>{planTab=id;render();};
+    seg.appendChild(b);
+  });
+  root.appendChild(seg);
+  if(planTab==="cut"){viewPlanCut(root);return;}
+
   const c=el("div",{class:"card"});
   c.appendChild(el("h2",{html:`Weekly plan <span class="sub">${GOAL.label}</span>`}));
   c.appendChild(el("div",{class:"hint"},"4-week muscle block — Push/Pull/Legs ×2, Sunday off. Every session ≤35 min: 13 working sets, 90s rest on compounds, 60s on isolation. Lifting only, no cardio this block. WFH days: train at lunch; office days: the 35-min cap makes mornings easy."));
@@ -850,7 +891,7 @@ function viewPlan(root){
 
   // progression / bulk rules
   const cr=el("div",{class:"card"});
-  cr.appendChild(el("h2","Progression & bulk rules"));
+  cr.appendChild(el("h2",null,"Progression & bulk rules"));
   PLAN_RULES.rules.forEach(txt=>{const f=el("div",{class:"flag"});f.append(el("div",{class:"dot"}),el("div",null,txt));cr.appendChild(f);});
   cr.appendChild(el("div",{class:"hint",style:"margin-top:8px"},"Increments — "+PLAN_RULES.increments));
   root.appendChild(cr);
@@ -872,11 +913,39 @@ function viewPlan(root){
 
   // supplement reference
   const cs=el("div",{class:"card"});
-  cs.appendChild(el("h2","Supplement stack & timing"));
+  cs.appendChild(el("h2",null,"Supplement stack & timing"));
   SUPPS.forEach(s=>{const r=el("div",{class:"meal"});
     const info=el("div");info.append(el("div",{class:"mn"},s.name),el("div",{class:"mm"},s.when));
     r.append(info,el("div",{class:"mk small muted"},s.tm));cs.appendChild(r);});
   root.appendChild(cs);
+}
+
+/* ---------- 2-week fat-loss block (standalone plan on the Plan tab) ---------- */
+function viewPlanCut(root){
+  const P=CUT_PLAN;
+  const c=el("div",{class:"card"});
+  c.appendChild(el("h2",{html:`${P.title} <span class="sub">${P.sub}</span>`}));
+  c.appendChild(el("div",{class:"hint"},P.frame));
+  const cyc=el("div",{class:"flag warn"});
+  cyc.append(el("div",{class:"dot"}),el("div",null,P.cycleNote));
+  c.appendChild(cyc);
+  P.days.forEach(day=>{
+    const pd=el("div",{class:"plan-day"});
+    const h=el("div",{class:"pd-h"});
+    h.append(el("div",{class:"dn"},day.d),el("div",{class:"tp"},day.lifts.length?"WEIGHTS + CARDIO":"CARDIO"));
+    pd.appendChild(h);
+    pd.appendChild(el("div",null,day.focus));
+    if(day.cardio)pd.appendChild(el("div",{class:"small muted",style:"margin-top:3px"},"Cardio: "+day.cardio));
+    if(day.lifts.length)pd.appendChild(el("div",{class:"small muted",style:"margin-top:3px"},"Weights: "+day.lifts.join(" • ")));
+    if(day.note)pd.appendChild(el("div",{class:"small",style:"color:var(--mut2);margin-top:4px;font-style:italic"},day.note));
+    c.appendChild(pd);
+  });
+  root.appendChild(c);
+
+  const cr=el("div",{class:"card"});
+  cr.appendChild(el("h2",null,"How this strips subcutaneous fat"));
+  P.rules.forEach(txt=>{const f=el("div",{class:"flag"});f.append(el("div",{class:"dot"}),el("div",null,txt));cr.appendChild(f);});
+  root.appendChild(cr);
 }
 
 /* ============================================================
@@ -959,7 +1028,7 @@ function viewReview(root){
 
   // adherence card
   const c3=el("div",{class:"card"});
-  c3.appendChild(el("h2","Adherence"));
+  c3.appendChild(el("h2",null,"Adherence"));
   c3.appendChild(macroBar("Supplements",suppPct,100,"%",false));
   c3.appendChild(macroBar("Training sessions",sessionsDone,sessionsPlanned||1,"",false));
   c3.appendChild(macroBar("Nutrition days logged",nDays,7,"",false));
@@ -967,7 +1036,7 @@ function viewReview(root){
 
   // body + projection
   const c4=el("div",{class:"card"});
-  c4.appendChild(el("h2","Body & physiology"));
+  c4.appendChild(el("h2",null,"Body & physiology"));
   if(wk.length){
     const first=wk[0],last=wk[wk.length-1];
     const dw=round(last.weight-first.weight,1);
@@ -989,7 +1058,7 @@ function viewReview(root){
   if(suppPct>=90)flags.push(["ok",`Supplement adherence ${suppPct}%.`]);
   else if(suppPct<70&&suppTaken)flags.push(["warn",`Supplement adherence ${suppPct}% — creatine daily matters most this block; magnesium at 19:30 anchors sleep.`]);
   const cf=el("div",{class:"card"});
-  cf.appendChild(el("h2","Flags & coaching"));
+  cf.appendChild(el("h2",null,"Flags & coaching"));
   if(!flags.length)cf.appendChild(el("div",{class:"empty"},"Log a full week to generate flags."));
   flags.forEach(([cls,msg])=>{const f=el("div",{class:"flag "+cls});f.append(el("div",{class:"dot"}),el("div",null,msg));cf.appendChild(f);});
   root.appendChild(cf);
@@ -1037,27 +1106,27 @@ function projection(){
 function viewTrends(root){
   // weight
   const wpts=S.bodyLog.filter(b=>b.weight).map(b=>({d:b.date,v:b.weight}));
-  const c1=el("div",{class:"card"});c1.appendChild(el("h2","Body weight (kg)"));
+  const c1=el("div",{class:"card"});c1.appendChild(el("h2",null,"Body weight (kg)"));
   c1.appendChild(lineChart(wpts,{target:TARGET_WEIGHT,unit:"kg",color:"var(--acc)"}));
   c1.appendChild(el("div",{class:"legend",html:`<span><i style="background:var(--acc)"></i>Weight</span><span><i style="background:var(--acc2)"></i>Target ${TARGET_WEIGHT}kg</span>`}));
   root.appendChild(c1);
 
   // body fat
   const bpts=S.bodyLog.filter(b=>b.bodyFat).map(b=>({d:b.date,v:b.bodyFat}));
-  const c2=el("div",{class:"card"});c2.appendChild(el("h2","Body fat (%)"));
+  const c2=el("div",{class:"card"});c2.appendChild(el("h2",null,"Body fat (%)"));
   if(bpts.length)c2.appendChild(lineChart(bpts,{target:GOAL.bf,unit:"%",color:"var(--warn)"}));
   else c2.appendChild(el("div",{class:"empty"},"Add body-fat readings to chart this."));
   root.appendChild(c2);
 
   // weekly volume (last 8 weeks)
-  const c3=el("div",{class:"card"});c3.appendChild(el("h2","Weekly training volume (kg)"));
+  const c3=el("div",{class:"card"});c3.appendChild(el("h2",null,"Weekly training volume (kg)"));
   const vpts=[];let m=mondayOf(todayISO());
   for(let i=7;i>=0;i--){const wm=addDays(m,-7*i);let v=0;for(let d=0;d<7;d++){const w=S.workouts[addDays(wm,d)];if(w)v+=workoutVolume(w).total;}vpts.push({d:wm,v:round(v)});}
   c3.appendChild(barChart(vpts));
   root.appendChild(c3);
 
   // protein adherence (last 14 days)
-  const c4=el("div",{class:"card"});c4.appendChild(el("h2","Protein vs target (last 14 days)"));
+  const c4=el("div",{class:"card"});c4.appendChild(el("h2",null,"Protein vs target (last 14 days)"));
   const ppts=[];for(let i=13;i>=0;i--){const d=addDays(todayISO(),-i);const tt=nutTotals(d);ppts.push({d:d,v:round(tt.protein)});}
   c4.appendChild(barChart(ppts,{target:S.targets.protein}));
   root.appendChild(c4);
@@ -1111,7 +1180,7 @@ function txt(x,y,s,anchor){const t=document.createElementNS("http://www.w3.org/2
    ============================================================ */
 function viewData(root){
   const c=el("div",{class:"card"});
-  c.appendChild(el("h2","Your data"));
+  c.appendChild(el("h2",null,"Your data"));
   c.appendChild(el("div",{class:"small muted",style:"margin-bottom:10px"},"Everything is stored locally on this device. Export regularly to back up and to move data between phone and laptop."));
   const days=Object.keys(S.workouts).length;const ndays=Object.keys(S.nutrition).length;
   const g=el("div",{class:"grid3"});
@@ -1131,7 +1200,7 @@ function viewData(root){
 
   // baseline reference
   const cb=el("div",{class:"card"});
-  cb.appendChild(el("h2","InBody baseline — 10 Jun 2026"));
+  cb.appendChild(el("h2",null,"InBody baseline — 10 Jun 2026"));
   const kv=el("div",{class:"kvs"});
   kv.innerHTML=`<span>Weight <b>${BASELINE.weight}kg</b></span><span>Body fat <b>${BASELINE.bodyFat}%</b></span>
   <span>Fat mass <b>${BASELINE.fatMass}kg</b></span><span>Lean (FFM) <b>${BASELINE.ffm}kg</b></span>
@@ -1142,7 +1211,7 @@ function viewData(root){
 
   // danger
   const cd=el("div",{class:"card"});
-  cd.appendChild(el("h2","Reset"));
+  cd.appendChild(el("h2",null,"Reset"));
   const wipe=el("button",{class:"btn bad full"},"Erase all data");
   wipe.onclick=()=>{if(confirm("Delete ALL PeakLog data on this device? Export first if unsure.")){localStorage.removeItem(KEY);S=load();render();toast("Wiped");}};
   cd.appendChild(wipe);
