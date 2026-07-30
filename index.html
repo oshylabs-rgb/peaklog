@@ -31,7 +31,7 @@ a{color:var(--acc2)}
 .logo b{color:var(--acc)}
 .app-head .date{margin-left:auto;color:var(--mut);font-size:13px;text-align:right}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px}
-.card h2{font-size:14px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);font-weight:700}
+.card h2{font-size:14px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);font-weight:700;overflow:hidden}
 .card h2 .sub{float:right;text-transform:none;letter-spacing:0;color:var(--mut2);font-weight:500}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -128,6 +128,29 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:12px 0}
 @media(max-width:560px){.addmeal{grid-template-columns:1fr 1fr;gap:7px}}
 .foodchip{display:inline-block;background:var(--chip);border:1px solid var(--line2);border-radius:9px;padding:7px 10px;margin:0 6px 6px 0;font-size:13px}
 .foodchip b{color:var(--acc)}
+.step{display:grid;grid-template-columns:82px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.step:last-child{border-bottom:none}
+.step .st{font-size:12px;color:var(--acc);font-weight:700;padding-top:2px;line-height:1.35}
+.step .sd{font-size:14px}
+.step .sg{font-size:12px;color:var(--mut);margin-top:3px}
+.spec{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0}
+.spec .sp{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+.spec .sp .k{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2)}
+.spec .sp .v{font-weight:700;font-size:14px;margin-top:1px}
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ztab{width:100%;border-collapse:collapse;font-size:13px}
+.ztab td,.ztab th{padding:7px 8px 7px 0;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+.ztab td.wrap{white-space:normal}
+.ztab th{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut2);font-weight:700}
+.ztab tr.hi td{color:var(--acc);font-weight:700}
+.sesh{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:11px;background:var(--panel2)}
+.sesh .sh{display:flex;align-items:baseline;gap:8px;margin-bottom:3px;flex-wrap:wrap}
+.sesh .sh .nm{font-weight:800;font-size:15px}
+.sesh .sh .wh{margin-left:auto;font-size:12px;color:var(--acc)}
+.sublab{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);font-weight:700;margin:12px 0 5px}
+ul.tight{margin:4px 0 0;padding-left:17px}
+ul.tight li{margin-bottom:4px;font-size:13px;color:var(--mut)}
+ul.tight li b{color:var(--txt)}
 </style>
 </head>
 <body>
@@ -289,13 +312,139 @@ const CUT_PLAN={
     "Outside the gym: 10k+ steps on top of sessions, rising toward week 4. NEAT quietly out-burns any single workout."
   ],
   days:[
-    {d:"Day 1",focus:"Full-body weights + rower intervals",cardio:"Rower intervals — hard 250–500 m pushes / easy paddle (length scales by week)",lifts:["Leg Press 3×12","Lat Pulldown 3×12","Incline DB Press 3×12","Seated Cable Row 3×12","Cable Woodchop 3×15/side"],note:"Full-body strength base. Moderate load, short rest (45–60s) to keep the heart rate up."},
-    {d:"Day 2",focus:"Treadmill HIIT + core",cardio:"Treadmill — 5-min warm-up, 30s fast run / 60s walk intervals, 5-min cool-down (reps scale by week)",lifts:["Hanging Leg Raise 3×12","Plank 3×45s","Cable Crunch 3×15","Russian Twist 3×20"],note:"Highest-intensity cardio day — push the fast intervals genuinely hard."},
-    {d:"Day 3",focus:"Full-body weights + incline walk",cardio:"Treadmill — brisk incline walk at 6–8% (duration scales by week)",lifts:["Goblet Squat 3×12","Chest Press Machine 3×12","DB RDL 3×12","Shoulder Press Machine 3×12","Face Pull 3×15"],note:"Second strength session, opposite emphasis. Finish on the incline walk at a conversational pace."},
-    {d:"Day 4",focus:"Rower steady-state (Zone 2) + core",cardio:"Rower — steady conversational pace, ~70% effort (duration scales by week)",lifts:["Plank 3×60s","Side Plank 3×30s/side","Dead Bug 3×12"],note:"Recovery-paced but long — big fat-burn with low fatigue. Keep the stroke smooth."},
-    {d:"Day 5",focus:"Full-body weights (legs) + rower intervals",cardio:"Rower intervals — hard 500 m pushes / easy paddle (length scales by week)",lifts:["Leg Press 4×12","Lying Leg Curl 3×12","Walking Lunge 3×12/leg","Standing Calf Raise 3×15","Cable Crunch 3×15"],note:"Legs are the biggest muscles — training them hard spikes the day's calorie burn."},
-    {d:"Day 6",focus:"Long incline walk (low intensity)",cardio:"Treadmill — incline walk, 5–8%, fasted if it suits you (duration scales by week)",lifts:[],note:"Pure fat-burn, no weights. Podcast pace. A lot of the subcutaneous fat quietly comes off on days like this."},
-    {d:"Day 7",focus:"Rest",cardio:"Optional easy 20–30 min flat walk + mobility",lifts:[],note:"Full rest / active recovery. Sleep 7–9h — recovery is when the fat loss banks."}
+    {d:"Day 1",focus:"Full-body weights + rower intervals",cardio:"Rower intervals — 250 m hard @ 2:00 split, 28–30 spm / 75s easy paddle. 4 reps week 1 → 7 by week 4",lifts:["Leg Press 3×12","Lat Pulldown 3×12","Incline DB Press 3×12","Seated Cable Row 3×12","Cable Woodchop 3×15/side"],note:"Full-body strength base. Moderate load, short rest (45–60s) to keep the heart rate up."},
+    {d:"Day 2",focus:"Treadmill HIIT + core",cardio:"Treadmill — 5 min warm-up, then 30s @ 12.0 km/h / 60s walk @ 5.0, 8 reps week 1 → 14 by week 4, 5 min cool-down",lifts:["Hanging Leg Raise 3×12","Plank 3×45s","Cable Crunch 3×15","Russian Twist 3×20"],note:"Highest-intensity cardio day — push the fast intervals genuinely hard."},
+    {d:"Day 3",focus:"Full-body weights + incline walk",cardio:"Treadmill — 5.5 km/h at 7–9% incline, hold HR 125–132. 20 min after the weights",lifts:["Goblet Squat 3×12","Chest Press Machine 3×12","DB RDL 3×12","Shoulder Press Machine 3×12","Face Pull 3×15"],note:"Second strength session, opposite emphasis. Finish on the incline walk at a conversational pace."},
+    {d:"Day 4",focus:"Rower steady-state (Zone 2) + core",cardio:"Rower Zone 2 — 20–22 spm, 2:28–2:38 split, HR 125–132. 25 min week 1 → 40 by week 4",lifts:["Plank 3×60s","Side Plank 3×30s/side","Dead Bug 3×12"],note:"Recovery-paced but long — big fat-burn with low fatigue. Keep the stroke smooth."},
+    {d:"Day 5",focus:"Full-body weights (legs) + rower intervals",cardio:"Rower intervals — 500 m hard @ 2:05 split, 26–28 spm / 90s easy paddle. 4 reps week 1 → 7 by week 4",lifts:["Leg Press 4×12","Lying Leg Curl 3×12","Walking Lunge 3×12/leg","Standing Calf Raise 3×15","Cable Crunch 3×15"],note:"Legs are the biggest muscles — training them hard spikes the day's calorie burn."},
+    {d:"Day 6",focus:"Long incline walk (low intensity)",cardio:"Treadmill — 5.5 km/h at 7–9%, HR 125–132, hands off the rails. 30 min week 1 → 60 by week 4",lifts:[],note:"Pure fat-burn, no weights. Podcast pace. A lot of the subcutaneous fat quietly comes off on days like this."},
+    {d:"Day 7",focus:"Rest",cardio:"Optional easy 20–30 min flat walk, HR under 118. Plus mobility",lifts:[],note:"Full rest / active recovery. Sleep 7–9h — recovery is when the fat loss banks."}
+  ]
+};
+
+/* ---------- cardio prescriptions (exact, machine-level) ----------
+   The lifting plan gives a weight, a rep range and a "move up when" trigger.
+   This does the same for cardio: a target number on the machine, a heart-rate
+   band that governs it, and a progression rule. Heart rate is the law, the
+   machine setting is the dial you turn to obey it.
+   Max HR 182 = Tanaka (208 − 0.7 × 37). Zone 2 = 65–75% of that. */
+const CARDIO={
+  title:"Cardio — exact prescriptions",
+  sub:"Zone 2 · Intervals · Incline walk",
+  hrMax:182,
+  z2:{lo:118,hi:137,aim:"125–132",ceiling:140},
+  frame:"Zone 2 is the only cardio zone people get wrong, and they always get it wrong the same way: too hard. It should feel almost insultingly easy for the first 10 minutes. If you finish a Zone 2 session feeling like you trained, you were in Zone 3 and you've bought fatigue that costs you on the weights without buying extra fat loss.",
+  zones:[
+    {z:"Zone 1",pct:"<65%",bpm:"under 118",feel:"Strolling. Nose breathing, zero effort.",use:"Warm-ups, cool-downs, rest-day walks"},
+    {z:"Zone 2",pct:"65–75%",bpm:"118–137",feel:"Full sentences, slightly deeper breathing. You could keep going for 2 hours.",use:"THE zone-2 sessions — rower steady-state, incline walks",hi:true},
+    {z:"Zone 3",pct:"75–85%",bpm:"138–155",feel:"Sentences break into phrases. Feels productive. It isn't.",use:"The grey zone — too hard to recover from, too easy to be an interval. Avoid."},
+    {z:"Zone 4–5",pct:"85–100%",bpm:"156–182",feel:"Two or three words max. Burning.",use:"Interval pushes only — 30s to 2 min at a time"}
+  ],
+  strap:{
+    head:"Reading your zone without guessing",
+    body:"A chest strap (Polar H10 / Garmin HRM) is the single best £60 in this plan — wrist optical drifts badly on the rower because of the grip. Gym machine hand-grips are worse than useless.",
+    checks:[
+      "Talk test — the ground truth, no kit needed. Zone 2 = you can say a full sentence out loud without gulping air. Have to breathe mid-sentence? Too hard, back off.",
+      "Nose test — you can breathe through your nose only. The second you have to open your mouth to keep up, you've left Zone 2.",
+      "Manual count — fingers on the wrist, count beats for 15 seconds, multiply by 4. Zone 2 for you = 30–34 beats in 15 seconds.",
+      "RPE — Zone 2 is a 3–4 out of 10. Interval pushes are an 8–9."
+    ]
+  },
+  sessions:[
+    {id:"z2row",name:"Zone 2 — Rower",tag:"25–40 min",where:"Day 4 (main Zone 2 session)",
+     setup:["Damper lever on 4. Check drag factor is 115–125: Menu → Display → Drag Factor, row 10 strokes.",
+            "Set the screen to show Time, Split (/500m), Stroke rate (s/m) and Heart rate together.",
+            "Feet strapped at the ball of the foot, strap across the laces."],
+     steps:[
+       {t:"0:00–3:00",d:"Warm-up. Arms-only 10 strokes, arms+body 10, half-slide 10, then full stroke.",g:"18 spm · split ~2:55 · HR drifting to ~110"},
+       {t:"3:00–5:00",d:"Build. Lengthen to the full stroke and settle onto the target split.",g:"20 spm · ease the split down to 2:35"},
+       {t:"5:00–end",d:"The session. Lock the split and hold it. Check HR every 5 minutes and adjust the split, not the rate.",g:"20–22 spm · split 2:28–2:38 · 105–125 W · HR 125–132"},
+       {t:"last 3:00",d:"Cool-down. Drop the rate, let the HR fall under 110 before you stand up.",g:"18 spm · split ~3:00"}
+     ],
+     specs:[["Stroke rate","20–22 spm"],["Split","2:28–2:38 /500m"],["Power","105–125 W"],["Heart rate","125–132 bpm"],["30 min covers","~6,500–7,200 m"],["Burn","~330 kcal / 30 min"]],
+     govern:"Split is the dial, heart rate is the law. Every 5 minutes: HR over 140 → add 5 seconds to the split. HR under 118 → take 5 seconds off. Never fix it by changing the stroke rate — above 24 spm you're rowing an interval, not Zone 2.",
+     prog:"Log the average split and average HR every session. The win is a faster split at the same heart rate. When you hold 128 bpm at a split 5 seconds quicker than week 1, that's your new baseline — reset the target band 5 seconds down.",
+     cues:["Drive order: legs → hips → arms. Recovery: arms → hips → legs. Never out of order.",
+           "The recovery takes twice as long as the drive (1:2). Rushing back up the slide is the single biggest cause of an HR spike in Zone 2.",
+           "Shoulders down and relaxed, handle to the bottom of the ribs, no yanking with the arms.",
+           "Push the floor away — the legs do 60% of the work, the arms about 10%."]},
+
+    {id:"z2walk",name:"Zone 2 — Treadmill incline walk",tag:"30–60 min",where:"Day 3 finisher · Day 6 long walk",
+     setup:["Speed gets set once and never touched: 5.5 km/h. Incline is the only dial you turn.",
+            "Hands OFF the handrails — holding on cuts the real cost by 20–25% and makes every number on the screen a lie.",
+            "Phone/podcast on. This session is supposed to be boring."],
+     steps:[
+       {t:"0:00–4:00",d:"Warm-up walk at 5.5 km/h, 2% incline.",g:"HR climbs to ~110"},
+       {t:"4:00–12:00",d:"Raise the incline 1% every 2 minutes until HR sits at 125–132. Then stop raising it.",g:"Usually lands at 7–9%"},
+       {t:"12:00–end",d:"Hold that incline. HR drifts up 3–5 bpm over a long walk — that's normal, only act if it crosses 140.",g:"5.5 km/h · 7–9% · HR 125–132"},
+       {t:"last 3:00",d:"Incline back to 0%, walk it out at 5.0 km/h.",g:"HR under 110 before you step off"}
+     ],
+     specs:[["Speed","5.5 km/h (fixed)"],["Incline","7–9% typical"],["Heart rate","125–132 bpm"],["Effort","~7.5 METs"],["Burn","~10 kcal/min"],["45 min","~470 kcal"]],
+     govern:"Incline is the dial, heart rate is the law. HR over 140 → drop 1%. HR under 118 → add 1%. Never chase the number by walking faster: above ~6.5 km/h you're between a walk and a jog, which is the least efficient thing you can do.",
+     prog:"Log the incline that holds you at ~128 bpm. In week 1 that might be 7%. If by week 4 it takes 9–10% to reach the same heart rate at the same speed, your aerobic base has improved — that's the entire point of the block, and it's the same logic as adding 2.5 kg to a lift.",
+     cues:["Upright posture, don't lean into the rail or hunch over the console.",
+           "Full heel-to-toe roll, push off the back foot — don't shuffle.",
+           "If your calves scream before your lungs do, the incline is ahead of your ankles. Drop 1% and build up over the weeks."]},
+
+    {id:"rowint",name:"Rower intervals",tag:"15–25 min",where:"Day 1 (250 m) · Day 5 (500 m)",
+     setup:["Damper 5 for intervals (drag factor 125–135). Heavier than Zone 2 — you want the load, not the rate.",
+            "Set the monitor to Intervals: Distance → 250 m or 500 m → rest 75 s or 90 s.",
+            "Week 1 only: after the warm-up, row ONE hard 500 m all-out and note the time. Your interval target = that time ÷ 500 m split, plus 8 seconds. Starting estimate if you'd rather not test: 2:05."],
+     steps:[
+       {t:"0:00–5:00",d:"Warm-up. Easy row at Zone 2 split, then 3 × 10 hard strokes with 30s easy between to open the legs.",g:"finish warm-up at HR ~130"},
+       {t:"Push",d:"Day 1: 250 m hard. Day 5: 500 m hard. First 5 strokes powerful and long to get the flywheel up, then settle onto the split and hold it.",g:"250 m → 2:00 split, 28–30 spm · 500 m → 2:05 split, 26–28 spm · HR 160+"},
+       {t:"Rest",d:"Easy paddle — keep moving, don't sit still. 250 m reps → 75 s. 500 m reps → 90 s.",g:"~2:50 split · 18 spm · HR falling toward 130"},
+       {t:"Reps",d:"Week 1: 4 reps. Week 2: 5. Week 3: 6. Week 4: 7. Week 5: cut to 3, easy.",g:"same target split on every rep"},
+       {t:"5:00 out",d:"Cool-down. Very easy row until HR is under 120.",g:"18 spm"}
+     ],
+     specs:[["Day 1 rep","250 m @ 2:00 split"],["Day 5 rep","500 m @ 2:05 split"],["Stroke rate","26–30 spm"],["Rest","75 s / 90 s easy paddle"],["Peak HR","160–175 bpm"],["Effort","8–9 / 10"]],
+     govern:"Every rep hits the same split. The set is judged on the LAST rep, not the first — if rep 1 is 8 seconds faster than the target you went out too hard and the set is already ruined.",
+     prog:"Double progression, same as the weights: hold the target split on every rep for the full week's rep count, and next week drop the target by 2 seconds per 500 m. Can't hold it? Stay on the number until you can.",
+     cues:["Stop rule: if any rep comes in more than 4 seconds slower than rep 1, that rep is the last one. Ending a set early is a data point, not a failure.",
+           "Power comes from the legs. At high rates the temptation is to shorten the stroke and flail with the arms — that's how the split gets worse while you feel like you're working harder.",
+           "Breathe out on the drive. Holding your breath is why people feel sick on the rower."]},
+
+    {id:"tmhiit",name:"Treadmill HIIT",tag:"18–25 min",where:"Day 2 (highest-intensity day)",
+     setup:["Learn the belt-straddle before your first session: feet on the side rails, belt running, step on to start the rep and step off to end it. Far safer and faster than changing the speed 14 times.",
+            "If you'd rather change the speed each rep, set the belt to 5.0 km/h between reps and hit the +/− preset buttons — don't ride the arrows.",
+            "Incline stays at 1% throughout."],
+     steps:[
+       {t:"0:00–5:00",d:"Warm-up. 6.0 km/h at 1%, last minute at 8.0 km/h to prime the legs.",g:"HR ~130 by the end"},
+       {t:"Push 30s",d:"Run at 12.0 km/h. Tall, quick feet, arms driving. This should be genuinely hard by rep 4.",g:"HR climbing to 165–175"},
+       {t:"Rest 60s",d:"Walk at 5.0 km/h. Don't hang off the rails, don't sit down.",g:"HR falling back toward 140"},
+       {t:"Reps",d:"Week 1: 8 reps. Week 2: 10. Week 3: 12. Week 4: 14. Week 5: one session of 6 only.",g:"8 reps ≈ 12 min of intervals"},
+       {t:"5:00 out",d:"Cool-down. 5.0 km/h flat until HR is under 120, then stretch the calves.",g:"do not skip — this one matters"}
+     ],
+     specs:[["Push speed","12.0 km/h start"],["Push length","30 seconds"],["Walk","5.0 km/h, 60 seconds"],["Incline","1%"],["Peak HR","165–175 bpm"],["Burn","~250–320 kcal"]],
+     govern:"Work-to-rest is 1:2 and stays there. If you can't complete the last rep at full speed, the speed is too high — not your conditioning.",
+     prog:"Complete every rep for the week at 12.0 km/h with the last one still controlled → next week go to 12.5 km/h. Missed reps or had to bail early → hold the speed and repeat the week. Exactly the same rule as hitting the top of a rep range before adding a plate.",
+     cues:["One HIIT session a week is the whole dose on a cut. It's there for the conditioning, not the calories — a hard 20 minutes burns less than a 45-minute incline walk and costs far more recovery.",
+           "Never do this the day before Legs. It blunts the session that matters more.",
+           "Feeling sick or dizzy is a stop signal, not a badge. Walk it off and take the reps you got."]}
+  ],
+  weeks:[
+    {wk:"Week 1",z2row:"25 min",walk:"30 min",rowint:"4 × 250/500 m",hiit:"8 × 30s @ 12.0",total:"~2h10"},
+    {wk:"Week 2",z2row:"30 min",walk:"40 min",rowint:"5 × 250/500 m",hiit:"10 × 30s @ 12.5",total:"~2h30"},
+    {wk:"Week 3",z2row:"35 min",walk:"45 min",rowint:"6 × 250/500 m",hiit:"12 × 30s @ 13.0",total:"~2h50"},
+    {wk:"Week 4",z2row:"40 min",walk:"60 min + AM 20",rowint:"7 × 250/500 m",hiit:"14 × 30s @ 13.5",total:"~3h30"},
+    {wk:"Week 5",z2row:"30 min",walk:"45 min",rowint:"drop — easy 3",hiit:"6 × 30s, once",total:"~2h15"}
+  ],
+  rules:[
+    "Weights first, cardio second, always. Zone 2 straight after lifting is fine and actually convenient — glycogen is already down. Intervals after lifting are not: do those on their own day.",
+    "If you can split the day, put Zone 2 at least 6 hours away from the lifting session. If you can't, just tack it on the end and don't lose sleep over it.",
+    "Zone 2 volume is the fat-loss engine here and it barely costs recovery — when you need more output, add Zone 2 minutes, never more intervals.",
+    "One HIIT session a week. Two is where the knees, the sleep and the lifting numbers all start going backwards on a deficit.",
+    "Fasted Zone 2 is optional and burns roughly the same fat over 24 hours. Do it if the timing suits your eating window, not because it's magic. Take electrolytes either way.",
+    "Zone 2 works on time in the zone, not distance covered. A 40-minute session at 128 bpm beats a 30-minute session at 150 bpm for this block, every time.",
+    "Never do intervals two days running, and never the day before Legs.",
+    "10,000+ steps a day sits on top of all of this. That's NEAT, and across a week it quietly out-burns every cardio session combined."
+  ],
+  mistakes:[
+    "Going too hard on Zone 2 — the universal error. Zone 2 done at 150 bpm is Zone 3: hard enough to eat into recovery, not hard enough to build the aerobic base. When in doubt, go slower.",
+    "Holding the treadmill handrails. It cuts the actual work by a fifth while the console keeps reporting the same number.",
+    "Chasing stroke rate on the rower. 22 spm at a 2:30 split is Zone 2. 28 spm at a 2:30 split is a different, worse session.",
+    "Skipping the cool-down after intervals and going straight to the changing room. Two minutes of walking is the difference between recovered and wrecked tomorrow.",
+    "Adding cardio when the scale stalls. Tighten the food first — cardio is the lever you pull once the diet is already honest."
   ]
 };
 
@@ -850,13 +999,14 @@ function viewSupps(root){
 function viewPlan(root){
   // separate plans — the muscle block (default) and the standalone 5-week progressive cut
   const seg=el("div",{class:"seg"});
-  [["block","Muscle block"],["cut","5-Week Cut"]].forEach(([id,lab])=>{
+  [["block","Muscle block"],["cut","5-Week Cut"],["cardio","Cardio"]].forEach(([id,lab])=>{
     const b=el("button",{class:planTab===id?"on":""},lab);
     b.onclick=()=>{planTab=id;render();};
     seg.appendChild(b);
   });
   root.appendChild(seg);
   if(planTab==="cut"){viewPlanCut(root);return;}
+  if(planTab==="cardio"){viewPlanCardio(root);return;}
 
   const c=el("div",{class:"card"});
   c.appendChild(el("h2",{html:`Weekly plan <span class="sub">${GOAL.label}</span>`}));
@@ -976,7 +1126,130 @@ function viewPlanCut(root){
   const cr=el("div",{class:"card"});
   cr.appendChild(el("h2",null,"How this strips subcutaneous fat"));
   P.rules.forEach(txt=>{const f=el("div",{class:"flag"});f.append(el("div",{class:"dot"}),el("div",null,txt));cr.appendChild(f);});
+  const gb=el("button",{class:"btn sm sec full",style:"margin-top:4px"},"Exact cardio instructions →");
+  gb.onclick=()=>{planTab="cardio";render();};
+  cr.appendChild(gb);
   root.appendChild(cr);
+}
+
+/* ---------- cardio: the exact prescriptions (Plan tab) ---------- */
+function viewPlanCardio(root){
+  const C=CARDIO;
+
+  const c=el("div",{class:"card"});
+  c.appendChild(el("h2",{html:`${C.title} <span class="sub">${C.sub}</span>`}));
+  c.appendChild(el("div",{class:"hint"},C.frame));
+  root.appendChild(c);
+
+  // heart-rate zones
+  const cz=el("div",{class:"card"});
+  cz.appendChild(el("h2",{html:`Your heart-rate zones <span class="sub">max ${C.hrMax} bpm</span>`}));
+  const sc=el("div",{class:"tscroll"});
+  const tb=el("table",{class:"ztab"});
+  const tbody=el("tbody");
+  const thead=el("tr");
+  ["Zone","% max","Your bpm","What it feels like"].forEach(h=>thead.appendChild(el("th",null,h)));
+  tbody.appendChild(thead);
+  C.zones.forEach(z=>{
+    const tr=el("tr",{class:z.hi?"hi":""});
+    tr.append(el("td",null,z.z),el("td",null,z.pct),el("td",null,z.bpm),el("td",{class:"wrap"},z.feel));
+    tbody.appendChild(tr);
+  });
+  tb.appendChild(tbody);sc.appendChild(tb);cz.appendChild(sc);
+  const zu=el("ul",{class:"tight"});
+  C.zones.forEach(z=>zu.appendChild(el("li",{html:`<b>${z.z}</b> — ${z.use}`})));
+  cz.appendChild(zu);
+  const zf=el("div",{class:"flag ok",style:"margin-top:10px"});
+  zf.append(el("div",{class:"dot"}),el("div",null,`Zone 2 target: hold ${C.z2.aim} bpm. Band is ${C.z2.lo}–${C.z2.hi}. Cross ${C.z2.ceiling} and it stops being Zone 2 — slow down.`));
+  cz.appendChild(zf);
+  root.appendChild(cz);
+
+  // measuring the zone
+  const cm=el("div",{class:"card"});
+  cm.appendChild(el("h2",null,C.strap.head));
+  cm.appendChild(el("div",{class:"hint"},C.strap.body));
+  C.strap.checks.forEach(t=>{const f=el("div",{class:"flag"});f.append(el("div",{class:"dot"}),el("div",null,t));cm.appendChild(f);});
+  root.appendChild(cm);
+
+  // the sessions — minute by minute
+  C.sessions.forEach(s=>{
+    const cs=el("div",{class:"card"});
+    const h=el("h2");
+    h.innerHTML=`${s.name} <span class="sub">${s.tag}</span>`;
+    cs.appendChild(h);
+    cs.appendChild(el("div",{class:"small",style:"color:var(--acc);margin:-4px 0 10px"},s.where));
+
+    cs.appendChild(el("div",{class:"sublab"},"Set the machine up"));
+    const su=el("ul",{class:"tight"});
+    s.setup.forEach(t=>su.appendChild(el("li",null,t)));
+    cs.appendChild(su);
+
+    cs.appendChild(el("div",{class:"sublab"},"The session, start to finish"));
+    s.steps.forEach(st=>{
+      const r=el("div",{class:"step"});
+      r.appendChild(el("div",{class:"st"},st.t));
+      const d=el("div");
+      d.appendChild(el("div",{class:"sd"},st.d));
+      if(st.g)d.appendChild(el("div",{class:"sg"},"→ "+st.g));
+      r.appendChild(d);
+      cs.appendChild(r);
+    });
+
+    cs.appendChild(el("div",{class:"sublab"},"The numbers"));
+    const sp=el("div",{class:"spec"});
+    s.specs.forEach(([k,v])=>{
+      const b=el("div",{class:"sp"});
+      b.append(el("div",{class:"k"},k),el("div",{class:"v"},v));
+      sp.appendChild(b);
+    });
+    cs.appendChild(sp);
+
+    const gf=el("div",{class:"flag warn"});
+    gf.append(el("div",{class:"dot"}),el("div",null,s.govern));
+    cs.appendChild(gf);
+    const pf=el("div",{class:"flag ok"});
+    pf.append(el("div",{class:"dot"}),el("div",{html:"<b>Move up when:</b> "+s.prog}));
+    cs.appendChild(pf);
+
+    cs.appendChild(el("div",{class:"sublab"},"Technique & rules"));
+    const cu=el("ul",{class:"tight"});
+    s.cues.forEach(t=>cu.appendChild(el("li",null,t)));
+    cs.appendChild(cu);
+
+    root.appendChild(cs);
+  });
+
+  // week-by-week cardio numbers
+  const cw=el("div",{class:"card"});
+  cw.appendChild(el("h2",{html:`Week by week <span class="sub">exact volumes</span>`}));
+  const cur=cutWeekIndex(todayISO());
+  const sc2=el("div",{class:"tscroll"});
+  const t2=el("table",{class:"ztab"});
+  const tb2=el("tbody");
+  const th2=el("tr");
+  ["Week","Zone 2 row","Incline walk","Rower intervals","Treadmill HIIT","Total"].forEach(h=>th2.appendChild(el("th",null,h)));
+  tb2.appendChild(th2);
+  C.weeks.forEach((w,i)=>{
+    const tr=el("tr",{class:i===cur?"hi":""});
+    tr.append(el("td",null,w.wk+(i===cur?" ●":"")),el("td",null,w.z2row),el("td",null,w.walk),
+              el("td",null,w.rowint),el("td",null,w.hiit),el("td",null,w.total));
+    tb2.appendChild(tr);
+  });
+  t2.appendChild(tb2);sc2.appendChild(t2);cw.appendChild(sc2);
+  cw.appendChild(el("div",{class:"hint",style:"margin-top:10px"},"Zone 2 row is Day 4, the long incline walk is Day 6 (plus a shorter one to finish Day 3), rower intervals are Days 1 and 5, treadmill HIIT is Day 2. Week 5 pulls the hard work back so fatigue and water clear."));
+  root.appendChild(cw);
+
+  // placement rules
+  const cr=el("div",{class:"card"});
+  cr.appendChild(el("h2",null,"How to place it around the weights"));
+  C.rules.forEach(t=>{const f=el("div",{class:"flag"});f.append(el("div",{class:"dot"}),el("div",null,t));cr.appendChild(f);});
+  root.appendChild(cr);
+
+  // mistakes
+  const cx=el("div",{class:"card"});
+  cx.appendChild(el("h2",null,"The five ways this goes wrong"));
+  C.mistakes.forEach(t=>{const f=el("div",{class:"flag bad"});f.append(el("div",{class:"dot"}),el("div",null,t));cx.appendChild(f);});
+  root.appendChild(cx);
 }
 // which week of the cut today falls in, anchored to the active phase start (or null)
 function cutWeekIndex(date){
