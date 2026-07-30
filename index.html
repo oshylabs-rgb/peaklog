@@ -208,16 +208,16 @@ const PHASES=[
     window:{windowStart:"12:00", windowEnd:"18:00", fastHours:18},
     fasting:"Weekdays 12:00–18:00 eating window · Sunday extended fast 20-24h, ending 19:00",
     volumeIncrease:false,
-    split:[{d:"Mon",s:"Push A",lift:true},{d:"Tue",s:"Pull A",lift:true},{d:"Wed",s:"Legs A + Core A",lift:true},
-           {d:"Thu",s:"Push B",lift:true},{d:"Fri",s:"Pull B",lift:true},
+    split:[{d:"Mon",s:"Push A + Z2 row",lift:true},{d:"Tue",s:"Pull A + Z2 walk",lift:true},{d:"Wed",s:"Legs A + Core A",lift:true},
+           {d:"Thu",s:"Push B + Z2 row",lift:true},{d:"Fri",s:"Pull B + Z2 walk",lift:true},
            {d:"Sat",s:"Legs B + Core B",lift:true},{d:"Sun",s:"Rest + fast",lift:false}]},
   {id:"p2", label:"Hold and Nudge", start:"2026-08-08", end:"2026-09-03", mode:"hold",
     targets:{kcal:2350, protein:195, fat:110, carbs:145, carbCeiling:170},
     window:{windowStart:"12:00", windowEnd:"19:00", fastHours:16},
     fasting:"Standard 16:8 — 12:00 to 19:00",
     volumeIncrease:true,
-    split:[{d:"Mon",s:"Push A",lift:true},{d:"Tue",s:"Pull A",lift:true},{d:"Wed",s:"Legs A + Core A",lift:true},
-           {d:"Thu",s:"Push B",lift:true},{d:"Fri",s:"Pull B",lift:true},
+    split:[{d:"Mon",s:"Push A + Z2 row",lift:true},{d:"Tue",s:"Pull A + Z2 walk",lift:true},{d:"Wed",s:"Legs A + Core A",lift:true},
+           {d:"Thu",s:"Push B + Z2 row",lift:true},{d:"Fri",s:"Pull B + Z2 walk",lift:true},
            {d:"Sat",s:"Legs B + Core B",lift:true},{d:"Sun",s:"Rest + fast",lift:false}]}
 ];
 const PHASE_START_BODY={date:"2026-07-16", weight:80, bodyFat:null, note:"Phase 1 start — Fat Loss Sprint"};
@@ -238,12 +238,12 @@ function applyPhaseTargets(){
    prog = "move up when" trigger (double progression). Weights carry over from the Summer Log baselines.
    Effort rule: last set of every lift lands at 0-2 reps in the tank. */
 const TEMPLATE={
-  0:{type:"Push A — Chest focus",note:"Set a 35-min timer. 90s rest on presses, 60s on isolation — the clock is part of the program.",cardio:null,exercises:[
+  0:{type:"Push A — Chest focus",note:"Set a 35-min timer. 90s rest on presses, 60s on isolation — the clock is part of the program. Rower goes on the end, once the lifting is done.",cardio:{type:"Zone 2 — Rower",min:25,ref:"z2row",detail:"Straight after the lifts. 20–22 spm · 2:28–2:38 split · HR 125–132."},exercises:[
     {name:"DB Bench Press",mg:"Chest",sets:4,reps:"8-10",wt:32.5,perHand:true,prog:"4×10 clean → 35"},
     {name:"Shoulder Press Machine",mg:"Shoulders",sets:3,reps:"10-12",wt:40,prog:"3×12 → 45"},
     {name:"Lateral Raises",mg:"Shoulders",sets:3,reps:"12-15",wt:8,perHand:true,prog:"3×15 → 9-10"},
     {name:"Triceps Pushdowns",mg:"Triceps",sets:3,reps:"10-12",wt:17.5,prog:"3×12 → 20"}]},
-  1:{type:"Pull A — Width",note:"Wide lats + shoulder caps = the visual size. Rows strict, no body English.",cardio:null,exercises:[
+  1:{type:"Pull A — Width",note:"Wide lats + shoulder caps = the visual size. Rows strict, no body English. Incline walk on the end.",cardio:{type:"Zone 2 — Incline walk",min:20,ref:"z2walk",detail:"Straight after the lifts. 5.5 km/h · 7–9% incline · HR 125–132 · hands off the rails."},exercises:[
     {name:"Lat Pulldown",mg:"Back",sets:4,reps:"8-10",wt:75,prog:"4×10 → 80"},
     {name:"Seated Cable Row",mg:"Back",sets:3,reps:"10-12",wt:60,prog:"3×12 → 65"},
     {name:"Face Pulls",mg:"Rear Delts",sets:3,reps:"12-15",wt:17.5,prog:"3×15 → 20"},
@@ -256,12 +256,12 @@ const TEMPLATE={
     {name:"Cable Crunch",mg:"Core",sets:3,reps:"10-12",wt:35,prog:"3×12 hips locked → 40"},
     {name:"Hanging Leg Raise",mg:"Core",sets:3,reps:"8-12",wt:0,prog:"3×12 strict straight-leg → +2kg between the feet"},
     {name:"Pallof Press",mg:"Core",sets:3,reps:"10-12 ea",wt:15,prog:"3×12/side with zero rotation → 20"}]},
-  3:{type:"Push B — Shoulder focus",note:"OHP first while fresh. Dips: full depth, controlled down.",cardio:null,exercises:[
+  3:{type:"Push B — Shoulder focus",note:"OHP first while fresh. Dips: full depth, controlled down. Longest rower of the week on the end.",cardio:{type:"Zone 2 — Rower",min:30,ref:"z2row",detail:"Straight after the lifts. 20–22 spm · 2:28–2:38 split · HR 125–132."},exercises:[
     {name:"Barbell Overhead Press",mg:"Shoulders",sets:4,reps:"8-10",wt:37.5,prog:"4×10 → 40"},
     {name:"Incline DB Press",mg:"Chest",sets:3,reps:"8-12",wt:26,perHand:true,prog:"3×12 → 28"},
     {name:"Weighted Dips",mg:"Triceps",sets:3,reps:"8-12",wt:10,added:true,prog:"3×12 → +12.5"},
     {name:"Rear Delt Fly",mg:"Rear Delts",sets:3,reps:"12-15",wt:43,prog:"3×15 → 48"}]},
-  4:{type:"Pull B — Thickness + arms",note:"Pull-ups while fresh. Curls slow on the way down — that half grows the arm.",cardio:null,exercises:[
+  4:{type:"Pull B — Thickness + arms",note:"Pull-ups while fresh. Curls slow on the way down — that half grows the arm. Incline walk on the end.",cardio:{type:"Zone 2 — Incline walk",min:20,ref:"z2walk",detail:"Straight after the lifts. 5.5 km/h · 7–9% incline · HR 125–132 · hands off the rails."},exercises:[
     {name:"Weighted Pull-up",mg:"Back",sets:4,reps:"6-8",wt:20,added:true,prog:"4×8 → +22.5"},
     {name:"Seated Cable Row",mg:"Back",sets:3,reps:"10-12",wt:60,prog:"3×12 → 65"},
     {name:"Incline DB Curl",mg:"Biceps",sets:3,reps:"10-12",wt:12,perHand:true,prog:"3×12 → 14"},
@@ -274,7 +274,7 @@ const TEMPLATE={
     {name:"Weighted Plank",mg:"Core",sets:3,reps:"30-45s",wt:0,prog:"45s perfect → +5kg plate on the back, reset to 30s"},
     {name:"Ab Wheel Rollout",mg:"Core",sets:3,reps:"8-12",wt:0,prog:"3×12 near-full range → knees further back"},
     {name:"Side Plank",mg:"Core",sets:3,reps:"30s ea",wt:0,prog:"45s clean each side → +5kg on the top hip"}]},
-  6:{type:"Rest",cardio:null,exercises:[]}
+  6:{type:"Rest",note:"Full rest day. The walk is optional and should feel like nothing — if it feels like training, you've missed the point.",cardio:{type:"Optional easy walk",min:30,ref:"z2walk",detail:"Optional. Flat or 2–3% · HR under 118 · podcast pace. Recovery, not a session."},exercises:[]}
 };
 // program-wide guidance, surfaced on the Plan tab
 const PLAN_RULES={
@@ -340,6 +340,18 @@ const CARDIO={
   hrMax:182,
   z2:{lo:118,hi:137,aim:"125–132",ceiling:140},
   frame:"Zone 2 is the only cardio zone people get wrong, and they always get it wrong the same way: too hard. It should feel almost insultingly easy for the first 10 minutes. If you finish a Zone 2 session feeling like you trained, you were in Zone 3 and you've bought fatigue that costs you on the weights without buying extra fat loss.",
+  // the muscle block: cardio bolted onto the end of the four upper-body days.
+  // leg days stay clean — legs are already cooked and the rower is 60% legs.
+  blockWeek:[
+    {d:"Mon",lift:"Push A",c:"Zone 2 — Rower",min:"25 min",why:"Legs are fresh, so the rower is easy to hold in the zone."},
+    {d:"Tue",lift:"Pull A",c:"Zone 2 — Incline walk",min:"20 min",why:"Treadmill, so your grip and lats get a break after pulling."},
+    {d:"Wed",lift:"Legs A + Core A",c:"—",min:"—",why:"No cardio. Heavy legs plus the core finisher is already the day."},
+    {d:"Thu",lift:"Push B",c:"Zone 2 — Rower",min:"30 min",why:"Longest session of the week — legs fresh again after Wednesday."},
+    {d:"Fri",lift:"Pull B",c:"Zone 2 — Incline walk",min:"20 min",why:"Easy on the arms after curls and pull-ups."},
+    {d:"Sat",lift:"Legs B + Core B",c:"—",min:"—",why:"No cardio. Hip thrusts and RDLs plus core is plenty."},
+    {d:"Sun",lift:"Rest",c:"Optional easy walk",min:"30 min",why:"Optional, HR under 118. Recovery and steps, not a session."}
+  ],
+  blockNote:"Total is about 95 minutes of Zone 2 a week across four sessions, all of it after the lifting. No intervals in this block — HIIT is the first thing that eats into a muscle-building deficit, and it lives in the 5-Week Cut plan if you switch to that.",
   zones:[
     {z:"Zone 1",pct:"<65%",bpm:"under 118",feel:"Strolling. Nose breathing, zero effort.",use:"Warm-ups, cool-downs, rest-day walks"},
     {z:"Zone 2",pct:"65–75%",bpm:"118–137",feel:"Full sentences, slightly deeper breathing. You could keep going for 2 hours.",use:"THE zone-2 sessions — rower steady-state, incline walks",hi:true},
@@ -437,6 +449,8 @@ const CARDIO={
   ],
   rules:[
     "Weights first, cardio second, always. Zone 2 straight after lifting is fine and actually convenient — glycogen is already down. Intervals after lifting are not: do those on their own day.",
+    "Cardio is the first thing to cut if the lifts stall. This is a muscle block — the Zone 2 is there to support conditioning and the deficit, not to compete with the training that's driving the growth. Two weeks of falling numbers means drop a session, not push through.",
+    "Nothing on the leg days. Wednesday and Saturday already carry heavy legs plus a core finisher, and the rower is roughly 60% legs — stacking cardio there is how you arrive at Monday still tired.",
     "If you can split the day, put Zone 2 at least 6 hours away from the lifting session. If you can't, just tack it on the end and don't lose sleep over it.",
     "Zone 2 volume is the fat-loss engine here and it barely costs recovery — when you need more output, add Zone 2 minutes, never more intervals.",
     "One HIIT session a week. Two is where the knees, the sleep and the lifting numbers all start going backwards on a deficit.",
@@ -568,7 +582,7 @@ const SEED_FOODS=[
 const KEY="peaklog.v1";
 let S=load();
 function blank(){
-  return {version:1, planRev:6, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
+  return {version:1, planRev:7, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
     bodyLog:[{date:BASELINE.date,weight:BASELINE.weight,bodyFat:BASELINE.bodyFat,note:"InBody 580 baseline"},
              Object.assign({},PHASE_START_BODY)],
     inbody:[BASELINE],
@@ -618,6 +632,12 @@ function migrate(o){ // forward-compatible defaults
     const today=todayISO();
     for(const d in o.workouts){if(d>=today&&isPristine(o.workouts[d]))delete o.workouts[d];}
     o.planRev=6;
+  }
+  if(o.planRev<7){
+    // Zone 2 cardio bolted onto the four upper days — refresh untouched today/future sessions
+    const today=todayISO();
+    for(const d in o.workouts){if(d>=today&&isPristine(o.workouts[d]))delete o.workouts[d];}
+    o.planRev=7;
   }
   return o;
 }
@@ -852,17 +872,6 @@ function viewWorkout(root){
   if(planned&&planned.note)head.appendChild(el("div",{class:"small",style:"margin-top:6px;color:var(--mut2);font-style:italic"},planned.note));
   root.appendChild(head);
 
-  // cardio
-  if(w.cardio){
-    const cc=el("div",{class:"card"});
-    cc.appendChild(el("h2",{html:`Cardio <span class="sub">${w.cardio.type}</span>`}));
-    const l=el("label",{class:"fld"});l.appendChild(el("span",{class:"lb"},`Minutes (target ${w.cardio.min})`));
-    const inp=el("input",{type:"number",inputmode:"numeric",placeholder:String(w.cardio.min)});inp.value=w.cardio.actualMin||"";
-    inp.oninput=()=>{w.cardio.actualMin=inp.value;save();};
-    l.appendChild(inp);cc.appendChild(l);
-    root.appendChild(cc);
-  }
-
   // exercises
   const list=el("div",{class:"card"});
   list.appendChild(el("h2",{html:`Lifts <span class="sub">${w.exercises.length} exercises</span>`}));
@@ -873,6 +882,22 @@ function viewWorkout(root){
     w.exercises.push({name:nm,mg:mg,target:"3x10",sets:[{reps:"",weight:""},{reps:"",weight:""},{reps:"",weight:""}]});save();render();};
   list.appendChild(add);
   root.appendChild(list);
+
+  // cardio — after the lifts, because that's the order it gets done in
+  if(w.cardio){
+    const cc=el("div",{class:"card"});
+    cc.appendChild(el("h2",{html:`Then cardio <span class="sub">${w.cardio.type}</span>`}));
+    const det=planned&&planned.cardio&&planned.cardio.detail;
+    if(det)cc.appendChild(el("div",{class:"hint"},det));
+    const l=el("label",{class:"fld"});l.appendChild(el("span",{class:"lb"},`Minutes (target ${w.cardio.min})`));
+    const inp=el("input",{type:"number",inputmode:"numeric",placeholder:String(w.cardio.min)});inp.value=w.cardio.actualMin||"";
+    inp.oninput=()=>{w.cardio.actualMin=inp.value;save();};
+    l.appendChild(inp);cc.appendChild(l);
+    const hb=el("button",{class:"btn sm sec"},"How to do this session →");
+    hb.onclick=()=>{planTab="cardio";route="plan";render();};
+    cc.appendChild(hb);
+    root.appendChild(cc);
+  }
 
   // rpe + notes
   const meta=el("div",{class:"card"});
@@ -1102,7 +1127,7 @@ function viewPlan(root){
 
   const c=el("div",{class:"card"});
   c.appendChild(el("h2",{html:`Weekly plan <span class="sub">${GOAL.label}</span>`}));
-  c.appendChild(el("div",{class:"hint"},"4-week muscle block — Push/Pull/Legs ×2, Sunday off. Lifting is ≤35 min: 13 working sets, 90s rest on compounds, 60s on isolation. No cardio in this block. The two leg days carry a core finisher on the end (+6-7 min) — see the Core tab. WFH days: train at lunch; office days: the 35-min cap makes mornings easy."));
+  c.appendChild(el("div",{class:"hint"},"4-week muscle block — Push/Pull/Legs ×2, Sunday off. Lifting is ≤35 min: 13 working sets, 90s rest on compounds, 60s on isolation. Then the extras go on the end, never before: Zone 2 cardio after the four upper days (20–30 min), a core finisher after the two leg days (+6–7 min). Cardio days come out at roughly 55–65 min door to door."));
   for(let i=0;i<7;i++){
     const t=TEMPLATE[i];const isToday=i===dow(todayISO());
     const pd=el("div",{class:"plan-day"+(isToday?" today":"")});
@@ -1110,7 +1135,10 @@ function viewPlan(root){
     h.append(el("div",{class:"dn"},DOW_NAMES[i]),el("div",{class:"tp"},isToday?"TODAY":""));
     pd.appendChild(h);
     pd.appendChild(el("div",null,t.type));
-    if(t.cardio)pd.appendChild(el("div",{class:"small muted"},`Cardio: ${t.cardio.type} (${t.cardio.min} min)`));
+    if(t.cardio){
+      pd.appendChild(el("div",{class:"small",style:"color:var(--acc2)"},`Then cardio: ${t.cardio.type} — ${t.cardio.min} min`));
+      if(t.cardio.detail)pd.appendChild(el("div",{class:"small muted"},t.cardio.detail));
+    }
     if(t.exercises.length)pd.appendChild(el("div",{class:"small muted"},t.exercises.map(e=>e.name+(e.wt>0?` ${e.added?"+":""}${e.wt}kg${e.perHand?"/h":""}`:"")).join(" • ")));
     if(t.note)pd.appendChild(el("div",{class:"small",style:"color:var(--mut2);margin-top:4px;font-style:italic"},t.note));
     c.appendChild(pd);
@@ -1232,6 +1260,27 @@ function viewPlanCardio(root){
   c.appendChild(el("h2",{html:`${C.title} <span class="sub">${C.sub}</span>`}));
   c.appendChild(el("div",{class:"hint"},C.frame));
   root.appendChild(c);
+
+  // which days — the muscle block you're actually training
+  const cb=el("div",{class:"card"});
+  cb.appendChild(el("h2",{html:`Your cardio days <span class="sub">muscle block</span>`}));
+  cb.appendChild(el("div",{class:"hint"},"Lifting first, cardio straight after, same session. Only the four upper-body days carry cardio — the leg days stay clean."));
+  const scb=el("div",{class:"tscroll"});
+  const tbk=el("table",{class:"ztab"});const tbkb=el("tbody");
+  const hb=el("tr");["Day","Lift first","Then cardio","For"].forEach(h=>hb.appendChild(el("th",null,h)));tbkb.appendChild(hb);
+  C.blockWeek.forEach((r,i)=>{
+    const tr=el("tr",{class:i===dow(todayISO())?"hi":""});
+    tr.append(el("td",null,r.d+(i===dow(todayISO())?" ●":"")),el("td",null,r.lift),el("td",null,r.c),el("td",null,r.min));
+    tbkb.appendChild(tr);
+  });
+  tbk.appendChild(tbkb);scb.appendChild(tbk);cb.appendChild(scb);
+  const wl=el("ul",{class:"tight",style:"margin-top:10px"});
+  C.blockWeek.filter(r=>r.why).forEach(r=>wl.appendChild(el("li",{html:`<b>${r.d}</b> — ${r.why}`})));
+  cb.appendChild(wl);
+  const bf=el("div",{class:"flag ok",style:"margin-top:10px"});
+  bf.append(el("div",{class:"dot"}),el("div",null,C.blockNote));
+  cb.appendChild(bf);
+  root.appendChild(cb);
 
   // heart-rate zones
   const cz=el("div",{class:"card"});
@@ -1363,15 +1412,15 @@ function viewPlanCore(root){
   const sc=el("div",{class:"tscroll"});
   const t1=el("table",{class:"ztab"});const tb1=el("tbody");
   const h1=el("tr");["Day","Session","Cardio","Core"].forEach(h=>h1.appendChild(el("th",null,h)));tb1.appendChild(h1);
-  [["Mon","Push A","—","—"],["Tue","Pull A","—","—"],["Wed","Legs A","—","Core A"],
-   ["Thu","Push B","—","—"],["Fri","Pull B","—","—"],["Sat","Legs B","—","Core B"],
-   ["Sun","Rest","—","—"]].forEach((r,i)=>{
+  [["Mon","Push A","Z2 row 25 min","—"],["Tue","Pull A","Z2 walk 20 min","—"],["Wed","Legs A","—","Core A"],
+   ["Thu","Push B","Z2 row 30 min","—"],["Fri","Pull B","Z2 walk 20 min","—"],["Sat","Legs B","—","Core B"],
+   ["Sun","Rest","Easy walk (opt)","—"]].forEach((r,i)=>{
     const tr=el("tr",{class:i===dow(todayISO())?"hi":""});
     r.forEach(v=>tr.appendChild(el("td",null,v)));tb1.appendChild(tr);
   });
   t1.appendChild(tb1);sc.appendChild(t1);cwk.appendChild(sc);
   const f1=el("div",{class:"flag ok",style:"margin-top:9px"});
-  f1.append(el("div",{class:"dot"}),el("div",null,"No cardio at all in this block — six lifting days, Sunday off. Core is a finisher on the two leg days, so it never collides with a heavy upper session."));
+  f1.append(el("div",{class:"dot"}),el("div",null,"Everything stacks onto a lifting day — you never make a separate trip. Cardio goes after the four upper sessions, core after the two leg sessions, and the two never land on the same day."));
   cwk.appendChild(f1);
 
   cwk.appendChild(el("div",{class:"sublab"},"5-Week Cut — the other plan"));
