@@ -274,7 +274,7 @@ const TEMPLATE={
     {name:"Weighted Plank",mg:"Core",sets:3,reps:"30-45s",wt:0,prog:"45s perfect → +5kg plate on the back, reset to 30s"},
     {name:"Ab Wheel Rollout",mg:"Core",sets:3,reps:"8-12",wt:0,prog:"3×12 near-full range → knees further back"},
     {name:"Side Plank",mg:"Core",sets:3,reps:"30s ea",wt:0,prog:"45s clean each side → +5kg on the top hip"}]},
-  6:{type:"Rest",note:"Full rest day. The walk is optional and should feel like nothing — if it feels like training, you've missed the point.",cardio:{type:"Optional easy walk",min:30,ref:"z2walk",detail:"Optional. Flat or 2–3% · HR under 118 · podcast pace. Recovery, not a session."},exercises:[]}
+  6:{type:"Rest",note:"Full rest day. The walk is optional and should feel like nothing — if it feels like training, you've missed the point.",cardio:{type:"Optional easy walk",min:30,ref:null,detail:"Optional. Flat or 2–3% · HR under 118 · podcast pace. Recovery, not a session."},exercises:[]}
 };
 // program-wide guidance, surfaced on the Plan tab
 const PLAN_RULES={
@@ -318,12 +318,12 @@ const CUT_PLAN={
     "Outside the gym: 10k+ steps on top of sessions, rising toward week 4. NEAT quietly out-burns any single workout."
   ],
   days:[
-    {d:"Day 1",focus:"Full-body weights + rower intervals",cardio:"Rower intervals — 250 m hard @ 2:00 split, 28–30 spm / 75s easy paddle. 4 reps week 1 → 7 by week 4",lifts:["Leg Press 3×12","Lat Pulldown 3×12","Incline DB Press 3×12","Seated Cable Row 3×12","Cable Woodchop 3×15/side"],note:"Full-body strength base. Moderate load, short rest (45–60s) to keep the heart rate up."},
-    {d:"Day 2",focus:"Treadmill HIIT + core",cardio:"Treadmill — 5 min warm-up, then 30s @ 12.0 km/h / 60s walk @ 5.0, 8 reps week 1 → 14 by week 4, 5 min cool-down",lifts:["Hanging Leg Raise 3×12","Plank 3×45s","Cable Crunch 3×15","Russian Twist 3×20"],note:"Highest-intensity cardio day — push the fast intervals genuinely hard."},
-    {d:"Day 3",focus:"Full-body weights + incline walk",cardio:"Treadmill — 5.5 km/h at 7–9% incline, hold HR 125–132. 20 min after the weights",lifts:["Goblet Squat 3×12","Chest Press Machine 3×12","DB RDL 3×12","Shoulder Press Machine 3×12","Face Pull 3×15"],note:"Second strength session, opposite emphasis. Finish on the incline walk at a conversational pace."},
-    {d:"Day 4",focus:"Rower steady-state (Zone 2) + core",cardio:"Rower Zone 2 — 20–22 spm, 2:28–2:38 split, HR 125–132. 25 min week 1 → 40 by week 4",lifts:["Plank 3×60s","Side Plank 3×30s/side","Dead Bug 3×12"],note:"Recovery-paced but long — big fat-burn with low fatigue. Keep the stroke smooth."},
-    {d:"Day 5",focus:"Full-body weights (legs) + rower intervals",cardio:"Rower intervals — 500 m hard @ 2:05 split, 26–28 spm / 90s easy paddle. 4 reps week 1 → 7 by week 4",lifts:["Leg Press 4×12","Lying Leg Curl 3×12","Walking Lunge 3×12/leg","Standing Calf Raise 3×15","Cable Crunch 3×15"],note:"Legs are the biggest muscles — training them hard spikes the day's calorie burn."},
-    {d:"Day 6",focus:"Long incline walk (low intensity)",cardio:"Treadmill — 5.5 km/h at 7–9%, HR 125–132, hands off the rails. 30 min week 1 → 60 by week 4",lifts:[],note:"Pure fat-burn, no weights. Podcast pace. A lot of the subcutaneous fat quietly comes off on days like this."},
+    {d:"Day 1",ref:"rowint",focus:"Full-body weights + rower intervals",cardio:"Rower intervals — 250 m hard @ 2:00 split, 28–30 spm / 75s easy paddle. 4 reps week 1 → 7 by week 4",lifts:["Leg Press 3×12","Lat Pulldown 3×12","Incline DB Press 3×12","Seated Cable Row 3×12","Cable Woodchop 3×15/side"],note:"Full-body strength base. Moderate load, short rest (45–60s) to keep the heart rate up."},
+    {d:"Day 2",ref:"tmhiit",focus:"Treadmill HIIT + core",cardio:"Treadmill — 5 min warm-up, then 30s @ 12.0 km/h / 60s walk @ 5.0, 8 reps week 1 → 14 by week 4, 5 min cool-down",lifts:["Hanging Leg Raise 3×12","Plank 3×45s","Cable Crunch 3×15","Russian Twist 3×20"],note:"Highest-intensity cardio day — push the fast intervals genuinely hard."},
+    {d:"Day 3",ref:"z2walk",focus:"Full-body weights + incline walk",cardio:"Treadmill — 5.5 km/h at 7–9% incline, hold HR 125–132. 20 min after the weights",lifts:["Goblet Squat 3×12","Chest Press Machine 3×12","DB RDL 3×12","Shoulder Press Machine 3×12","Face Pull 3×15"],note:"Second strength session, opposite emphasis. Finish on the incline walk at a conversational pace."},
+    {d:"Day 4",ref:"z2row",focus:"Rower steady-state (Zone 2) + core",cardio:"Rower Zone 2 — 20–22 spm, 2:28–2:38 split, HR 125–132. 25 min week 1 → 40 by week 4",lifts:["Plank 3×60s","Side Plank 3×30s/side","Dead Bug 3×12"],note:"Recovery-paced but long — big fat-burn with low fatigue. Keep the stroke smooth."},
+    {d:"Day 5",ref:"rowint",focus:"Full-body weights (legs) + rower intervals",cardio:"Rower intervals — 500 m hard @ 2:05 split, 26–28 spm / 90s easy paddle. 4 reps week 1 → 7 by week 4",lifts:["Leg Press 4×12","Lying Leg Curl 3×12","Walking Lunge 3×12/leg","Standing Calf Raise 3×15","Cable Crunch 3×15"],note:"Legs are the biggest muscles — training them hard spikes the day's calorie burn."},
+    {d:"Day 6",ref:"z2walk",focus:"Long incline walk (low intensity)",cardio:"Treadmill — 5.5 km/h at 7–9%, HR 125–132, hands off the rails. 30 min week 1 → 60 by week 4",lifts:[],note:"Pure fat-burn, no weights. Podcast pace. A lot of the subcutaneous fat quietly comes off on days like this."},
     {d:"Day 7",focus:"Rest",cardio:"Optional easy 20–30 min flat walk, HR under 118. Plus mobility",lifts:[],note:"Full rest / active recovery. Sleep 7–9h — recovery is when the fat loss banks."}
   ]
 };
@@ -883,7 +883,9 @@ function viewWorkout(root){
   list.appendChild(add);
   root.appendChild(list);
 
-  // cardio — after the lifts, because that's the order it gets done in
+  // cardio — after the lifts, because that's the order it gets done in.
+  // The full prescription renders here, open, so the day's instructions are
+  // complete on this screen — no trip to the Plan tab.
   if(w.cardio){
     const cc=el("div",{class:"card"});
     cc.appendChild(el("h2",{html:`Then cardio <span class="sub">${w.cardio.type}</span>`}));
@@ -893,9 +895,9 @@ function viewWorkout(root){
     const inp=el("input",{type:"number",inputmode:"numeric",placeholder:String(w.cardio.min)});inp.value=w.cardio.actualMin||"";
     inp.oninput=()=>{w.cardio.actualMin=inp.value;save();};
     l.appendChild(inp);cc.appendChild(l);
-    const hb=el("button",{class:"btn sm sec"},"How to do this session →");
-    hb.onclick=()=>{planTab="cardio";route="plan";render();};
-    cc.appendChild(hb);
+    const ref=planned&&planned.cardio&&planned.cardio.ref;
+    const cs=ref?cardioSession(ref):null;
+    if(cs)expander(cc,"the session, step by step",()=>cardioSessionBody(cs,`${w.cardio.min} min today`),true);
     root.appendChild(cc);
   }
 
@@ -1138,6 +1140,10 @@ function viewPlan(root){
     if(t.cardio){
       pd.appendChild(el("div",{class:"small",style:"color:var(--acc2)"},`Then cardio: ${t.cardio.type} — ${t.cardio.min} min`));
       if(t.cardio.detail)pd.appendChild(el("div",{class:"small muted"},t.cardio.detail));
+      if(t.cardio.ref){
+        const cs=cardioSession(t.cardio.ref);
+        if(cs)expander(pd,"exact session",()=>cardioSessionBody(cs,`${t.cardio.min} min`),false);
+      }
     }
     if(t.exercises.length)pd.appendChild(el("div",{class:"small muted"},t.exercises.map(e=>e.name+(e.wt>0?` ${e.added?"+":""}${e.wt}kg${e.perHand?"/h":""}`:"")).join(" • ")));
     if(t.note)pd.appendChild(el("div",{class:"small",style:"color:var(--mut2);margin-top:4px;font-style:italic"},t.note));
@@ -1221,8 +1227,18 @@ function viewPlanCut(root){
     h.append(el("div",{class:"dn"},`${w.wk} — ${w.theme}`),el("div",{class:"tp"},active?"THIS WEEK":""));
     pd.appendChild(h);
     pd.appendChild(el("div",{class:"small muted",style:"margin-top:2px"},"Deficit: "+w.deficit));
-    pd.appendChild(el("div",{class:"small muted",style:"margin-top:2px"},"Cardio: "+w.cardio));
-    pd.appendChild(el("div",{class:"small",style:"color:var(--mut2);margin-top:4px;font-style:italic"},w.note));
+    const wv=CARDIO.weeks[i];
+    [["rowint","Rower intervals (Days 1 & 5)",wv.rowint],
+     ["tmhiit","Treadmill HIIT (Day 2)",wv.hiit],
+     ["z2row","Zone 2 row (Day 4)",wv.z2row],
+     ["z2walk","Incline walk (Days 3 & 6)",wv.walk]].forEach(([id,nm,vol])=>{
+      const s=cardioSession(id);
+      const row=el("div",{class:"small",style:"margin-top:6px"});
+      row.innerHTML=`<b>${nm}</b> — <span style="color:var(--acc)">${vol}</span>`;
+      pd.appendChild(row);
+      if(s)expander(pd,"exact session",()=>cardioSessionBody(s,`${vol} this week`),false);
+    });
+    pd.appendChild(el("div",{class:"small",style:"color:var(--mut2);margin-top:8px;font-style:italic"},w.note));
     cw.appendChild(pd);
   });
   root.appendChild(cw);
@@ -1239,6 +1255,13 @@ function viewPlanCut(root){
     if(day.cardio)pd.appendChild(el("div",{class:"small muted",style:"margin-top:3px"},"Cardio: "+day.cardio));
     if(day.lifts.length)pd.appendChild(el("div",{class:"small muted",style:"margin-top:3px"},"Weights: "+day.lifts.join(" • ")));
     if(day.note)pd.appendChild(el("div",{class:"small",style:"color:var(--mut2);margin-top:4px;font-style:italic"},day.note));
+    if(day.ref){
+      const s=cardioSession(day.ref);
+      const curW=cutWeekIndex(todayISO());
+      const wv=curW>=0?CARDIO.weeks[curW]:null;
+      const dose=wv?({rowint:wv.rowint,tmhiit:wv.hiit,z2row:wv.z2row,z2walk:wv.walk})[day.ref]:null;
+      if(s)expander(pd,"exact cardio session",()=>cardioSessionBody(s,dose?`${dose} this week`:null),false);
+    }
     ct.appendChild(pd);
   });
   root.appendChild(ct);
@@ -1250,6 +1273,65 @@ function viewPlanCut(root){
   gb.onclick=()=>{planTab="cardio";render();};
   cr.appendChild(gb);
   root.appendChild(cr);
+}
+
+/* ---------- shared cardio session detail ----------
+   The full prescription for one session — machine setup, minute-by-minute
+   timeline, target numbers, governing rule, progression, technique. Rendered
+   inline everywhere a session is named (Workout tab, cut weeks, cut days,
+   block plan) so the instructions travel with the mention instead of living
+   on a separate tab. */
+function cardioSessionBody(s,headline){
+  const box=el("div");
+  if(headline){
+    const hf=el("div",{class:"flag ok"});
+    hf.append(el("div",{class:"dot"}),el("div",{html:"<b>Your dose:</b> "+headline}));
+    box.appendChild(hf);
+  }
+  box.appendChild(el("div",{class:"sublab"},"Set the machine up"));
+  const su=el("ul",{class:"tight"});
+  s.setup.forEach(t=>su.appendChild(el("li",null,t)));
+  box.appendChild(su);
+  box.appendChild(el("div",{class:"sublab"},"The session, start to finish"));
+  s.steps.forEach(st=>{
+    const r=el("div",{class:"step"});
+    r.appendChild(el("div",{class:"st"},st.t));
+    const d=el("div");
+    d.appendChild(el("div",{class:"sd"},st.d));
+    if(st.g)d.appendChild(el("div",{class:"sg"},"→ "+st.g));
+    r.appendChild(d);
+    box.appendChild(r);
+  });
+  box.appendChild(el("div",{class:"sublab"},"The numbers"));
+  const sp=el("div",{class:"spec"});
+  s.specs.forEach(([k,v])=>{
+    const b=el("div",{class:"sp"});
+    b.append(el("div",{class:"k"},k),el("div",{class:"v"},v));
+    sp.appendChild(b);
+  });
+  box.appendChild(sp);
+  const gf=el("div",{class:"flag warn"});
+  gf.append(el("div",{class:"dot"}),el("div",null,s.govern));
+  box.appendChild(gf);
+  const pf=el("div",{class:"flag ok"});
+  pf.append(el("div",{class:"dot"}),el("div",{html:"<b>Move up when:</b> "+s.prog}));
+  box.appendChild(pf);
+  box.appendChild(el("div",{class:"sublab"},"Technique & rules"));
+  const cu=el("ul",{class:"tight"});
+  s.cues.forEach(t=>cu.appendChild(el("li",null,t)));
+  box.appendChild(cu);
+  return box;
+}
+function cardioSession(id){return CARDIO.sessions.find(x=>x.id===id)||null;}
+// inline show/hide — the detail expands in place, no tab change, no re-render
+function expander(parent,label,build,open){
+  const b=el("button",{class:"btn sm sec full",style:"margin-top:8px"},"");
+  parent.appendChild(b);
+  let body=null;
+  function set(o){open=o;b.textContent=o?("Hide "+label+" ▴"):(label+" ▾");if(body)body.style.display=o?"":"none";}
+  b.onclick=e=>{e.stopPropagation();if(!body){body=build();b.after(body);}set(!open);};
+  if(open){body=build();b.after(body);}
+  set(!!open);
 }
 
 /* ---------- cardio: the exact prescriptions (Plan tab) ---------- */
@@ -1319,44 +1401,7 @@ function viewPlanCardio(root){
     h.innerHTML=`${s.name} <span class="sub">${s.tag}</span>`;
     cs.appendChild(h);
     cs.appendChild(el("div",{class:"small",style:"color:var(--acc);margin:-4px 0 10px"},s.where));
-
-    cs.appendChild(el("div",{class:"sublab"},"Set the machine up"));
-    const su=el("ul",{class:"tight"});
-    s.setup.forEach(t=>su.appendChild(el("li",null,t)));
-    cs.appendChild(su);
-
-    cs.appendChild(el("div",{class:"sublab"},"The session, start to finish"));
-    s.steps.forEach(st=>{
-      const r=el("div",{class:"step"});
-      r.appendChild(el("div",{class:"st"},st.t));
-      const d=el("div");
-      d.appendChild(el("div",{class:"sd"},st.d));
-      if(st.g)d.appendChild(el("div",{class:"sg"},"→ "+st.g));
-      r.appendChild(d);
-      cs.appendChild(r);
-    });
-
-    cs.appendChild(el("div",{class:"sublab"},"The numbers"));
-    const sp=el("div",{class:"spec"});
-    s.specs.forEach(([k,v])=>{
-      const b=el("div",{class:"sp"});
-      b.append(el("div",{class:"k"},k),el("div",{class:"v"},v));
-      sp.appendChild(b);
-    });
-    cs.appendChild(sp);
-
-    const gf=el("div",{class:"flag warn"});
-    gf.append(el("div",{class:"dot"}),el("div",null,s.govern));
-    cs.appendChild(gf);
-    const pf=el("div",{class:"flag ok"});
-    pf.append(el("div",{class:"dot"}),el("div",{html:"<b>Move up when:</b> "+s.prog}));
-    cs.appendChild(pf);
-
-    cs.appendChild(el("div",{class:"sublab"},"Technique & rules"));
-    const cu=el("ul",{class:"tight"});
-    s.cues.forEach(t=>cu.appendChild(el("li",null,t)));
-    cs.appendChild(cu);
-
+    cs.appendChild(cardioSessionBody(s));
     root.appendChild(cs);
   });
 
