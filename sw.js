@@ -1,5 +1,5 @@
 /* PeakLog service worker — offline-first cache of the app shell */
-const CACHE = "peaklog-v10";
+const CACHE = "peaklog-v11";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", e => {

@@ -151,6 +151,18 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:12px 0}
 ul.tight{margin:4px 0 0;padding-left:17px}
 ul.tight li{margin-bottom:4px;font-size:13px;color:var(--mut)}
 ul.tight li b{color:var(--txt)}
+/* workout module (session screen) */
+.wsclock{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.wsrow{border:1px solid var(--line);border-radius:11px;background:var(--panel2);padding:9px 10px;margin-bottom:8px;cursor:pointer}
+.wsrow.done{border-color:#1f5a44;background:#0e1f1a;cursor:default}
+.wsrow.skip{opacity:.55;cursor:default}
+.wsrow .top{display:flex;gap:7px;align-items:baseline;flex-wrap:wrap}
+.wsrow .nm{font-weight:700}
+.wsrow .prev{margin-left:auto;color:var(--mut2);font-size:12px;white-space:nowrap}
+.wsctl{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.wsctl .stepv{min-width:60px;text-align:center;font-weight:800}
+.stepbtn{background:var(--panel);border:1px solid var(--line2);color:var(--txt);border-radius:9px;padding:6px 11px;font-weight:800;font-size:15px}
+.confirmbtn{margin-left:auto;background:var(--acc);color:#06281d;border:none;border-radius:9px;padding:8px 14px;font-weight:800;font-size:15px}
 </style>
 </head>
 <body>
@@ -547,6 +559,260 @@ const CORE={
   ]
 };
 
+/* ============================================================
+   WORKOUT MODULE — PRD build (approved 3 Aug 2026)
+   Upper/Lower lift week + rower/treadmill cardio, InBody-anchored
+   starting weights, double progression, 45-min lift cap with auto
+   skip-flagging, rower pace targeting, Sunday fast-day locks.
+   Own state lives in S.wm. Reads the phase config (PHASES /
+   activePhase) READ-ONLY for the Phase 2 switch (8 Aug) and the
+   Sunday fast flag — integration point A. Integration point B is
+   the single carb-timing line on the Nutrition tab (Phase 2, lift
+   days). Nothing else in the existing tabs is touched.
+   ============================================================ */
+
+/* ---------- exercise library ----------
+   lbmMult = estimated 1RM as a multiple of lean body mass (compounds;
+   working weight = 70% of that, rounded to 2.5). startKg = fixed
+   conservative start for accessories — session-1 progression takes over.
+   perHand = the number is per dumbbell. incrementKg: 2.5 upper, 5 lower
+   (DB moves stay 2.5 — that's the rack). repRange: compounds 6-10,
+   accessories 10-15. */
+const WM_EXERCISES=[
+  // Upper A — push bias
+  {id:"benchBB",  name:"Barbell Bench Press",       group:"push",equipment:"barbell",  incrementKg:2.5,repRange:[6,10], lbmMult:0.9},
+  {id:"ohpDB",    name:"Seated DB Shoulder Press",  group:"push",equipment:"dumbbell", incrementKg:2.5,repRange:[6,10], lbmMult:0.55,perHand:true},
+  {id:"inclineDB",name:"Incline DB Press",          group:"push",equipment:"dumbbell", incrementKg:2.5,repRange:[6,10], lbmMult:0.7, perHand:true},
+  {id:"cableFly", name:"Cable Fly",                 group:"push",equipment:"cable",    incrementKg:2.5,repRange:[10,15],startKg:15},
+  {id:"latRaise", name:"Lateral Raise",             group:"push",equipment:"dumbbell", incrementKg:2.5,repRange:[10,15],startKg:8, perHand:true},
+  {id:"triPush",  name:"Triceps Pushdown",          group:"push",equipment:"cable",    incrementKg:2.5,repRange:[10,15],startKg:20},
+  {id:"csRow",    name:"Chest-Supported Row",       group:"pull",equipment:"machine",  incrementKg:2.5,repRange:[10,15],startKg:30},
+  // Upper B — pull bias
+  {id:"pullUp",   name:"Pull-up (weighted/assisted)",group:"pull",equipment:"bodyweight",incrementKg:2.5,repRange:[6,10],startKg:0},
+  {id:"rowBB",    name:"Barbell Row",               group:"pull",equipment:"barbell",  incrementKg:2.5,repRange:[6,10], lbmMult:0.85},
+  {id:"cableRow", name:"Seated Cable Row",          group:"pull",equipment:"cable",    incrementKg:2.5,repRange:[10,15],startKg:45},
+  {id:"facePull", name:"Face Pull",                 group:"pull",equipment:"cable",    incrementKg:2.5,repRange:[10,15],startKg:20},
+  {id:"dbCurl",   name:"DB Curl",                   group:"pull",equipment:"dumbbell", incrementKg:2.5,repRange:[10,15],startKg:10,perHand:true},
+  {id:"hammerCurl",name:"Hammer Curl",              group:"pull",equipment:"dumbbell", incrementKg:2.5,repRange:[10,15],startKg:10,perHand:true},
+  {id:"rearFly",  name:"Rear Delt Fly",             group:"pull",equipment:"machine",  incrementKg:2.5,repRange:[10,15],startKg:15},
+  // Lower A
+  {id:"squatBB",  name:"Back Squat",                group:"legs",equipment:"barbell",  incrementKg:5,  repRange:[6,10], lbmMult:1.2},
+  {id:"rdl",      name:"Romanian Deadlift",         group:"legs",equipment:"barbell",  incrementKg:5,  repRange:[6,10], lbmMult:1.1},
+  {id:"legPress", name:"Leg Press",                 group:"legs",equipment:"machine",  incrementKg:5,  repRange:[6,10], lbmMult:1.5},
+  {id:"legCurl",  name:"Lying Leg Curl",            group:"legs",equipment:"machine",  incrementKg:5,  repRange:[10,15],startKg:40},
+  {id:"calfStand",name:"Standing Calf Raise",       group:"legs",equipment:"machine",  incrementKg:5,  repRange:[10,15],startKg:60},
+  {id:"kneeRaise",name:"Hanging Knee Raise",        group:"core",equipment:"bodyweight",incrementKg:2.5,repRange:[10,15],startKg:0},
+  // Lower B
+  {id:"hackSquat",name:"Front Squat / Hack Squat",  group:"legs",equipment:"machine",  incrementKg:5,  repRange:[6,10], lbmMult:1.2},
+  {id:"hipThrust",name:"Hip Thrust",                group:"legs",equipment:"barbell",  incrementKg:5,  repRange:[6,10], lbmMult:1.2},
+  {id:"lunge",    name:"Walking Lunge (DB)",        group:"legs",equipment:"dumbbell", incrementKg:2.5,repRange:[6,10], startKg:10,perHand:true},
+  {id:"legExt",   name:"Leg Extension",             group:"legs",equipment:"machine",  incrementKg:5,  repRange:[10,15],startKg:45},
+  {id:"calfSeat", name:"Seated Calf Raise",         group:"legs",equipment:"machine",  incrementKg:5,  repRange:[10,15],startKg:40},
+  {id:"cableCrunch",name:"Cable Crunch",            group:"core",equipment:"cable",    incrementKg:2.5,repRange:[10,15],startKg:30}
+];
+
+/* ---------- programme days ----------
+   Phase 1 week per the PRD table. sets are the Phase 1 base — Phase 2
+   (read from the phase config) adds +1 automatically. supersetGroup:
+   exercises sharing a group alternate set-for-set. Rest: compounds 120s,
+   superset pairs / standalone accessories 60s. fastDayAllowed is true
+   only for rest and FLAT treadmill Z2. */
+const WM_DAYS={
+  upperA:{id:"upperA",label:"Upper A — push bias",type:"lift",fastDayAllowed:false,exercises:[
+    {exerciseId:"benchBB",sets:3,restSeconds:120},
+    {exerciseId:"ohpDB",sets:3,restSeconds:120},
+    {exerciseId:"inclineDB",sets:3,restSeconds:120},
+    {exerciseId:"cableFly",sets:3,supersetGroup:"A1",restSeconds:60},
+    {exerciseId:"latRaise",sets:3,supersetGroup:"A1",restSeconds:60},
+    {exerciseId:"triPush",sets:3,supersetGroup:"A2",restSeconds:60},
+    {exerciseId:"csRow",sets:3,supersetGroup:"A2",restSeconds:60}]},
+  rowInt:{id:"rowInt",label:"Rowing intervals — 8 × 500 m",type:"row",fastDayAllowed:false,
+    cardio:{machine:"rower",protocol:"8 × 500 m hard, 90 s easy paddle between",
+      intervals:{work:"500 m",rest:"90 s",count:8},paceTarget:"2:00–2:10 /500m",durationMin:30}},
+  lowerA:{id:"lowerA",label:"Lower A",type:"lift",fastDayAllowed:false,exercises:[
+    {exerciseId:"squatBB",sets:3,restSeconds:120},
+    {exerciseId:"rdl",sets:3,restSeconds:120},
+    {exerciseId:"legPress",sets:3,restSeconds:120},
+    {exerciseId:"legCurl",sets:3,supersetGroup:"A1",restSeconds:60},
+    {exerciseId:"calfStand",sets:3,supersetGroup:"A1",restSeconds:60},
+    {exerciseId:"kneeRaise",sets:3,restSeconds:60}]},
+  z2Tread:{id:"z2Tread",label:"Treadmill Zone 2 — incline",type:"treadmill_z2",fastDayAllowed:false,
+    cardio:{machine:"treadmill",protocol:"Incline Zone 2 walk",hrBand:[115,135],inclinePct:[12,15],speedKmh:[5.5,6],durationMin:40}},
+  upperB:{id:"upperB",label:"Upper B — pull bias",type:"lift",fastDayAllowed:false,exercises:[
+    {exerciseId:"pullUp",sets:3,restSeconds:120},
+    {exerciseId:"rowBB",sets:3,restSeconds:120},
+    {exerciseId:"cableRow",sets:3,restSeconds:60},
+    {exerciseId:"facePull",sets:3,supersetGroup:"B1",restSeconds:60},
+    {exerciseId:"dbCurl",sets:3,supersetGroup:"B1",restSeconds:60},
+    {exerciseId:"hammerCurl",sets:3,supersetGroup:"B2",restSeconds:60},
+    {exerciseId:"rearFly",sets:3,supersetGroup:"B2",restSeconds:60}]},
+  lowerB:{id:"lowerB",label:"Lower B (or rest)",type:"lift",fastDayAllowed:false,exercises:[
+    {exerciseId:"hackSquat",sets:3,restSeconds:120},
+    {exerciseId:"hipThrust",sets:3,restSeconds:120},
+    {exerciseId:"lunge",sets:3,restSeconds:120},
+    {exerciseId:"legExt",sets:3,supersetGroup:"B1",restSeconds:60},
+    {exerciseId:"calfSeat",sets:3,supersetGroup:"B1",restSeconds:60},
+    {exerciseId:"cableCrunch",sets:3,restSeconds:60}]},
+  sunRest:{id:"sunRest",label:"Fast day — rest or flat Z2",type:"rest",fastDayAllowed:true,
+    cardio:{machine:"treadmill",protocol:"Optional flat Zone 2 walk",hrBand:[115,135],inclinePct:[0,0],speedKmh:[5.5,6],durationMin:30}},
+  // Phase 2 unlocks (never in the base week map)
+  tmHiit:{id:"tmHiit",label:"Treadmill HIIT (Phase 2)",type:"treadmill_hiit",fastDayAllowed:false,
+    cardio:{machine:"treadmill",protocol:"10 × 30 s hard / 90 s easy walk",intervals:{work:"30 s",rest:"90 s",count:10},durationMin:25}},
+  optZ2:{id:"optZ2",label:"Optional Z2 — flat (Phase 2 extra)",type:"treadmill_z2",fastDayAllowed:true,
+    cardio:{machine:"treadmill",protocol:"Flat Zone 2 walk",hrBand:[115,135],inclinePct:[0,0],speedKmh:[5.5,6],durationMin:30}}
+};
+const WM_WEEK=["upperA","rowInt","lowerA","z2Tread","upperB","lowerB","sunRest"]; // Mon..Sun
+const WM_CAP_SEC=45*60;                 // lift session hard cap
+const WM_ROWER_SEED={lo:120,hi:130};    // 2:00–2:10 /500m seed band
+const WM_ROWER_FLOOR=110;               // 1:50 floor
+
+/* ---------- workout-module store slice ---------- */
+function wmBlank(){
+  return {inbody:{scanDate:"2026-08-01",weightKg:78.1,bodyFatPct:13.9,skeletalMuscleKg:null,segmental:{}},
+    sessions:{},setLogs:[],cardioLogs:[],activeSessionId:null,rowerPaceSec:null};
+}
+
+/* ---------- phase reads (integration point A — read-only) ---------- */
+function wmPhase2(date){const p=activePhase(date);return !!(p&&p.volumeIncrease);}
+// Sunday fast flag comes from the existing phase config (the split's Sunday
+// entry / fasting text) — the module never stores its own copy.
+function wmIsFastDay(date){
+  if(dow(date)!==6)return false;
+  const p=activePhase(date);if(!p)return false;
+  const sun=p.split&&p.split[6];
+  return !!(sun&&/fast/i.test(sun.s||""))||/fast/i.test(p.fasting||"");
+}
+function wmCanStart(day,date){
+  if(wmIsFastDay(date)&&!day.fastDayAllowed)return false;   // fast day: rest or flat Z2 only
+  if(day.type==="treadmill_hiit"&&!wmPhase2(date))return false; // HIIT unlocks in Phase 2
+  return true;
+}
+function wmSets(pe,date){return pe.sets+(wmPhase2(date)?1:0);} // Phase 2: +1 set per exercise
+
+/* ---------- weight prescription engine ---------- */
+function wmEx(id){return WM_EXERCISES.find(e=>e.id===id);}
+function wmLBM(ib){return ib.weightKg*(1-ib.bodyFatPct/100);}
+function wmRound(kg,step){step=step||2.5;return Math.round(kg/step)*step;}
+// conservative start: est 1RM = LBM × multiplier, work at 70% of that
+function wmEstimateKg(ex,ib){
+  if(ex.lbmMult==null)return ex.startKg||0;
+  let w=wmLBM(ib)*ex.lbmMult*0.7;
+  if(ex.perHand)w/=2;
+  return Math.max(0,wmRound(w));
+}
+// ended sessions that hold performed (non-skipped) sets of this exercise, oldest first
+function wmSessionsFor(exId){
+  const by={};
+  S.wm.setLogs.forEach(l=>{if(l.exerciseId===exId&&!l.skipped)(by[l.sessionId]=by[l.sessionId]||[]).push(l);});
+  return Object.keys(by)
+    .map(id=>({sess:S.wm.sessions[id],logs:by[id].slice().sort((a,b)=>a.setIndex-b.setIndex)}))
+    .filter(x=>x.sess&&x.sess.endedAt)
+    .sort((a,b)=>a.sess.startedAt<b.sess.startedAt?-1:1);
+}
+/* No history → InBody estimate (calibration; adjust freely, the engine
+   re-anchors to what was actually logged). With history the logs govern —
+   a new scan re-baselines estimates but never drags earned progression down.
+   Double progression: top of range on all sets two sessions running → +increment.
+   Below range bottom two sessions running → deload 10%. */
+function wmPrescription(exId){
+  const ex=wmEx(exId);
+  const hist=wmSessionsFor(exId);
+  if(!hist.length)return {kg:wmEstimateKg(ex,S.wm.inbody),why:"calibration"};
+  const last=hist[hist.length-1];
+  const anchor=Math.max(...last.logs.map(l=>num(l.weightKg)));
+  let kg=anchor,why="hold";
+  if(hist.length>=2){
+    const prev=hist[hist.length-2];
+    const topAll=x=>x.logs.length&&x.logs.every(l=>num(l.reps)>=ex.repRange[1]);
+    const below=x=>x.logs.some(l=>num(l.reps)<ex.repRange[0]);
+    if(topAll(last)&&topAll(prev)){kg=anchor+ex.incrementKg;why="progress";}
+    else if(below(last)&&below(prev)){kg=wmRound(anchor*0.9);why="deload";}
+  }
+  return {kg,why};
+}
+function wmWhyLabel(w){return w==="progress"?"↑ progressed":w==="deload"?"↓ deload −10%":w==="calibration"?"calibration — adjust freely":"hold";}
+function wmKgLabel(ex,kg){
+  kg=num(kg);
+  if(ex.equipment==="bodyweight")return kg>0?("BW+"+round(kg,1)+"kg"):"BW";
+  return round(kg,1)+"kg"+(ex.perHand?"/hand":"");
+}
+
+/* ---------- rower pace targeting ----------
+   Seed 2:00–2:10 /500m. After a session: next target = avg of the session's
+   interval paces − 1 s, floor 1:50 — but only if ALL intervals were completed
+   within 5 s of the current target. */
+function wmRowerTargetSec(){return S.wm.rowerPaceSec||(WM_ROWER_SEED.lo+WM_ROWER_SEED.hi)/2;}
+function wmPaceStr(sec){sec=Math.round(sec);return Math.floor(sec/60)+":"+pad(sec%60);}
+function wmRowerTargetLabel(){return S.wm.rowerPaceSec?wmPaceStr(S.wm.rowerPaceSec)+" /500m":"2:00–2:10 /500m (seed)";}
+function wmNextRowerTarget(times,targetSec,need){
+  if(!times||times.length<need)return null;
+  if(!times.every(t=>Math.abs(t-targetSec)<=5))return null;
+  const avg=times.reduce((a,b)=>a+b,0)/times.length;
+  return Math.max(WM_ROWER_FLOOR,Math.round(avg)-1);
+}
+function wmParseTime(v){
+  v=String(v==null?"":v).trim();
+  if(!v)return null;
+  if(/^\d+:\d{1,2}(\.\d+)?$/.test(v)){const[m,s]=v.split(":");return +m*60+parseFloat(s);}
+  const n=parseFloat(v);return isFinite(n)?n:null;
+}
+
+/* ---------- session lifecycle ---------- */
+function wmSetQueue(day,date){ // set rows in superset order (A1,B1,A2,B2…)
+  if(!day.exercises)return[];
+  const items=[],groups=[];
+  day.exercises.forEach(pe=>{
+    const g=groups[groups.length-1];
+    if(pe.supersetGroup&&g&&g.key===pe.supersetGroup)g.list.push(pe);
+    else groups.push({key:pe.supersetGroup||null,list:[pe]});
+  });
+  groups.forEach(g=>{
+    const rounds=Math.max(...g.list.map(pe=>wmSets(pe,date)));
+    for(let si=0;si<rounds;si++)g.list.forEach(pe=>{if(si<wmSets(pe,date))items.push({pe,setIndex:si});});
+  });
+  return items;
+}
+function wmCreateSession(dayId,date){
+  const id="ws-"+date+"-"+Date.now().toString(36);
+  S.wm.sessions[id]={id,date,programmeDayId:dayId,startedAt:new Date().toISOString(),endedAt:null,isFastDay:wmIsFastDay(date)};
+  S.wm.activeSessionId=id;save();return id;
+}
+function wmStartSession(dayId){
+  const date=todayISO();const day=WM_DAYS[dayId];
+  if(!wmCanStart(day,date)){
+    toast(wmIsFastDay(date)&&!day.fastDayAllowed?"Fast day — rest or flat Z2 only":"HIIT unlocks in Phase 2");
+    return;
+  }
+  const act=S.wm.activeSessionId&&S.wm.sessions[S.wm.activeSessionId];
+  if(act&&!act.endedAt){route="wmsession";render();return;} // resume, don't stack
+  wmCreateSession(dayId,date);wmDrafts={};wmRestUntil=0;
+  route="wmsession";render();
+}
+function wmLoggedSet(sid,exId,si){return S.wm.setLogs.find(l=>l.sessionId===sid&&l.exerciseId===exId&&l.setIndex===si);}
+function wmElapsedSec(sess){return Math.max(0,(Date.now()-Date.parse(sess.startedAt))/1000);}
+// end a lift session: anything not logged is flagged skipped (45-min cap rule)
+function wmFlagRemaining(sess){
+  const day=WM_DAYS[sess.programmeDayId];
+  if(day.type==="lift"){
+    wmSetQueue(day,sess.date).forEach(q=>{
+      if(!wmLoggedSet(sess.id,q.pe.exerciseId,q.setIndex))
+        S.wm.setLogs.push({sessionId:sess.id,exerciseId:q.pe.exerciseId,setIndex:q.setIndex,
+          weightKg:0,reps:0,timestamp:new Date().toISOString(),skipped:true});
+    });
+  }
+  sess.endedAt=new Date().toISOString();save();
+}
+function wmSessionVolume(sess){
+  let v=0;S.wm.setLogs.forEach(l=>{if(l.sessionId===sess.id&&!l.skipped)v+=num(l.weightKg)*num(l.reps);});
+  return v;
+}
+function wmPrevSet(exId,setIndex){ // last session's matching set, for the greyed "prev" hint
+  const h=wmSessionsFor(exId);
+  if(!h.length)return null;
+  const logs=h[h.length-1].logs;
+  return logs.find(l=>l.setIndex===setIndex)||logs[logs.length-1]||null;
+}
+
 const SUPPS=[
   {id:"acv",   name:"Apple cider vinegar",       when:"Morning",        tm:"~07:00"},
   {id:"rdust", name:"Rainbow Dust + creatine",   when:"Morning stack",  tm:"~07:30"},
@@ -588,7 +854,8 @@ function blank(){
     inbody:[BASELINE],
     workouts:{}, nutrition:{}, supplements:{}, liftWeights:{},
     myFoods:SEED_FOODS.slice(),
-    targets:Object.assign({},TARGETS) };
+    targets:Object.assign({},TARGETS),
+    wm:wmBlank() };
 }
 function load(){
   try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o&&o.version)return migrate(o);}}catch(e){}
@@ -601,6 +868,16 @@ function migrate(o){ // forward-compatible defaults
   o.bodyLog=o.bodyLog||[];
   o.liftWeights=o.liftWeights||{};
   o.profile=o.profile||{};
+  // workout module slice (forward-compatible defaults, deep-fresh seed)
+  const wb=wmBlank();
+  o.wm=o.wm||wb;
+  o.wm.inbody=Object.assign(wb.inbody,o.wm.inbody||{});
+  o.wm.inbody.segmental=o.wm.inbody.segmental||{};
+  o.wm.sessions=o.wm.sessions||{};
+  o.wm.setLogs=o.wm.setLogs||[];
+  o.wm.cardioLogs=o.wm.cardioLogs||[];
+  if(o.wm.activeSessionId===undefined)o.wm.activeSessionId=null;
+  if(o.wm.rowerPaceSec===undefined)o.wm.rowerPaceSec=null;
   if(!o.planRev||o.planRev<2){
     // goal pushed to end Aug 2026
     if(!o.profile.goalDate||o.profile.goalDate==="2026-07-31")o.profile.goalDate=GOAL.date;
@@ -729,7 +1006,8 @@ function render(){
   renderTabs();
   const r=$("#root");r.innerHTML="";
   ({today:viewToday,workout:viewWorkout,nutrition:viewNutrition,supps:viewSupps,
-    plan:viewPlan,review:viewReview,trends:viewTrends,data:viewData})[route](r);
+    plan:viewPlan,review:viewReview,trends:viewTrends,data:viewData,
+    wmsession:viewWmSession})[route](r);
   window.scrollTo(0,0);
 }
 
@@ -789,6 +1067,9 @@ function viewToday(root){
     cp.appendChild(el("div",{class:"small muted",style:"margin-top:8px"},"Fasting: "+ph.fasting));
     root.appendChild(cp);
   }
+
+  // workout module — today's session card (start / resume, fast-day lock)
+  root.appendChild(wmTodayCard(date));
 
   // today's session
   const c1=el("div",{class:"card"});
@@ -971,6 +1252,12 @@ function viewNutrition(root){
   if(tot.netCarbs>t.netCarbCeiling){
     const f=el("div",{class:"flag warn"});f.append(el("div",{class:"dot"}),el("div",null,`Carbs over ceiling: ${round(tot.netCarbs)}g (cap ${t.netCarbCeiling}g) — past this the surplus turns to fat.`));c.appendChild(f);
   }
+  // workout module — Phase 2 carb-timing flag on lift days (integration point B)
+  if(wmPhase2(date)&&WM_DAYS[WM_WEEK[dow(date)]].type==="lift"){
+    const f=el("div",{class:"flag ok"});
+    f.append(el("div",{class:"dot"}),el("div",null,"Lift day — carbs pre and post session."));
+    c.appendChild(f);
+  }
   root.appendChild(c);
 
   // fasting window
@@ -1117,12 +1404,13 @@ function viewSupps(root){
 function viewPlan(root){
   // separate plans — the muscle block (default) and the standalone 5-week progressive cut
   const seg=el("div",{class:"seg"});
-  [["block","Muscle block"],["cut","5-Week Cut"],["cardio","Cardio"],["core","Core"]].forEach(([id,lab])=>{
+  [["block","Muscle block"],["programme","Programme"],["cut","5-Week Cut"],["cardio","Cardio"],["core","Core"]].forEach(([id,lab])=>{
     const b=el("button",{class:planTab===id?"on":""},lab);
     b.onclick=()=>{planTab=id;render();};
     seg.appendChild(b);
   });
   root.appendChild(seg);
+  if(planTab==="programme"){viewPlanProgramme(root);return;}
   if(planTab==="cut"){viewPlanCut(root);return;}
   if(planTab==="cardio"){viewPlanCardio(root);return;}
   if(planTab==="core"){viewPlanCore(root);return;}
@@ -1544,6 +1832,397 @@ function cutWeekIndex(date){
 }
 
 /* ============================================================
+   WORKOUT MODULE — VIEWS
+   Today card, session screen (lift + cardio + summary), programme
+   week view, InBody baseline settings. Same card/flag/meal-row
+   patterns as the rest of the app.
+   ============================================================ */
+let wmTimer=null,wmRestUntil=0,wmDrafts={};
+
+function wmTodayCard(date){
+  const dayId=WM_WEEK[dow(date)];const day=WM_DAYS[dayId];
+  const p2=wmPhase2(date);const fast=wmIsFastDay(date);
+  const c=el("div",{class:"card"});
+  c.appendChild(el("h2",{html:`Workout module <span class="sub">${p2?"Phase 2 — +1 set, HIIT unlocked":"Phase 1"}</span>`}));
+  c.appendChild(el("div",{style:"font-weight:700"},day.label));
+  let sub="";
+  if(day.type==="lift"){
+    const uniq={};day.exercises.forEach(pe=>uniq[pe.exerciseId]=1);
+    sub=`${Object.keys(uniq).length} exercises · ${wmSetQueue(day,date).length} sets · 45-min cap`;
+  } else if(day.cardio) sub=`${day.cardio.protocol} · ${day.cardio.durationMin} min`;
+  if(sub)c.appendChild(el("div",{class:"small muted"},sub));
+  if(day.cardio&&day.cardio.machine==="rower")
+    c.appendChild(el("div",{class:"small",style:"color:var(--acc2)"},"Pace target: "+wmRowerTargetLabel()));
+  if(fast){
+    const f=el("div",{class:"flag warn",style:"margin-top:9px"});
+    f.append(el("div",{class:"dot"}),el("div",null,"Fast day — lifting and HIIT are locked. Rest, or 30-min flat Zone 2 only."));
+    c.appendChild(f);
+  }
+  const row=el("div",{class:"row",style:"margin-top:10px"});
+  const act=S.wm.activeSessionId&&S.wm.sessions[S.wm.activeSessionId];
+  if(act){
+    const b=el("button",{class:"btn sm"},act.endedAt?"View summary":"Resume session");
+    b.onclick=()=>{route="wmsession";render();};
+    row.appendChild(b);
+  } else if(fast){
+    const b=el("button",{class:"btn sm sec"},"Start flat Z2 (30 min)");
+    b.onclick=()=>wmStartSession("sunRest");
+    row.appendChild(b);
+  } else if(day.type==="treadmill_z2"&&p2){
+    const b1=el("button",{class:"btn sm"},"Start Z2 (40 min)");b1.onclick=()=>wmStartSession(dayId);
+    const b2=el("button",{class:"btn sm sec"},"Start HIIT (10 × 30/90)");b2.onclick=()=>wmStartSession("tmHiit");
+    row.append(b1,b2);
+  } else {
+    const b=el("button",{class:"btn sm"},day.type==="rest"?"Start flat Z2 (30 min)":"Start session");
+    b.onclick=()=>wmStartSession(dayId);
+    row.appendChild(b);
+    if(p2&&day.type==="lift"){
+      const b3=el("button",{class:"btn sm ghost"},"Optional Z2 (30 min)");
+      b3.onclick=()=>wmStartSession("optZ2");
+      row.appendChild(b3);
+    }
+  }
+  c.appendChild(row);
+  return c;
+}
+
+/* ---------- session screen ---------- */
+function viewWmSession(root){
+  const sess=S.wm.activeSessionId&&S.wm.sessions[S.wm.activeSessionId];
+  if(!sess){route="today";render();return;}
+  const day=WM_DAYS[sess.programmeDayId];
+  // resumed past the cap (e.g. after reload) → close it out immediately
+  if(!sess.endedAt&&day.type==="lift"&&wmElapsedSec(sess)>=WM_CAP_SEC){
+    wmFlagRemaining(sess);toast("45-min cap — remaining sets skipped");
+  }
+  if(sess.endedAt){wmSummary(root,sess,day);return;}
+  if(day.type==="lift")wmLiftView(root,sess,day);
+  else wmCardioView(root,sess,day);
+  wmEnsureTick();
+}
+function wmClockStr(sec){sec=Math.max(0,Math.floor(sec));return Math.floor(sec/60)+":"+pad(sec%60);}
+function wmEnsureTick(){
+  if(wmTimer)return;
+  wmTimer=setInterval(()=>{
+    const sess=S.wm.activeSessionId&&S.wm.sessions[S.wm.activeSessionId];
+    if(route!=="wmsession"||!sess){clearInterval(wmTimer);wmTimer=null;return;}
+    if(sess.endedAt)return;
+    const day=WM_DAYS[sess.programmeDayId];
+    const e=wmElapsedSec(sess);
+    const clk=$("#wmClock");if(clk)clk.textContent=wmClockStr(e);
+    const cap=$("#wmCap");
+    if(cap&&day.type==="lift")cap.textContent=wmClockStr(WM_CAP_SEC-e)+" left of 45:00";
+    const rc=$("#wmRestChip");
+    if(rc){const left=Math.ceil((wmRestUntil-Date.now())/1000);
+      if(left>0){rc.style.display="";rc.textContent="Rest "+wmClockStr(left);}
+      else rc.style.display="none";}
+    if(day.type==="lift"&&e>=WM_CAP_SEC){
+      wmFlagRemaining(sess);toast("45-min cap — remaining sets skipped");render();
+    }
+  },1000);
+}
+function wmStep(t,fn){const b=el("button",{class:"stepbtn"},t);b.onclick=e=>{e.stopPropagation();fn();};return b;}
+
+function wmLiftView(root,sess,day){
+  const queue=wmSetQueue(day,sess.date);
+  const done=queue.filter(q=>wmLoggedSet(sess.id,q.pe.exerciseId,q.setIndex)).length;
+  const head=el("div",{class:"card"});
+  head.appendChild(el("h2",{html:`${day.label} <span class="sub">${done}/${queue.length} sets</span>`}));
+  const cl=el("div",{class:"spread"});
+  cl.append(el("div",{class:"wsclock",id:"wmClock"},wmClockStr(wmElapsedSec(sess))),
+    el("div",{class:"small muted",id:"wmCap"},wmClockStr(WM_CAP_SEC-wmElapsedSec(sess))+" left of 45:00"));
+  head.appendChild(cl);
+  head.appendChild(el("div",{class:"pill",id:"wmRestChip",style:"margin-top:8px;display:none"},""));
+  head.appendChild(el("div",{class:"hint",style:"margin:8px 0 0"},"Tap a row to confirm the shown weight × reps. Rest timer starts on confirm. At 45:00 the remaining sets are flagged skipped and the session ends."));
+  const btns=el("div",{class:"row",style:"margin-top:10px"});
+  const endb=el("button",{class:"btn sm bad"},"End session");
+  endb.onclick=()=>{if(confirm("End the session? Unlogged sets are flagged skipped."))
+    {wmFlagRemaining(sess);render();}};
+  const disc=el("button",{class:"btn sm ghost"},"Discard");
+  disc.onclick=()=>{if(confirm("Discard this session and its sets?")){
+    S.wm.setLogs=S.wm.setLogs.filter(l=>l.sessionId!==sess.id);
+    delete S.wm.sessions[sess.id];S.wm.activeSessionId=null;save();route="today";render();}};
+  btns.append(endb,disc);head.appendChild(btns);
+  root.appendChild(head);
+
+  const list=el("div",{class:"card"});
+  list.appendChild(el("h2",{html:`Sets <span class="sub">superset order</span>`}));
+  queue.forEach((q,qi)=>list.appendChild(wmSetRow(sess,q,qi)));
+  root.appendChild(list);
+}
+function wmSetRow(sess,q,qi){
+  const ex=wmEx(q.pe.exerciseId);
+  const logged=wmLoggedSet(sess.id,ex.id,q.setIndex);
+  const row=el("div",{class:"wsrow"+(logged?(logged.skipped?" skip":" done"):"")});
+  const top=el("div",{class:"top"});
+  top.appendChild(el("div",{class:"nm"},ex.name));
+  if(q.pe.supersetGroup)top.appendChild(el("span",{class:"tag"},"SS "+q.pe.supersetGroup));
+  top.appendChild(el("span",{class:"tag"},`set ${q.setIndex+1}/${wmSets(q.pe,sess.date)}`));
+  const prev=wmPrevSet(ex.id,q.setIndex);
+  top.appendChild(el("div",{class:"prev"},prev?`prev ${wmKgLabel(ex,prev.weightKg)} × ${prev.reps}`:"first time"));
+  row.appendChild(top);
+  if(logged){
+    row.appendChild(el("div",{class:"small",style:"margin-top:5px;color:"+(logged.skipped?"var(--mut2)":"var(--acc)")},
+      logged.skipped?"Skipped — 45-min cap":`Logged ${wmKgLabel(ex,logged.weightKg)} × ${logged.reps}`));
+    return row;
+  }
+  const pres=wmPrescription(ex.id);
+  if(!wmDrafts[qi])wmDrafts[qi]={kg:pres.kg,reps:prev?num(prev.reps):ex.repRange[0]};
+  const d=wmDrafts[qi];
+  if(pres.why!=="hold")row.appendChild(el("div",{class:"small",style:"margin-top:3px;color:var(--acc2)"},wmWhyLabel(pres.why)));
+  const ctl=el("div",{class:"wsctl"});
+  const kgv=el("div",{class:"stepv"});
+  const rv=el("div",{class:"stepv",style:"min-width:34px"});
+  const paint=()=>{kgv.textContent=wmKgLabel(ex,d.kg);rv.textContent=String(d.reps);};
+  ctl.append(
+    wmStep("−",()=>{d.kg=Math.max(0,round(d.kg-ex.incrementKg,2));paint();}),kgv,
+    wmStep("+",()=>{d.kg=round(d.kg+ex.incrementKg,2);paint();}),
+    el("div",{class:"muted"},"×"),
+    wmStep("−",()=>{d.reps=Math.max(0,d.reps-1);paint();}),rv,
+    wmStep("+",()=>{d.reps=d.reps+1;paint();}));
+  const ok=el("button",{class:"confirmbtn"},"✓");
+  ok.onclick=e=>{e.stopPropagation();wmConfirmSet(sess,q,qi);};
+  ctl.appendChild(ok);
+  paint();
+  row.appendChild(ctl);
+  row.onclick=()=>wmConfirmSet(sess,q,qi);
+  return row;
+}
+function wmConfirmSet(sess,q,qi){
+  const ex=wmEx(q.pe.exerciseId);
+  const d=wmDrafts[qi]||{kg:wmPrescription(ex.id).kg,reps:ex.repRange[0]};
+  S.wm.setLogs.push({sessionId:sess.id,exerciseId:ex.id,setIndex:q.setIndex,
+    weightKg:num(d.kg),reps:num(d.reps),timestamp:new Date().toISOString()});
+  wmRestUntil=Date.now()+q.pe.restSeconds*1000;
+  delete wmDrafts[qi];save();render();
+}
+
+function wmCardioView(root,sess,day){
+  const c=day.cardio;
+  const head=el("div",{class:"card"});
+  head.appendChild(el("h2",{html:`${day.label} <span class="sub">${c.durationMin} min</span>`}));
+  head.appendChild(el("div",{class:"wsclock",id:"wmClock"},wmClockStr(wmElapsedSec(sess))));
+  head.appendChild(el("div",{class:"small",style:"margin-top:6px"},c.protocol));
+  const sp=el("div",{class:"spec"});
+  const specs=[];
+  if(c.machine==="rower")specs.push(["Pace target",wmRowerTargetLabel()]);
+  if(c.intervals)specs.push(["Intervals",`${c.intervals.count} × ${c.intervals.work} / ${c.intervals.rest}`]);
+  if(c.hrBand)specs.push(["Heart rate",c.hrBand[0]+"–"+c.hrBand[1]+" bpm"]);
+  if(c.inclinePct)specs.push(["Incline",c.inclinePct[0]===c.inclinePct[1]?c.inclinePct[0]+"%":c.inclinePct[0]+"–"+c.inclinePct[1]+"%"]);
+  if(c.speedKmh)specs.push(["Speed",c.speedKmh[0]+"–"+c.speedKmh[1]+" km/h"]);
+  specs.push(["Duration",c.durationMin+" min"]);
+  specs.forEach(([k,v])=>{const b=el("div",{class:"sp"});b.append(el("div",{class:"k"},k),el("div",{class:"v"},v));sp.appendChild(b);});
+  head.appendChild(sp);
+  root.appendChild(head);
+
+  const log=el("div",{class:"card"});
+  if(c.machine==="rower"&&c.intervals){
+    log.appendChild(el("h2",{html:`Intervals <span class="sub">time per 500 m</span>`}));
+    log.appendChild(el("div",{class:"hint"},`Enter each 500 m as m:ss (e.g. 2:04) or seconds. The target drops 1 s next session only if all ${c.intervals.count} land within 5 s of target — floor 1:50.`));
+    const g=el("div",{class:"grid2"});
+    for(let i=0;i<c.intervals.count;i++){
+      const f=mini(`#${i+1} (m:ss)`,"text","2:05");
+      f.i.value=wmDrafts["int"+i]||"";
+      f.i.oninput=()=>{wmDrafts["int"+i]=f.i.value;};
+      g.appendChild(f.l);
+    }
+    log.appendChild(g);
+    const b=el("button",{class:"btn full"},"Complete session");
+    b.onclick=()=>wmFinishRower(sess,day);
+    log.appendChild(b);
+  } else if(day.type==="treadmill_hiit"){
+    log.appendChild(el("h2",null,"Log HIIT"));
+    const g=el("div",{class:"grid2"});
+    const rf=mini("Rounds completed","number",String(c.intervals?c.intervals.count:10));
+    const df=mini("Duration min","number",String(c.durationMin));
+    g.append(rf.l,df.l);log.appendChild(g);
+    const b=el("button",{class:"btn full"},"Complete session");
+    b.onclick=()=>{
+      S.wm.cardioLogs.push({sessionId:sess.id,machine:"treadmill",rounds:num(rf.i.value,c.intervals.count),
+        durationMin:num(df.i.value,c.durationMin),timestamp:new Date().toISOString()});
+      sess.endedAt=new Date().toISOString();save();render();};
+    log.appendChild(b);
+  } else {
+    log.appendChild(el("h2",null,"Log treadmill"));
+    const g=el("div",{class:"grid3"});
+    const df=mini("Minutes","number",String(c.durationMin));
+    const inf=mini("Incline %","number",String(c.inclinePct?c.inclinePct[0]:0));
+    const spf=mini("Speed km/h","number",String(c.speedKmh?c.speedKmh[0]:5.5));
+    g.append(df.l,inf.l,spf.l);log.appendChild(g);
+    const b=el("button",{class:"btn full"},"Complete session");
+    b.onclick=()=>{
+      S.wm.cardioLogs.push({sessionId:sess.id,machine:"treadmill",durationMin:num(df.i.value,c.durationMin),
+        inclinePct:num(inf.i.value,0),speedKmh:num(spf.i.value,0),timestamp:new Date().toISOString()});
+      sess.endedAt=new Date().toISOString();save();render();};
+    log.appendChild(b);
+  }
+  root.appendChild(log);
+  const ab=el("button",{class:"btn sm ghost full"},"Discard session");
+  ab.onclick=()=>{if(confirm("Discard this session?")){
+    delete S.wm.sessions[sess.id];S.wm.activeSessionId=null;save();route="today";render();}};
+  root.appendChild(ab);
+}
+function wmFinishRower(sess,day){
+  const c=day.cardio;const times=[];
+  for(let i=0;i<c.intervals.count;i++){
+    const t=wmParseTime(wmDrafts["int"+i]);
+    if(t!=null)times.push(t);
+  }
+  if(!times.length){toast("Enter at least one interval");return;}
+  const sum=times.reduce((a,b)=>a+b,0);
+  S.wm.cardioLogs.push({sessionId:sess.id,machine:"rower",
+    splits:times.map(t=>({distanceM:500,timeSec:t})),
+    avgPacePer500m:wmPaceStr(sum/times.length),
+    durationMin:round((sum+90*(times.length-1))/60),
+    timestamp:new Date().toISOString()});
+  const next=wmNextRowerTarget(times,wmRowerTargetSec(),c.intervals.count);
+  if(next!=null)S.wm.rowerPaceSec=next;
+  sess.endedAt=new Date().toISOString();
+  Object.keys(wmDrafts).forEach(k=>{if(k.indexOf("int")===0)delete wmDrafts[k];});
+  save();render();
+}
+
+function wmSummary(root,sess,day){
+  const c=el("div",{class:"card"});
+  const durMin=round((Date.parse(sess.endedAt)-Date.parse(sess.startedAt))/60000);
+  c.appendChild(el("h2",{html:`Session done <span class="sub">${day.label}</span>`}));
+  const g=el("div",{class:"grid3"});
+  if(day.type==="lift"){
+    const logs=S.wm.setLogs.filter(l=>l.sessionId===sess.id);
+    const doneN=logs.filter(l=>!l.skipped).length,skipN=logs.filter(l=>l.skipped).length;
+    g.append(stat("Duration",durMin,"min"),stat("Sets done",doneN,""),
+      stat("Volume",round(wmSessionVolume(sess)).toLocaleString(),"kg"));
+    c.appendChild(g);
+    if(skipN){const f=el("div",{class:"flag warn",style:"margin-top:10px"});
+      f.append(el("div",{class:"dot"}),el("div",null,`${skipN} set${skipN===1?"":"s"} flagged skipped at the 45-min cap.`));c.appendChild(f);}
+    c.appendChild(el("div",{class:"sublab"},"Next time"));
+    const seen={};
+    day.exercises.forEach(pe=>{
+      if(seen[pe.exerciseId])return;seen[pe.exerciseId]=1;
+      const ex=wmEx(pe.exerciseId);const p=wmPrescription(ex.id);
+      const r=el("div",{class:"meal"});
+      const info=el("div");info.append(el("div",{class:"mn"},ex.name),
+        el("div",{class:"mm"},`${ex.repRange[0]}–${ex.repRange[1]} reps · ${wmWhyLabel(p.why)}`));
+      r.append(info,el("div",{class:"mk"},wmKgLabel(ex,p.kg)));
+      c.appendChild(r);
+    });
+  } else {
+    const cl=S.wm.cardioLogs.find(l=>l.sessionId===sess.id);
+    g.append(stat("Duration",cl?cl.durationMin:durMin,"min"),
+      stat("Machine",day.cardio.machine,""),
+      stat(cl&&cl.avgPacePer500m?"Avg pace":"Logged",cl&&cl.avgPacePer500m?cl.avgPacePer500m:(cl?"yes":"—"),""));
+    c.appendChild(g);
+    if(day.cardio.machine==="rower")
+      c.appendChild(el("div",{class:"small muted",style:"margin-top:8px"},"Next pace target: "+wmRowerTargetLabel()));
+  }
+  const done=el("button",{class:"btn full",style:"margin-top:12px"},"Done");
+  done.onclick=()=>{S.wm.activeSessionId=null;route="today";render();};
+  c.appendChild(done);
+  root.appendChild(c);
+}
+
+/* ---------- programme week view (Plan tab sub-tab) ---------- */
+function viewPlanProgramme(root){
+  const p2cfg=PHASES.find(p=>p.volumeIncrease)||null; // phase config, read-only
+  const c=el("div",{class:"card"});
+  c.appendChild(el("h2",{html:`Workout programme <span class="sub">Upper/Lower + cardio</span>`}));
+  c.appendChild(el("div",{class:"hint"},"InBody-anchored starting weights, double progression, 45-min lift cap. Week 1 is calibration — adjust freely, the engine re-anchors to what you log. Sunday is the fast day: rest or 30-min flat Zone 2 only."));
+  if(p2cfg){
+    const f=el("div",{class:"flag ok"});
+    f.append(el("div",{class:"dot"}),el("div",{html:`<b>Phase switch ${fmtNice(p2cfg.start)}</b> — +1 set per exercise, treadmill HIIT unlocked (10 × 30 s / 90 s), optional third cardio session, carbs pre/post on lift days.`}));
+    c.appendChild(f);
+  }
+  root.appendChild(c);
+  const phases=[["Phase 1",false],[p2cfg?`Phase 2 — from ${fmtNice(p2cfg.start)}`:"Phase 2",true]];
+  phases.forEach(([label,isP2])=>{
+    const card=el("div",{class:"card"});
+    const activeNow=!!activePhase(todayISO())&&wmPhase2(todayISO())===isP2;
+    card.appendChild(el("h2",{html:`${label} <span class="sub">${activeNow?"active now":""}</span>`}));
+    for(let i=0;i<7;i++){
+      const day=WM_DAYS[WM_WEEK[i]];
+      const pd=el("div",{class:"plan-day"+(activeNow&&i===dow(todayISO())?" today":"")});
+      const h=el("div",{class:"pd-h"});
+      h.append(el("div",{class:"dn"},DOW_NAMES[i]),
+        el("div",{class:"tp"},day.type==="lift"?"LIFT":day.type==="rest"?"FAST DAY":"CARDIO"));
+      pd.appendChild(h);
+      pd.appendChild(el("div",null,day.label));
+      if(day.type==="lift"){
+        pd.appendChild(el("div",{class:"small muted"},
+          day.exercises.map(pe=>wmEx(pe.exerciseId).name+(pe.supersetGroup?"*":"")).join(" • ")));
+        pd.appendChild(el("div",{class:"small",style:"color:var(--acc2)"},
+          `${day.exercises[0].sets+(isP2?1:0)} sets per exercise · * superset pairs · compounds 120 s rest, supersets 60 s`));
+        expander(pd,"current prescriptions",()=>wmPrescriptionList(day),false);
+      } else if(day.cardio){
+        pd.appendChild(el("div",{class:"small muted"},day.cardio.protocol+" · "+day.cardio.durationMin+" min"));
+        if(day.cardio.machine==="rower")
+          pd.appendChild(el("div",{class:"small",style:"color:var(--acc2)"},"Pace target: "+wmRowerTargetLabel()));
+        if(day.cardio.hrBand)
+          pd.appendChild(el("div",{class:"small muted"},`HR ${day.cardio.hrBand[0]}–${day.cardio.hrBand[1]}`+
+            (day.cardio.inclinePct?` · incline ${day.cardio.inclinePct[0]}–${day.cardio.inclinePct[1]}%`:"")+
+            (day.cardio.speedKmh?` · ${day.cardio.speedKmh[0]}–${day.cardio.speedKmh[1]} km/h`:"")));
+      }
+      if(i===3&&isP2)pd.appendChild(el("div",{class:"small",style:"color:var(--acc2)"},"or Treadmill HIIT — 10 × 30 s hard / 90 s easy"));
+      if(i===6)pd.appendChild(el("div",{class:"small muted"},"Lifting and HIIT locked on the fast day."));
+      card.appendChild(pd);
+    }
+    if(isP2)card.appendChild(el("div",{class:"hint",style:"margin-top:6px"},"Phase 2 also allows an optional third weekly cardio session (flat Z2, from the Today card on lift days)."));
+    root.appendChild(card);
+  });
+}
+function wmPrescriptionList(day){
+  const box=el("div");
+  day.exercises.forEach(pe=>{
+    const ex=wmEx(pe.exerciseId);const p=wmPrescription(ex.id);
+    const r=el("div",{class:"meal"});
+    const info=el("div");info.append(el("div",{class:"mn"},ex.name),
+      el("div",{class:"mm"},`${ex.repRange[0]}–${ex.repRange[1]} reps · rest ${pe.restSeconds}s${pe.supersetGroup?" · SS "+pe.supersetGroup:""} · ${wmWhyLabel(p.why)}`));
+    r.append(info,el("div",{class:"mk"},wmKgLabel(ex,p.kg)));
+    box.appendChild(r);
+  });
+  return box;
+}
+
+/* ---------- InBody baseline settings (Data tab) ---------- */
+function wmInBodyCard(){
+  const ib=S.wm.inbody;
+  const c=el("div",{class:"card"});
+  c.appendChild(el("h2",{html:`InBody — workout module <span class="sub">scan ${fmtNice(ib.scanDate)}</span>`}));
+  c.appendChild(el("div",{class:"hint"},"Baseline behind the starting-weight estimates. A new scan re-baselines the estimates; logged sessions and earned progression are never pulled down."));
+  const g=el("div",{class:"grid2"});
+  const wf=mini("Weight kg","number","78.1");wf.i.value=ib.weightKg;
+  const bf=mini("Body fat %","number","13.9");bf.i.value=ib.bodyFatPct;
+  const sf=mini("Skeletal muscle kg","number","");sf.i.value=ib.skeletalMuscleKg==null?"":ib.skeletalMuscleKg;
+  const df=mini("Scan date","date","");df.i.value=ib.scanDate;
+  g.append(wf.l,bf.l,sf.l,df.l);
+  c.appendChild(g);
+  const segFields=[["leftArmKg","Left arm kg"],["rightArmKg","Right arm kg"],["trunkKg","Trunk kg"],["leftLegKg","Left leg kg"],["rightLegKg","Right leg kg"]];
+  const segInputs={};
+  expander(c,"segmental lean mass (optional)",()=>{
+    const b=el("div",{class:"grid2"});
+    segFields.forEach(([k,lab])=>{
+      const f=mini(lab,"number","");
+      f.i.value=(ib.segmental&&ib.segmental[k]!=null)?ib.segmental[k]:"";
+      segInputs[k]=f.i;b.appendChild(f.l);
+    });
+    return b;
+  },false);
+  c.appendChild(el("div",{class:"small muted",style:"margin:8px 0"},`Lean body mass on file: ${round(wmLBM(ib),1)} kg`));
+  const b=el("button",{class:"btn sm warn"},"Save & re-baseline prescriptions");
+  b.onclick=()=>{
+    if(!confirm("Re-baseline starting-weight estimates from this scan? Logged history is untouched."))return;
+    ib.weightKg=num(wf.i.value,ib.weightKg);
+    ib.bodyFatPct=num(bf.i.value,ib.bodyFatPct);
+    ib.skeletalMuscleKg=sf.i.value===""?null:num(sf.i.value);
+    if(df.i.value)ib.scanDate=df.i.value;
+    ib.segmental=ib.segmental||{};
+    segFields.forEach(([k])=>{if(segInputs[k])ib.segmental[k]=segInputs[k].value===""?null:num(segInputs[k].value);});
+    save();render();toast("Re-baselined");
+  };
+  c.appendChild(b);
+  return c;
+}
+
+/* ============================================================
    WEEKLY REVIEW
    ============================================================ */
 function viewReview(root){
@@ -1803,6 +2482,9 @@ function viewData(root){
   <span>BMR <b>${BASELINE.bmr}kcal</b></span><span>InBody <b>${BASELINE.score}/100</b></span>`;
   cb.appendChild(kv);
   root.appendChild(cb);
+
+  // workout module — editable InBody baseline (drives the prescriptions)
+  root.appendChild(wmInBodyCard());
 
   // danger
   const cd=el("div",{class:"card"});

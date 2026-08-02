@@ -12,6 +12,7 @@ Personal, local-first tracker for training, supplements and nutrition, with an a
 - **Weekly Review** — every Monday-to-Sunday: sessions done vs planned, volume per muscle group, supplement adherence, macro averages vs target, body trajectory and a linear projection toward the end-July goal, plus plain-language flags.
 - **Trends** — weight, body fat, weekly volume, protein adherence charts.
 - **Data** — JSON export / import for backup and moving between devices, and a full reset.
+- **Workout module** (PRD build) — Upper/Lower lift week plus rower intervals and treadmill Zone 2, with InBody-anchored starting weights, double progression (top of range twice → +increment; below range twice → deload 10%), a 45-minute lift cap that auto-flags remaining sets skipped, rower pace targeting (2:00–2:10 seed, −1 s when all intervals land within 5 s, floor 1:50), and Sunday fast-day locks (rest or flat Z2 only). Phase 2 (8 Aug, read from the phase config) adds +1 set per exercise, unlocks treadmill HIIT and an optional third cardio session, and flags pre/post-lift carbs on the Nutrition tab. Start sessions from the Today card; the week view lives under Plan → Programme; the editable InBody baseline lives on the Data tab.
 
 ## Tech
 
@@ -45,6 +46,15 @@ When prompted: framework preset **Other**, build command **none**, output direct
 - `inbody[]` — full InBody snapshots
 - `workouts{date}`, `nutrition{date}`, `supplements{date}`
 - `myFoods[]`
+- `wm` — workout module: `inbody` baseline (78.1 kg / 13.9% seed, editable on the Data tab), `sessions{}`, `setLogs[]`, `cardioLogs[]`, `rowerPaceSec`, `activeSessionId`
+
+## Tests
+
+The workout-module engine (prescriptions, progression, fast-day locks, phase boundary, rower pace targeting, 45-min cap flagging, persistence) has a node test harness:
+
+```
+node tests/workout-module.test.mjs
+```
 
 Export from the Data tab produces a versioned JSON file; import migrates forward.
 
