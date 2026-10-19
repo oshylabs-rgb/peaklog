@@ -18,7 +18,8 @@ Rotating training blocks that suit Arnold's body, deadlifts and squats properly 
 - **Squat and deadlift anchors stay in every block**; variations rotate (hack/front/Bulgarian, conventional/trap-bar). Stiff-legged deadlift replaces RDL on Lower A. RDL stays in the library as `retired` so history resolves, and SLDL seeds from logged RDL weights x 0.9.
 - **"Posture workouts" interpretation.** The app contained no posture day or home routine (only a "mobility / rest" label and a cardio form cue). Read as: make posture work weight-based and keep it inside the existing gym days. Built as compound+posture supersets (face pull, CS row, rows, rear delt fly, Y-raise, hip thrust, deadlifts, farmer's carry), 29–31 sets/week per block. If a separate home routine was meant, say so and it can be added as an optional list.
 - **One plan, two logging screens.** `TEMPLATE` (old static PPL) was removed; `tplFor(date)` builds the Workout-tab day from the rotation, so the Today session card and the Workout tab can't disagree. Days already logged are stored in full and untouched.
-- **Snapshot judged on strength first (best e1RM vs median of last 3 non-deload weeks: up >= +1%, down <= -2%), consistency second.** Body weight/fat shown for context, not scored (no active nutrition phase to judge against).
+- **Snapshot judged on strength first (best e1RM vs median of last 3 non-deload weeks: up >= +1%, down <= -2%), consistency second.** Body weight/fat shown for context, not scored; the existing weight-trend card (`projection()`, gain mode) already owns bulk judgement.
+- **The bulk is intentional and off-limits (confirmed by Arnold, 19 Oct 2026).** He is bulking from October 2026 for at least 5 months. The August goal (12 Aug 2026) and the Phase 1/2 nutrition config (ended 3 Sep) are out of date on purpose. Do NOT refresh them, change targets or macros, add a phase, reset `appliedPhase`, or raise them as stale/blocked. With no active phase the app runs in its gain / lean-bulk mode. The rotation and snapshot never write to `targets`, `profile.goalDate` or the phase config (the planRev-8 migration is tested to leave them alone).
 - **Frozen pre-rotation week.** `WM_DAYS` lift days are kept only for dates before the rotation began, so old sessions render as they were done.
 
 ## Validation (19 Oct 2026)
@@ -27,7 +28,6 @@ Rotating training blocks that suit Arnold's body, deadlifts and squats properly 
 - Every lift day, every block, week 1 and deload: estimated <= 43 min (36–41 typical) by the model in `wmEstimateMin`.
 
 ## Known limitations / next actions
-- **Goal and phase plan are stale.** Goal date 12 Aug 2026 and the two nutrition phases (ended 3 Sep) have passed: Today shows "0 days left" and the Phase 2 macros still apply. Needs a new goal/phase (cut, hold or gain) from Arnold — not changed here.
 - Session time is modelled (35 s a set, prescribed rests); real sessions may run longer. The cap still auto-flags unlogged sets as skipped.
 - Starting loads for brand-new lifts are estimates until the first session is logged.
 - Trap-bar deadlift assumes a trap bar (or sumo as the substitute).
