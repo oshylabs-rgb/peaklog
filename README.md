@@ -5,13 +5,15 @@ Personal, local-first tracker for training, supplements and nutrition, with an a
 ## What it does
 
 - **Today** — goal countdown, today's planned session, nutrition progress bars, one-tap supplement checklist.
-- **Workout** — preloaded 5-day hypertrophy split (push / hamstring-glute / pull / quad / arms-shoulders) plus Zone 2 and Friday VO2 max. Log sets, reps, weight and cardio; auto volume calculation.
+- **Workout** — the day's planned session, built from the current rotation block (same exercises, sets and weights as the session screen). Log sets, reps, weight and cardio; auto volume calculation.
 - **Nutrition** — calories, protein, net carbs (keto ceiling), fat, water; 16:8 fasting window timer; saved "my foods" quick-pick.
 - **Supplements** — full stack with timing (Rainbow Dust + creatine, Salte Electrolytes, collagen, D3+K2, omega-3, Aduna cacao, magnesium glycinate, ACV) and adherence streak.
-- **Plan** — the weekly training template and editable keto targets.
-- **Weekly Review** — every Monday-to-Sunday: sessions done vs planned, volume per muscle group, supplement adherence, macro averages vs target, body trajectory and a linear projection toward the end-July goal, plus plain-language flags.
+- **Plan** — Rotation (the 18-week cycle, this week's prescriptions, block controls), This week, the 5-week cut, Cardio and Core references, phase plan and editable nutrition targets.
+- **Weekly Review** — every Monday-to-Sunday: a Growing / Holding / Slipping snapshot on top, then sessions done vs due, volume per muscle group, supplement adherence, macro averages vs target, body trajectory and plain-language flags. Reads both the session screen and the Workout tab.
 - **Trends** — weight, body fat, weekly volume, protein adherence charts.
 - **Data** — JSON export / import for backup and moving between devices, and a full reset.
+- **Rotation** — three 6-week blocks that repeat: **Build** (6–10 reps, hypertrophy base) → **Strength** (3–6 reps, heavy) → **Volume** (8–15 reps, new angles, joint-friendlier variations). Each block is five loading weeks plus a deload (about 10% lighter, one set fewer). The week layout never changes (Mon Upper A, Tue rower, Wed Lower A, Thu treadmill Z2, Fri Upper B, Sat Lower B, Sun rest) and every lift day stays under the 45-minute cap (checked in the tests). Squat, deadlift, press and pull are in every block; the variations rotate. Squats: back squat on Lower A every block plus a second pattern (hack / front / Bulgarian) on Lower B. Deadlifts: stiff-legged deadlift on Lower A (replaces the Romanian deadlift) and a conventional deadlift on Lower B (trap-bar or sumo in the Volume block). Posture is trained under load inside the lift days as compound+posture supersets (face pulls, rows, rear delts, Y-raises, hip thrusts, hinges, farmer's carry), about 30 sets a week — no separate posture day. A new block re-sets every weight from the last session's estimated 1RM so 12-rep weights are not used for 5s; the stiff-legged deadlift starts from the logged Romanian-deadlift numbers. "Start next block now" and "Restart this block" live on Plan → Rotation.
+- **Weekly snapshot** — Today (last completed week) and top of Review (any week). Verdict is Growing / Holding / Slipping / Deload / Baseline from each lift's best estimated 1RM against the median of its last three non-deload weeks (so a block change or a planned deload never reads as going backward), consistency (sessions done vs due), volume vs last week, new bests, body weight/fat for context, a four-week trail and next-week guidance.
 - **Workout module** (PRD build) — Upper/Lower lift week plus rower intervals and treadmill Zone 2, with InBody-anchored starting weights, double progression (top of range twice → +increment; below range twice → deload 10%), a 45-minute lift cap that auto-flags remaining sets skipped, rower pace targeting (2:00–2:10 seed, −1 s when all intervals land within 5 s, floor 1:50), and Sunday fast-day locks (rest or flat Z2 only). Phase 2 (8 Aug, read from the phase config) adds +1 set per exercise, unlocks treadmill HIIT and an optional third cardio session, and flags pre/post-lift carbs on the Nutrition tab. Start sessions from the Today card; the week view lives under Plan → Programme; the editable InBody baseline lives on the Data tab.
 
 ## Tech
@@ -46,14 +48,16 @@ When prompted: framework preset **Other**, build command **none**, output direct
 - `inbody[]` — full InBody snapshots
 - `workouts{date}`, `nutrition{date}`, `supplements{date}`
 - `myFoods[]`
-- `wm` — workout module: `inbody` baseline (78.1 kg / 13.9% seed, editable on the Data tab), `sessions{}`, `setLogs[]`, `cardioLogs[]`, `rowerPaceSec`, `activeSessionId`
+- `wm` — workout module: `inbody` baseline (78.1 kg / 13.9% seed, editable on the Data tab), `sessions{}`, `setLogs[]`, `cardioLogs[]`, `rowerPaceSec`, `activeSessionId`, `rotation.anchors[]` (`{startDate, startBlock}` — the Monday a block's week 1 began; appended to, never rewritten, so past weeks keep their labels). Sessions freeze their plan (`plan`, `blockId`, `week`, `deload`); set logs record the `range` they were done at.
+- `planRev` 8 (rotation): the update writes a one-time raw copy of your data to `peaklog.v1.bak-planRev7` before migrating (downloadable from the Data tab) and never removes a logged workout, set, weigh-in or meal. Retired exercises (Romanian deadlift) stay in the library so history resolves.
 
 ## Tests
 
-The workout-module engine (prescriptions, progression, fast-day locks, phase boundary, rower pace targeting, 45-min cap flagging, persistence) has a node test harness:
+Two node test suites (no dependencies):
 
 ```
-node tests/workout-module.test.mjs
+node tests/workout-module.test.mjs   # engine: prescriptions, progression, fast-day locks, phase boundary, rower pace, 45-min cap, persistence
+node tests/rotation.test.mjs         # rotation maths, deadlift/squat/posture programming, 45-min fit of every day, block-change weight conversion, data survival across the update, weekly snapshot verdicts
 ```
 
 Export from the Data tab produces a versioned JSON file; import migrates forward.
