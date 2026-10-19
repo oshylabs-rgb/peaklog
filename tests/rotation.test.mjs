@@ -10,7 +10,7 @@ const eq = (a, b, m) => assert.deepStrictEqual(JSON.parse(JSON.stringify(a)), JS
 let passed = 0;
 function test(name, fn) { fn(); passed++; console.log("ok - " + name); }
 
-const LIFT_DAYS = ["upperA", "upperB", "lowerA", "lowerB"];
+const LIFT_DAYS = ["upperA", "pullA", "lowerA", "pushB", "upperB", "lowerB"]; // Mon..Sat
 
 /* ============ rotation maths ============ */
 const A0 = loadApp({ now: "2026-10-19T10:00:00" });
@@ -65,7 +65,7 @@ test("loaded posture work lives inside the lift days (face pull, rows, rear delt
     assert.ok(A0.WM_BLOCKS[id].days.upperA.ex.some(pe => pe.exerciseId === "facePull"), id + " face pull on Upper A");
     assert.ok(A0.WM_BLOCKS[id].days.lowerB.ex.some(pe => pe.exerciseId === "farmerCarry"), id + " carry on Lower B");
   });
-  assert.equal(A0.WM_WEEK.filter(d => /posture/i.test(d)).length, 0); // no dedicated posture day
+  assert.equal(A0.WM_WEEK_ROT.filter(d => /posture/i.test(d)).length, 0); // no dedicated posture day
 });
 
 /* ============ every day is a valid 45-minute session ============ */
@@ -201,7 +201,7 @@ test("start-next-block appends an anchor, so weeks already done keep their label
 test("Workout tab days mirror the rotation: same exercises, sets and weights, no RDL anywhere for 18 weeks", () => {
   const A = loadApp({ now: "2026-10-19T10:00:00" });
   for (let d = 0; d < 126; d++) {
-    const date = A.addDays("2026-10-19", d), t = A.tplFor(date), day = A.wmDay(A.WM_WEEK[A.dow(date)], date);
+    const date = A.addDays("2026-10-19", d), t = A.tplFor(date), day = A.wmDay(A.wmDayIdFor(date), date);
     assert.ok(!/rdl|romanian/i.test(JSON.stringify(t)), date);
     if (day.type === "lift") {
       eq(t.exercises.map(e => e.name), day.exercises.map(pe => A.wmEx(pe.exerciseId).name), date);
@@ -212,7 +212,7 @@ test("Workout tab days mirror the rotation: same exercises, sets and weights, no
 test("getWorkout builds the logged day from the rotation and keeps weights as strings for the inputs", () => {
   const A = loadApp({ now: "2026-10-24T10:00:00" });          // Saturday: deadlift day
   const w = A.getWorkout("2026-10-24");
-  assert.equal(w.type, "Lower B — deadlift day");
+  assert.equal(w.type, "Legs B — deadlift day");
   assert.equal(w.exercises[0].name, "Deadlift");
   assert.equal(w.exercises[0].sets.length, 3);
   assert.equal(w.exercises[0].sets[0].weight, "70");          // 1.5 x 67.2 LBM x 0.7, rounded
@@ -251,7 +251,7 @@ test("update keeps every logged workout, set, body weigh-in, meal and setting; o
   const raw = JSON.stringify(OLD);
   const A = loadApp({ now: "2026-10-19T10:00:00", store: { "peaklog.v1": raw } });
   const S = A.S;
-  assert.equal(S.planRev, 8);
+  assert.equal(S.planRev, 9);
   eq(S.workouts["2026-07-20"], OLD.workouts["2026-07-20"]);      // past day, full detail incl. DB RDL
   eq(S.workouts["2026-10-20"], OLD.workouts["2026-10-20"]);      // today/future but has a logged rep -> kept
   // pristine today: dropped by the migration, then rebuilt from the rotation as soon as Today renders
@@ -303,21 +303,21 @@ test("a session that was already in progress when the update landed finishes the
 test("data that cannot be read is never silently replaced: the original is kept aside", () => {
   const A = loadApp({ now: "2026-10-19T10:00:00", store: { "peaklog.v1": "{ this is not json" } });
   assert.equal(A.store["peaklog.v1.bak-unreadable"], "{ this is not json");
-  assert.equal(A.S.planRev, 8); // and the app still starts
+  assert.equal(A.S.planRev, 9); // and the app still starts
 });
-test("fresh install starts the rotation this week at planRev 8", () => {
+test("fresh install starts the rotation this week at planRev 9", () => {
   const A = loadApp({ now: "2026-10-21T10:00:00" });
-  assert.equal(A.S.planRev, 8);
+  assert.equal(A.S.planRev, 9);
   eq(A.S.wm.rotation.anchors, [{ startDate: "2026-10-19", startBlock: 0 }]);
 });
 
 /* ============ weekly snapshot ============ */
-// a full training week: 4 lift days + 2 cardio days
+// a full training week: six lifting days (push / pull / legs x2)
 function fullWeek(A, mon, w) {
   addLiftSession(A, mon, "upperA", [["benchBB", w.bench, [8, 8, 8]]]);
-  addCardioSession(A, A.addDays(mon, 1), "rowInt");
+  addLiftSession(A, A.addDays(mon, 1), "pullA", [["latPulldown", 65, [10, 10, 10]]]);
   addLiftSession(A, A.addDays(mon, 2), "lowerA", [["squatBB", w.squat, [8, 8, 8]]]);
-  addCardioSession(A, A.addDays(mon, 3), "z2Tread");
+  addLiftSession(A, A.addDays(mon, 3), "pushB", [["ohpBB", 35, [6, 6, 6]]]);
   addLiftSession(A, A.addDays(mon, 4), "upperB", [["rowBB", w.row, [8, 8, 8]]]);
   addLiftSession(A, A.addDays(mon, 5), "lowerB", [["deadlift", w.dl, [6, 6, 6]]]);
 }
@@ -356,7 +356,7 @@ test("snapshot: several lifts well below recent weeks = Slipping, and it names w
 test("snapshot: strong lifts but only 2 of 6 sessions = Slipping on consistency", () => {
   const A = scenario([W(40, 60, 40, 80), W(40, 60, 40, 80), W(40, 60, 40, 80), W(40, 60, 40, 80)]);
   addLiftSession(A, "2026-10-12", "upperA", [["benchBB", 45, [8, 8, 8]]]);
-  addCardioSession(A, "2026-10-13", "rowInt");
+  addLiftSession(A, "2026-10-14", "lowerA", [["squatBB", 70, [8, 8, 8]]]);
   const s = A.weekSnapshot("2026-10-12");
   assert.equal(s.sessions.done, 2);
   assert.equal(s.verdict, "slipping");
@@ -426,6 +426,110 @@ test("snapshot: next-week guidance flags a coming deload and a coming block chan
   addLiftSession(A, "2026-11-16", "upperA", [["benchBB", 40, [8, 8, 8]]]);
   assert.match(A.weekSnapshot("2026-11-16").next, /Deload next week/);               // week 5 -> the 23 Nov deload is next
   assert.match(A.weekSnapshot("2026-11-23").next, /New block next week: Strength/);  // deload week -> Strength starts 30 Nov
+});
+
+/* ============ every training day shows exercises, weights and reps from InBody ============ */
+test("Mon–Sat each list real exercises with sets, reps and a weight in every week of all three blocks; Sunday is the only rest day", () => {
+  const A = loadApp({ now: "2026-10-19T10:00:00" });
+  for (let d = 0; d < 126; d++) {
+    const date = A.addDays("2026-10-19", d), dw = A.dow(date), day = A.wmDay(A.wmDayIdFor(date), date);
+    if (dw === 6) { assert.equal(day.type, "rest", date); continue; }
+    assert.equal(day.type, "lift", date + " should be a lifting day");
+    assert.ok(day.exercises.length >= 5, `${date}: only ${day.exercises.length} exercises`);
+    const t = A.tplFor(date);
+    t.exercises.forEach(e => {
+      assert.ok(e.sets >= 2, `${date} ${e.name} sets`);
+      assert.match(e.reps, /^\d+-\d+s?$/, `${date} ${e.name} reps`);
+      assert.ok(e.added || e.wt > 0 || /Raise|Hanging|Pull-up|Dips/i.test(e.name), `${date} ${e.name} has no weight`);
+    });
+  }
+});
+test("every day's Today-card list resolves to a weight for every loaded exercise", () => {
+  const A = loadApp({ now: "2026-10-19T10:00:00" });
+  LIFT_DAYS.forEach(id => A.WM_BLOCK_ORDER.forEach(b => A.WM_BLOCKS[b].days[id].ex.forEach(pe => {
+    const ex = A.wmEx(pe.exerciseId), p = A.wmPrescription(ex.id, A.wmRange(pe, ex));
+    if (ex.equipment !== "bodyweight") assert.ok(p.kg > 0, `${b}/${id} ${ex.name}`);
+  })));
+});
+test("any exercise that appears on two days in a block uses the same rep range on both (so double progression keeps working)", () => {
+  const A = loadApp({ now: "2026-10-19T10:00:00" });
+  A.WM_BLOCK_ORDER.forEach(b => {
+    const seen = {};
+    LIFT_DAYS.forEach(d => A.WM_BLOCKS[b].days[d].ex.forEach(pe => {
+      const ex = A.wmEx(pe.exerciseId), r = A.wmRange(pe, ex).join("-");
+      if (seen[pe.exerciseId]) assert.equal(r, seen[pe.exerciseId], `${b}: ${ex.name} range differs between days`);
+      seen[pe.exerciseId] = r;
+    }));
+  });
+});
+test("every loaded lift is driven by InBody lean mass, and a new scan rescales the whole plan", () => {
+  const A = loadApp({ now: "2026-10-19T10:00:00" });
+  const loaded = A.WM_EXERCISES.filter(e => e.equipment !== "bodyweight" && !e.retired);
+  loaded.forEach(e => assert.ok(e.lbmMult > 0, `${e.name} is not InBody-driven`));
+  const before = {}; loaded.forEach(e => { before[e.id] = A.wmPrescription(e.id).kg; });
+  A.S.wm.inbody.weightKg = 95; // a heavier, bulked-up scan
+  let bigger = 0;
+  loaded.forEach(e => {
+    const after = A.wmPrescription(e.id).kg;
+    assert.ok(after >= before[e.id], `${e.name} went down with more lean mass`);
+    if (after > before[e.id]) bigger++;
+  });
+  assert.ok(bigger >= loaded.length - 2, `only ${bigger}/${loaded.length} lifts rescaled`);
+  A.S.wm.inbody.weightKg = 78.1;
+});
+test("at today's InBody the accessory weights are unchanged from the fixed values they replaced", () => {
+  const A = loadApp({ now: "2026-10-19T10:00:00" });
+  const want = { cableFly: 15, latRaise: 8, triPush: 20, csRow: 30, cableRow: 45, latPulldown: 65, facePull: 20, rearFly: 15,
+    yRaise: 4, dbCurl: 10, inclineCurl: 10, hammerCurl: 10, bulgarian: 12.5, lunge: 10, legExt: 45, legCurl: 40,
+    calfStand: 60, calfSeat: 40, cableCrunch: 30, farmerCarry: 25 };
+  Object.keys(want).forEach(id => assert.equal(A.wmPrescription(id).kg, want[id], id));
+});
+test("the calibration label tells the user the weight comes from their InBody", () => {
+  const A = loadApp({ now: "2026-10-19T10:00:00" });
+  assert.equal(A.wmPrescription("benchBB").why, "calibration");
+});
+test("Sunday reads as a rest day in the rotation; dates before the rotation keep the old week untouched", () => {
+  const A = loadApp({ now: "2026-10-19T10:00:00" });
+  assert.match(A.wmDay("sunRest", "2026-10-25").label, /^Rest day/);
+  assert.match(A.wmDay("sunRest", "2026-10-11").label, /Fast day/);                 // before the rotation: as it was
+  assert.equal(A.wmDayIdFor("2026-10-13"), "rowInt");                               // old Tuesday
+  assert.equal(A.wmDayIdFor("2026-10-20"), "pullA");                                // new Tuesday
+  assert.equal(A.wmDayIdFor("2026-10-22"), "pushB");                                // new Thursday
+});
+test("Tuesday and Thursday keep cardio as an optional log, never in place of the lifting", () => {
+  const A = loadApp({ now: "2026-10-19T10:00:00" });
+  const tue = A.tplFor("2026-10-20"), thu = A.tplFor("2026-10-22");
+  assert.ok(tue.exercises.length >= 5 && /^Optional/.test(tue.cardio.type));
+  assert.ok(thu.exercises.length >= 5 && /^Optional/.test(thu.cardio.type));
+  assert.equal(A.tplFor("2026-10-19").cardio, null);
+});
+test("the consistency target is six lifting sessions in the rotation and the old 4 lifts + 2 cardio before it", () => {
+  const A = loadApp({ now: "2026-10-26T20:00:00" });
+  A.S.wm.rotation.anchors = [{ startDate: "2026-10-19", startBlock: 0 }];          // rotation began 19 Oct
+  addLiftSession(A, "2026-10-12", "upperA", [["benchBB", 40, [8, 8, 8]]]);        // pre-rotation week
+  addLiftSession(A, "2026-10-20", "pullA", [["latPulldown", 65, [10, 10, 10]]]);  // rotation week
+  const pre = A.weekSnapshot("2026-10-12", true).train, rot = A.weekSnapshot("2026-10-19", true).train;
+  assert.equal(pre.liftPlanned, 4); assert.equal(pre.cardioPlanned, 2);
+  assert.equal(rot.liftPlanned, 6); assert.equal(rot.cardioPlanned, 0);
+});
+test("update 8 -> 9: empty cached Tue/Thu/Sun days rebuild with exercises; anything logged stays; a fresh safety copy is taken", () => {
+  const o = JSON.parse(JSON.stringify(OLD));
+  o.planRev = 8;
+  o.wm.rotation = { anchors: [{ startDate: "2026-10-19", startBlock: 0 }] };
+  const empty = (type, cardio) => ({ type, planned: true, completed: false, rpe: "", notes: "", exercises: [], cardio });
+  o.workouts["2026-10-21"] = empty("Rowing intervals — 8 × 500 m", { type: "Rower intervals", min: 30, actualMin: "" });   // Wed, cached empty
+  o.workouts["2026-10-22"] = empty("Treadmill Zone 2 — incline", { type: "Zone 2", min: 40, actualMin: "" });            // Thu, cached empty
+  o.workouts["2026-10-25"] = empty("Rest", { type: "Optional easy walk", min: 30, actualMin: "" });                       // Sun
+  o.workouts["2026-10-23"] = empty("Rowing intervals — 8 × 500 m", { type: "Rower intervals", min: 30, actualMin: "28" }); // Fri, cardio logged
+  const raw = JSON.stringify(o);
+  const A = loadApp({ now: "2026-10-20T10:00:00", store: { "peaklog.v1": raw } });
+  assert.equal(A.S.planRev, 9);
+  assert.equal(A.S.workouts["2026-10-21"], undefined);                  // dropped; rebuilds when viewed
+  assert.ok(A.getWorkout("2026-10-22").exercises.length >= 5);          // Thursday now has exercises
+  assert.equal(A.getWorkout("2026-10-22").type, "Push B — shoulders + arms");
+  assert.ok(A.getWorkout("2026-10-25").type === "Rest");
+  eq(A.S.workouts["2026-10-23"].cardio.actualMin, "28");                // logged cardio kept
+  assert.equal(A.store["peaklog.v1.bak-planRev8"], raw);
 });
 
 console.log(`\n${passed} tests passed`);

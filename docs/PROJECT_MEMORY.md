@@ -1,6 +1,6 @@
 # PeakLog — project memory
 
-Last updated: 19 Oct 2026. Single-file static PWA (`index.html`), localStorage key `peaklog.v1`, no backend. Deploys from GitHub to Vercel (see `DEPLOY.md`). Never store secrets here.
+Last updated: 20 Oct 2026. Single-file static PWA (`index.html`), localStorage key `peaklog.v1`, no backend. Deploys from GitHub to Vercel (see `DEPLOY.md`). Never store secrets here.
 
 ## Current objective
 Rotating training blocks that suit Arnold's body, deadlifts and squats properly programmed, loaded posture work inside the lift days, and a weekly "growing or slipping?" snapshot — without losing any logged data.
@@ -19,11 +19,13 @@ Rotating training blocks that suit Arnold's body, deadlifts and squats properly 
 - **"Posture workouts" interpretation.** The app contained no posture day or home routine (only a "mobility / rest" label and a cardio form cue). Read as: make posture work weight-based and keep it inside the existing gym days. Built as compound+posture supersets (face pull, CS row, rows, rear delt fly, Y-raise, hip thrust, deadlifts, farmer's carry), 29–31 sets/week per block. If a separate home routine was meant, say so and it can be added as an optional list.
 - **One plan, two logging screens.** `TEMPLATE` (old static PPL) was removed; `tplFor(date)` builds the Workout-tab day from the rotation, so the Today session card and the Workout tab can't disagree. Days already logged are stored in full and untouched.
 - **Snapshot judged on strength first (best e1RM vs median of last 3 non-deload weeks: up >= +1%, down <= -2%), consistency second.** Body weight/fat shown for context, not scored; the existing weight-trend card (`projection()`, gain mode) already owns bulk judgement.
+- **Six lifting days, Sunday rest (follow-up, 20 Oct 2026).** Arnold saw Tue/Thu/Sun with no exercises and asked for a plan that gives exercises, weight and reps from his InBody on every day. Tue (Pull A) and Thu (Push B) became lifting days, so the week is push / pull / legs x2 (the structure he ran before the Aug module), Sunday is the one rest day. Cardio (rower intervals, incline Z2) is now optional on a bulk, kept as buttons on the Today card and an optional log on the Workout tab; nothing was deleted. Snapshot consistency target is 6 lifting sessions in the rotation (4 lifts + 2 cardio for weeks before it). Rule enforced by test: an exercise on two days of one block uses the same rep range on both, otherwise double progression would reset every session.
+- **Every loaded weight is InBody-driven.** The 20 accessories that used fixed start weights now use `lbmMult`, calibrated to reproduce today's numbers exactly at the current scan (78.1 kg, 13.9%, lean mass 67.2 kg) and to scale with any new scan. The InBody basis is stated once on the Today card and on Plan > Rotation. The scan on file is 1 Aug 2026; a newer scan entered on the Data tab rescales everything.
 - **The bulk is intentional and off-limits (confirmed by Arnold, 19 Oct 2026).** He is bulking from October 2026 for at least 5 months. The August goal (12 Aug 2026) and the Phase 1/2 nutrition config (ended 3 Sep) are out of date on purpose. Do NOT refresh them, change targets or macros, add a phase, reset `appliedPhase`, or raise them as stale/blocked. With no active phase the app runs in its gain / lean-bulk mode. The rotation and snapshot never write to `targets`, `profile.goalDate` or the phase config (the planRev-8 migration is tested to leave them alone).
 - **Frozen pre-rotation week.** `WM_DAYS` lift days are kept only for dates before the rotation began, so old sessions render as they were done.
 
 ## Validation (19 Oct 2026)
-- `node tests/workout-module.test.mjs` 22 pass; `node tests/rotation.test.mjs` 39 pass.
+- `node tests/workout-module.test.mjs` 22 pass; `node tests/rotation.test.mjs` 51 pass (six-day structure, InBody scaling, 8 -> 9 migration included).
 - Playwright (Chromium) on a fresh install and on a seeded planRev-7 database with 11 weeks of history incl. 33 RDL sets: all 8 tabs render with no console errors; a real session logs with rep ranges; Strength switch converts weights; legacy July day and backup intact.
 - Every lift day, every block, week 1 and deload: estimated <= 43 min (36–41 typical) by the model in `wmEstimateMin`.
 
