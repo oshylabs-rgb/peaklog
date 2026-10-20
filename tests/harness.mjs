@@ -23,7 +23,7 @@ function makeEl() {
 const SHIM = `
 ;globalThis.__app={
   getS:()=>S, setS:(x)=>{S=x;}, save:()=>save(), load, migrate, KEY,
-  WM_EXERCISES,WM_DAYS,WM_WEEK,WM_WEEK_ROT,wmDayIdFor,WM_BLOCKS,WM_BLOCK_ORDER,WM_BLOCK_WEEKS,WM_WEEK_CUES,
+  WM_EXERCISES,WM_DAYS,WM_WEEK,WM_LAYOUTS,WM_HALF_WEEKS,wmDayIdFor,wmLayoutFor,wmRestKind,wmDefaultRest,wmSetRest,wmRegionSets,WM_BLOCKS,WM_BLOCK_ORDER,WM_BLOCK_WEEKS,WM_WEEK_CUES,
   wmEx,wmBlockAt,wmDay,wmSessionDay,wmSessionsFor,wmPrescription,wmSets,wmSetQueue,wmEstimateMin,
   wmCreateSession,wmFlagRemaining,wmRange,wmE1RM,wmEffKg,wmPhase2,wmRound,
   tplFor,getWorkout,weekSnapshot,snapSets,snapFirstDate,snapKey,isPristine,
