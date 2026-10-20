@@ -27,6 +27,8 @@ const SHIM = `
   wmEx,wmBlockAt,wmDay,wmSessionDay,wmSessionsFor,wmPrescription,wmSets,wmSetQueue,wmEstimateMin,
   wmCreateSession,wmFlagRemaining,wmRange,wmE1RM,wmEffKg,wmPhase2,wmRound,
   tplFor,getWorkout,weekSnapshot,snapSets,snapFirstDate,snapKey,isPristine,
+  wmGroups,wmNextSet,wmGroupDone,wmWeightFor,wmSuggestReps,wmRepChips,wmLogSet,wmUndoSet,wmUndoLast,wmLogRemaining,wmLoggedSet,legacyRange,
+  wmSetDraft:(k,v)=>{wmDrafts[k]=v;},wmClearDrafts:()=>{wmDrafts={};},
   mondayOf,addDays,dow,todayISO,daysBetween
 };`;
 

@@ -161,7 +161,20 @@ ul.tight li b{color:var(--txt)}
 .wsrow .prev{margin-left:auto;color:var(--mut2);font-size:12px;white-space:nowrap}
 .wsctl{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
 .wsctl .stepv{min-width:60px;text-align:center;font-weight:800}
-.stepbtn{background:var(--panel);border:1px solid var(--line2);color:var(--txt);border-radius:9px;padding:6px 11px;font-weight:800;font-size:15px}
+.stepbtn{background:var(--panel);border:1px solid var(--line2);color:var(--txt);border-radius:10px;min-width:46px;min-height:44px;padding:0 12px;font-weight:800;font-size:18px}
+.exb{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:12px;margin-bottom:10px}
+.exb.open{border-color:var(--acc2);background:var(--panel)}
+.pill.ok{border-color:#1f5a44;color:var(--acc)}
+input[type=number].wsw{width:92px;flex:0 0 92px;text-align:center;font-weight:800;font-size:18px;padding:9px 6px}
+.sets{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 8px}
+.setb{min-width:58px;min-height:48px;padding:0 12px;border-radius:12px;border:2px solid var(--line2);background:var(--panel2);color:var(--txt);font-weight:800;font-size:18px}
+.setb.next{border-color:var(--acc2);color:var(--acc2)}
+.setb.done{background:#0e1f1a;border-color:var(--acc);color:var(--acc)}
+.setb.skip{opacity:.4}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+.chip{min-width:46px;min-height:44px;padding:0 4px;border-radius:10px;border:1px solid var(--line2);background:var(--panel2);color:var(--mut);font-weight:700;font-size:16px}
+.chip.hit{color:var(--txt);border-color:var(--line2)}
+.chip.sug{border-color:var(--acc2);color:var(--acc2)}
 .confirmbtn{margin-left:auto;background:var(--acc);color:#06281d;border:none;border-radius:9px;padding:8px 14px;font-weight:800;font-size:15px}
 </style>
 </head>
@@ -951,14 +964,19 @@ function wmParseTime(v){
 }
 
 /* ---------- session lifecycle ---------- */
-function wmSetQueue(day,date){ // set rows in superset order (A1,B1,A2,B2…)
-  if(!day.exercises)return[];
-  const items=[],groups=[];
-  day.exercises.forEach(pe=>{
+// consecutive exercises sharing a supersetGroup form one group; everything else is a group of one
+function wmGroups(day){
+  const groups=[];
+  (day.exercises||[]).forEach(pe=>{
     const g=groups[groups.length-1];
     if(pe.supersetGroup&&g&&g.key===pe.supersetGroup)g.list.push(pe);
     else groups.push({key:pe.supersetGroup||null,list:[pe]});
   });
+  return groups;
+}
+function wmSetQueue(day,date){ // set rows in superset order (A1,B1,A2,B2…)
+  if(!day.exercises)return[];
+  const items=[],groups=wmGroups(day);
   groups.forEach(g=>{
     const rounds=Math.max(...g.list.map(pe=>wmSets(pe,date)));
     for(let si=0;si<rounds;si++)g.list.forEach(pe=>{if(si<wmSets(pe,date))items.push({pe,setIndex:si});});
@@ -981,7 +999,7 @@ function wmStartSession(dayId){
   }
   const act=S.wm.activeSessionId&&S.wm.sessions[S.wm.activeSessionId];
   if(act&&!act.endedAt){route="wmsession";render();return;} // resume, don't stack
-  wmCreateSession(dayId,date);wmDrafts={};wmRestUntil=0;
+  wmCreateSession(dayId,date);wmDrafts={};wmRestUntil=0;wmUI={sess:null,open:null,shown:null};
   route="wmsession";render();
 }
 function wmLoggedSet(sid,exId,si){return S.wm.setLogs.find(l=>l.sessionId===sid&&l.exerciseId===exId&&l.setIndex===si);}
@@ -1007,6 +1025,71 @@ function wmPrevSet(exId,setIndex){ // last session's matching set, for the greye
   if(!h.length)return null;
   const logs=h[h.length-1].logs;
   return logs.find(l=>l.setIndex===setIndex)||logs[logs.length-1]||null;
+}
+
+/* ---------- fast logging ----------
+   Everything the session screen does on a tap, kept free of the DOM so it is testable.
+   A set is logged at the weight shown on its exercise card (a typed/stepped draft, else the
+   weight already used this session, else the prescription) and a rep count the lifter picks —
+   or, when they just tap the set, the suggestion: what they did on the previous set this
+   session, else the same set last session, else the bottom of the range. */
+function wmLogsFor(sid,exId){return S.wm.setLogs.filter(l=>l.sessionId===sid&&l.exerciseId===exId&&!l.skipped);}
+function wmNextSet(sess,pe){ // first set of this exercise not yet logged, or -1
+  const n=wmSets(pe,sess.date);
+  for(let i=0;i<n;i++)if(!wmLoggedSet(sess.id,pe.exerciseId,i))return i;
+  return -1;
+}
+function wmGroupDone(sess,g){return g.list.every(pe=>wmNextSet(sess,pe)<0);}
+function wmWeightFor(sess,pe){
+  const ex=wmEx(pe.exerciseId),d=wmDrafts["w:"+ex.id];
+  if(d!=null&&isFinite(d))return num(d);
+  const mine=wmLogsFor(sess.id,ex.id);
+  if(mine.length)return num(mine[mine.length-1].weightKg);
+  return wmPrescription(ex.id,wmRange(pe,ex),{deload:!!sess.deload}).kg;
+}
+function wmSuggestReps(sess,pe,setIndex){
+  const ex=wmEx(pe.exerciseId),range=wmRange(pe,ex),mine=wmLogsFor(sess.id,ex.id);
+  if(mine.length)return num(mine[mine.length-1].reps);
+  const prev=wmPrevSet(ex.id,setIndex);
+  if(prev&&wmSameRange(prev.range||ex.repRange,range))return num(prev.reps);
+  return range[0];
+}
+// the rep counts offered as one-tap buttons: a step under the range up to a step over it
+function wmRepChips(ex,range){
+  const st=ex.repStep||1,out=[];
+  for(let r=Math.max(st,range[0]-st);r<=range[1]+st;r+=st)out.push(r);
+  return out;
+}
+function wmLogSet(sess,pe,setIndex,kg,reps){
+  const ex=wmEx(pe.exerciseId),range=wmRange(pe,ex);
+  S.wm.setLogs=S.wm.setLogs.filter(l=>!(l.sessionId===sess.id&&l.exerciseId===ex.id&&l.setIndex===setIndex));
+  S.wm.setLogs.push({sessionId:sess.id,exerciseId:ex.id,setIndex:setIndex,weightKg:num(kg),reps:num(reps),
+    range:range.slice(),timestamp:new Date().toISOString()});
+  save();
+}
+function wmUndoSet(sess,exId,setIndex){
+  const n=S.wm.setLogs.length;
+  S.wm.setLogs=S.wm.setLogs.filter(l=>!(l.sessionId===sess.id&&l.exerciseId===exId&&l.setIndex===setIndex&&!l.skipped));
+  if(S.wm.setLogs.length!==n)save();
+}
+function wmUndoLast(sess){ // take back the most recent set of this session
+  for(let i=S.wm.setLogs.length-1;i>=0;i--){
+    const l=S.wm.setLogs[i];
+    if(l.sessionId===sess.id&&!l.skipped){S.wm.setLogs.splice(i,1);save();return l;}
+  }
+  return null;
+}
+// log every set not yet logged for these exercises, at the card weight; reps given, else the suggestion
+function wmLogRemaining(sess,pes,reps){
+  let n=0;
+  pes.forEach(pe=>{
+    const w=wmWeightFor(sess,pe);
+    for(let i=0;i<wmSets(pe,sess.date);i++){
+      if(wmLoggedSet(sess.id,pe.exerciseId,i))continue;
+      wmLogSet(sess,pe,i,w,reps!=null?reps:wmSuggestReps(sess,pe,i));n++;
+    }
+  });
+  return n;
 }
 
 const SUPPS=[
@@ -1259,15 +1342,19 @@ function renderTabs(){
     t.appendChild(b);
   });
 }
+let lastView="";
 function render(){
   applyPhaseTargets();
   $("#headDate").textContent=fmtNice(todayISO());
   renderTabs();
+  // tapping inside the same screen (logging a set, ticking a supplement) must not throw you back to the top
+  const view=[route,cursor,weekCursor,planTab].join("|"),keep=view===lastView,y=window.scrollY||0;
   const r=$("#root");r.innerHTML="";
   ({today:viewToday,workout:viewWorkout,nutrition:viewNutrition,supps:viewSupps,
     plan:viewPlan,review:viewReview,trends:viewTrends,data:viewData,
     wmsession:viewWmSession})[route](r);
-  window.scrollTo(0,0);
+  lastView=view;
+  window.scrollTo(0,keep?y:0);
 }
 
 /* ---------- day navigator ---------- */
@@ -1462,6 +1549,12 @@ function viewWorkout(root){
   }
   root.appendChild(meta);
 }
+// reps range out of a target like "3x6-10" or "3x30-45s" (a bare "3x10" is a single number)
+function legacyRange(ex){
+  const m=/x\s*(\d+)(?:-(\d+))?\s*(s?)/i.exec(ex.target||"");
+  const lo=m?+m[1]:10,timed=!!(m&&m[3]);
+  return {lo:lo,hi:m&&m[2]?+m[2]:lo,timed:timed,step:timed?5:1};
+}
 function exerciseCard(ex,ei,w){
   const c=el("div",{class:"ex"});
   const h=el("div",{class:"exh"});
@@ -1482,6 +1575,25 @@ function exerciseCard(ex,ei,w){
     ww.appendChild(wi);c.appendChild(ww);
   }
   if(ex.prog)c.appendChild(el("div",{class:"small",style:"color:var(--mut2);margin:0 0 8px"},"↑ move up: "+ex.prog));
+  // quick fill: tap the reps you got and the next empty set fills in; one button fills the rest
+  const empty=ex.sets.filter(s=>!s.reps).length;
+  if(empty){
+    const rg=legacyRange(ex),fillW=s=>{if((s.weight===""||s.weight==null)&&ex.wt>0)s.weight=String(ex.wt);};
+    const filled=ex.sets.filter(s=>s.reps),R=filled.length?+filled[filled.length-1].reps:rg.lo;
+    c.appendChild(el("div",{class:"small muted"},"Tap the reps you got for the next set:"));
+    const chips=el("div",{class:"chips"});
+    for(let r=Math.max(rg.step,rg.lo-rg.step);r<=rg.hi+rg.step;r+=rg.step){
+      const ch=el("button",{class:"chip"+(r>=rg.lo&&r<=rg.hi?" hit":"")+(r===R?" sug":"")},String(r));
+      ch.onclick=()=>{const si=ex.sets.findIndex(s=>!s.reps);if(si<0)return;ex.sets[si].reps=String(r);fillW(ex.sets[si]);save();buzz();render(true);};
+      chips.appendChild(ch);
+    }
+    c.appendChild(chips);
+    if(empty>=2){
+      const all=el("button",{class:"btn sm sec full",style:"margin-bottom:10px"},`✓ Fill the other ${empty} sets × ${R}${rg.timed?" s":""}`);
+      all.onclick=()=>{ex.sets.forEach(s=>{if(!s.reps){s.reps=String(R);fillW(s);}});save();buzz();render(true);};
+      c.appendChild(all);
+    }
+  }
   const hd=el("div",{class:"setrow small muted"});
   hd.append(el("div",{class:"si"},"#"),el("div",null,"Reps"),el("div",null,"Weight kg"),el("div",null,""));
   c.appendChild(hd);
@@ -2104,7 +2216,7 @@ function cutWeekIndex(date){
    week view, InBody baseline settings. Same card/flag/meal-row
    patterns as the rest of the app.
    ============================================================ */
-let wmTimer=null,wmRestUntil=0,wmDrafts={};
+let wmTimer=null,wmRestUntil=0,wmDrafts={},wmUI={sess:null,open:null,shown:null};
 
 // one-line statement of what the starting weights are built from
 function wmInBodyLine(){
@@ -2200,7 +2312,7 @@ function wmEnsureTick(){
     if(cap&&day.type==="lift")cap.textContent=wmClockStr(WM_CAP_SEC-e)+" left of 45:00";
     const rc=$("#wmRestChip");
     if(rc){const left=Math.ceil((wmRestUntil-Date.now())/1000);
-      if(left>0){rc.style.display="";rc.textContent="Rest "+wmClockStr(left);}
+      if(left>0){rc.style.display="";rc.textContent="Rest "+wmClockStr(left)+" · tap to skip";}
       else rc.style.display="none";}
     if(day.type==="lift"&&e>=WM_CAP_SEC){
       wmFlagRemaining(sess);toast("45-min cap — remaining sets skipped");render();
@@ -2210,6 +2322,7 @@ function wmEnsureTick(){
 function wmStep(t,fn){const b=el("button",{class:"stepbtn"},t);b.onclick=e=>{e.stopPropagation();fn();};return b;}
 
 function wmLiftView(root,sess,day){
+  if(wmUI.sess!==sess.id)wmUI={sess:sess.id,open:null,shown:null};
   const queue=wmSetQueue(day,sess.date);
   const done=queue.filter(q=>wmLoggedSet(sess.id,q.pe.exerciseId,q.setIndex)).length;
   const head=el("div",{class:"card"});
@@ -2218,14 +2331,19 @@ function wmLiftView(root,sess,day){
   cl.append(el("div",{class:"wsclock",id:"wmClock"},wmClockStr(wmElapsedSec(sess))),
     el("div",{class:"small muted",id:"wmCap"},wmClockStr(WM_CAP_SEC-wmElapsedSec(sess))+" left of 45:00"));
   head.appendChild(cl);
-  head.appendChild(el("div",{class:"pill",id:"wmRestChip",style:"margin-top:8px;display:none"},""));
+  const rc=el("div",{class:"pill",id:"wmRestChip",style:"margin-top:8px;display:none;cursor:pointer"},"");
+  rc.onclick=()=>{wmRestUntil=0;rc.style.display="none";};
+  head.appendChild(rc);
   if(sess.blockId&&sess.week){
     const cue=WM_WEEK_CUES[sess.week-1];
     head.appendChild(el("div",{class:"small",style:"margin-top:8px;color:var(--acc2)"},
       `${WM_BLOCKS[sess.blockId].name} block · week ${sess.week} (${cue.name}) — ${cue.effort}`));
   }
-  head.appendChild(el("div",{class:"hint",style:"margin:8px 0 0"},"Tap a row to confirm the shown weight × reps. Rest timer starts on confirm. At 45:00 the remaining sets are flagged skipped and the session ends."));
+  head.appendChild(el("div",{class:"hint",style:"margin:8px 0 0"},"Tap a set to log it at the weight shown. Got a different number? Tap the reps instead. \"All sets\" logs the rest of an exercise. Tap a logged set to undo it. At 45:00 the remaining sets are flagged skipped and the session ends."));
   const btns=el("div",{class:"row",style:"margin-top:10px"});
+  const undo=el("button",{class:"btn sm sec"},"↩ Undo last set");
+  undo.onclick=()=>{const l=wmUndoLast(sess);if(!l){toast("Nothing to undo");return;}
+    wmUI.open=null;toast("Undid "+wmEx(l.exerciseId).name+" set "+(l.setIndex+1));render();};
   const endb=el("button",{class:"btn sm bad"},"End session");
   endb.onclick=()=>{if(confirm("End the session? Unlogged sets are flagged skipped."))
     {wmFlagRemaining(sess);render();}};
@@ -2233,64 +2351,117 @@ function wmLiftView(root,sess,day){
   disc.onclick=()=>{if(confirm("Discard this session and its sets?")){
     S.wm.setLogs=S.wm.setLogs.filter(l=>l.sessionId!==sess.id);
     delete S.wm.sessions[sess.id];S.wm.activeSessionId=null;save();route="today";render();}};
-  btns.append(endb,disc);head.appendChild(btns);
+  btns.append(undo,endb,disc);head.appendChild(btns);
+  const left=queue.length-done;
+  if(left>0){
+    const all=el("button",{class:"btn sm full",style:"margin-top:8px"},`✓ Log all ${left} remaining sets as prescribed`);
+    all.onclick=()=>{if(confirm(`Log all ${left} remaining sets exactly as shown — the weight on each card and the suggested reps? You can still undo or change any set.`)){
+      const n=wmLogRemaining(sess,day.exercises);wmRestUntil=0;wmUI.open=null;toast(n+" sets logged");buzz();render(true);}};
+    head.appendChild(all);
+  }
   root.appendChild(head);
 
-  const list=el("div",{class:"card"});
-  list.appendChild(el("h2",{html:`Sets <span class="sub">superset order</span>`}));
-  queue.forEach((q,qi)=>list.appendChild(wmSetRow(sess,q,qi)));
-  root.appendChild(list);
+  // one exercise (or superset pair) open at a time; the rest fold down to a single line
+  const groups=wmGroups(day);
+  const firstOpen=groups.findIndex(g=>!wmGroupDone(sess,g));
+  const open=(wmUI.open!=null&&wmUI.open<groups.length)?wmUI.open:firstOpen;
+  groups.forEach((g,gi)=>root.appendChild(wmGroupCard(sess,g,gi,gi===open)));
+  if(open!==wmUI.shown){
+    wmUI.shown=open;
+    setTimeout(()=>{try{const e=document.getElementById("wmg"+open);if(e&&e.scrollIntoView)e.scrollIntoView({block:"start",behavior:"smooth"});}catch(x){}},40);
+  }
 }
-function wmSetRow(sess,q,qi){
-  const ex=wmEx(q.pe.exerciseId);
-  const logged=wmLoggedSet(sess.id,ex.id,q.setIndex);
-  const row=el("div",{class:"wsrow"+(logged?(logged.skipped?" skip":" done"):"")});
-  const top=el("div",{class:"top"});
-  top.appendChild(el("div",{class:"nm"},ex.name));
-  if(q.pe.supersetGroup)top.appendChild(el("span",{class:"tag"},"SS "+q.pe.supersetGroup));
-  top.appendChild(el("span",{class:"tag"},`set ${q.setIndex+1}/${wmSets(q.pe,sess.date)}`));
-  const range=wmRange(q.pe,ex),unit=ex.unit==="s"?" s":"";
+function buzz(){try{if(navigator.vibrate)navigator.vibrate(25);}catch(e){}}
+function wmGroupCard(sess,g,gi,isOpen){
+  const c=el("div",{class:"exb"+(isOpen?" open":""),id:"wmg"+gi});
+  const total=g.list.reduce((a,pe)=>a+wmSets(pe,sess.date),0);
+  const logged=g.list.reduce((a,pe)=>a+wmLogsFor(sess.id,pe.exerciseId).length,0);
+  if(!isOpen){
+    const names=g.list.map(pe=>wmEx(pe.exerciseId).name).join(" + ");
+    const line=el("div",{class:"spread",style:"cursor:pointer"});
+    const info=el("div");
+    info.appendChild(el("div",{style:"font-weight:700"},(logged>=total?"✓ ":"")+names));
+    info.appendChild(el("div",{class:"small muted"},g.list.map(pe=>{
+      const ex=wmEx(pe.exerciseId),mine=wmLogsFor(sess.id,ex.id);
+      return mine.length?`${wmKgLabel(ex,mine[mine.length-1].weightKg)} × ${mine.map(l=>l.reps).join("·")}`
+        :`${wmSets(pe,sess.date)} × ${wmRange(pe,ex)[0]}–${wmRange(pe,ex)[1]} @ ${wmKgLabel(ex,wmWeightFor(sess,pe))}`;}).join("  |  ")));
+    line.append(info,el("div",{class:"pill"+(logged>=total?" ok":"")},`${logged}/${total}`));
+    c.appendChild(line);
+    c.onclick=()=>{wmUI.open=gi;render(true);};
+    return c;
+  }
+  if(g.key)c.appendChild(el("div",{class:"small",style:"color:var(--acc2);margin-bottom:6px"},"Superset — alternate the two, rest after each pair"));
+  g.list.forEach(pe=>c.appendChild(wmExBlock(sess,g,pe)));
+  return c;
+}
+// log one set from a tap, start the rest timer, and move on when the exercise (pair) is finished
+function wmTapLog(sess,g,pe,setIndex,reps){
+  wmLogSet(sess,pe,setIndex,wmWeightFor(sess,pe),reps!=null?reps:wmSuggestReps(sess,pe,setIndex));
+  wmRestUntil=Date.now()+pe.restSeconds*1000;
+  if(wmGroupDone(sess,g))wmUI.open=null;
+  buzz();render(true);
+}
+function wmExBlock(sess,g,pe){
+  const ex=wmEx(pe.exerciseId),range=wmRange(pe,ex),unit=ex.unit==="s"?" s":"",n=wmSets(pe,sess.date);
+  const b=el("div",{style:"margin-bottom:12px"});
+  const top=el("div",{class:"top",style:"display:flex;gap:7px;align-items:baseline;flex-wrap:wrap"});
+  top.appendChild(el("div",{style:"font-weight:800;font-size:16px"},ex.name));
   top.appendChild(el("span",{class:"tag"},wmRangeLabel(ex,range)));
   if(ex.posture)top.appendChild(el("span",{class:"tag",style:"color:var(--acc2)"},"posture"));
-  const prev=wmPrevSet(ex.id,q.setIndex);
-  top.appendChild(el("div",{class:"prev"},prev?`prev ${wmKgLabel(ex,prev.weightKg)} × ${prev.reps}${unit}`:"first time"));
-  row.appendChild(top);
-  if(logged){
-    row.appendChild(el("div",{class:"small",style:"margin-top:5px;color:"+(logged.skipped?"var(--mut2)":"var(--acc)")},
-      logged.skipped?"Skipped — 45-min cap":`Logged ${wmKgLabel(ex,logged.weightKg)} × ${logged.reps}${unit}`));
-    return row;
-  }
+  b.appendChild(top);
+  // what you did last time, and where today's weight comes from
+  const hist=wmSessionsFor(ex.id),last=hist.length?hist[hist.length-1]:null;
   const pres=wmPrescription(ex.id,range,{deload:!!sess.deload});
-  const prevInRange=prev&&wmSameRange(prev.range||ex.repRange,range);
-  if(!wmDrafts[qi])wmDrafts[qi]={kg:pres.kg,reps:prevInRange?num(prev.reps):range[0]};
-  const d=wmDrafts[qi];
-  const repStep=ex.repStep||1;
-  if(pres.why!=="hold")row.appendChild(el("div",{class:"small",style:"margin-top:3px;color:var(--acc2)"},wmWhyLabel(pres.why,pres.from)));
-  const ctl=el("div",{class:"wsctl"});
-  const kgv=el("div",{class:"stepv"});
-  const rv=el("div",{class:"stepv",style:"min-width:"+(unit?"52":"34")+"px"});
-  const paint=()=>{kgv.textContent=wmKgLabel(ex,d.kg);rv.textContent=String(d.reps)+unit;};
-  ctl.append(
-    wmStep("−",()=>{d.kg=Math.max(0,round(d.kg-ex.incrementKg,2));paint();}),kgv,
-    wmStep("+",()=>{d.kg=round(d.kg+ex.incrementKg,2);paint();}),
-    el("div",{class:"muted"},"×"),
-    wmStep("−",()=>{d.reps=Math.max(0,d.reps-repStep);paint();}),rv,
-    wmStep("+",()=>{d.reps=d.reps+repStep;paint();}));
-  const ok=el("button",{class:"confirmbtn"},"✓");
-  ok.onclick=e=>{e.stopPropagation();wmConfirmSet(sess,q,qi);};
-  ctl.appendChild(ok);
-  paint();
-  row.appendChild(ctl);
-  row.onclick=()=>wmConfirmSet(sess,q,qi);
-  return row;
-}
-function wmConfirmSet(sess,q,qi){
-  const ex=wmEx(q.pe.exerciseId),range=wmRange(q.pe,ex);
-  const d=wmDrafts[qi]||{kg:wmPrescription(ex.id,range,{deload:!!sess.deload}).kg,reps:range[0]};
-  S.wm.setLogs.push({sessionId:sess.id,exerciseId:ex.id,setIndex:q.setIndex,
-    weightKg:num(d.kg),reps:num(d.reps),range:range.slice(),timestamp:new Date().toISOString()});
-  wmRestUntil=Date.now()+q.pe.restSeconds*1000;
-  delete wmDrafts[qi];save();render();
+  let sub=last?`Last time: ${wmKgLabel(ex,last.logs[last.logs.length-1].weightKg)} × ${last.logs.map(l=>l.reps).join(" · ")}${unit}`:"First time on this lift";
+  if(pres.why!=="hold"&&pres.why!=="calibration")sub+=" · "+wmWhyLabel(pres.why,pres.from);
+  else if(!last)sub+=" · weight from your InBody";
+  b.appendChild(el("div",{class:"small muted",style:"margin:2px 0 8px"},sub));
+
+  // weight: type it or step it — it applies to every set of this exercise
+  const wrow=el("div",{class:"wsctl",style:"margin:0 0 8px"});
+  const wi=el("input",{type:"number",inputmode:"decimal",class:"wsw"});
+  wi.value=String(wmWeightFor(sess,pe));
+  const setW=v=>{v=Math.max(0,round(v,2));wmDrafts["w:"+ex.id]=v;wi.value=String(v);};
+  wi.oninput=()=>{if(wi.value!==""&&isFinite(+wi.value))wmDrafts["w:"+ex.id]=+wi.value;};
+  wrow.append(el("div",{class:"small muted",style:"min-width:54px"},"Weight"),
+    wmStep("−",()=>setW(num(wi.value)-ex.incrementKg)),wi,
+    wmStep("+",()=>setW(num(wi.value)+ex.incrementKg)),
+    el("div",{class:"small muted"},ex.equipment==="bodyweight"?"kg added":ex.perHand?"kg / hand":"kg"));
+  b.appendChild(wrow);
+
+  // the sets: tap to log (at the suggested reps), tap a logged one to undo
+  const next=wmNextSet(sess,pe);
+  const sets=el("div",{class:"sets"});
+  for(let i=0;i<n;i++){
+    const lg=wmLoggedSet(sess.id,ex.id,i);
+    const sb=el("button",{class:"setb"+(lg?(lg.skipped?" skip":" done"):(i===next?" next":""))},
+      lg?(lg.skipped?"–":lg.reps+(unit?"s":"")):String(i+1));
+    sb.onclick=()=>{
+      if(lg&&!lg.skipped){wmUndoSet(sess,ex.id,i);render(true);}
+      else if(!lg)wmTapLog(sess,g,pe,i,null);
+    };
+    sets.appendChild(sb);
+  }
+  b.appendChild(sets);
+  if(next>=0){
+    const R=wmSuggestReps(sess,pe,next);
+    b.appendChild(el("div",{class:"small muted"},`Tap set ${next+1} to log ${R}${unit}, or tap the reps you got:`));
+    const chips=el("div",{class:"chips"});
+    wmRepChips(ex,range).forEach(r=>{
+      const ch=el("button",{class:"chip"+(r>=range[0]&&r<=range[1]?" hit":"")+(r===R?" sug":"")},String(r));
+      ch.onclick=()=>wmTapLog(sess,g,pe,next,r);
+      chips.appendChild(ch);
+    });
+    b.appendChild(chips);
+    const rem=[...Array(n).keys()].filter(i=>!wmLoggedSet(sess.id,ex.id,i)).length;
+    if(rem>=2){
+      const all=el("button",{class:"btn sm sec full"},`✓ All ${rem} remaining sets × ${R}${unit}`);
+      all.onclick=()=>{wmLogRemaining(sess,[pe],R);wmRestUntil=Date.now()+pe.restSeconds*1000;
+        if(wmGroupDone(sess,g))wmUI.open=null;buzz();render(true);};
+      b.appendChild(all);
+    }
+  }
+  return b;
 }
 
 function wmCardioView(root,sess,day){
