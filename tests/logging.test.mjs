@@ -39,7 +39,7 @@ test("suggested reps: bottom of the range the first time, last session's set nex
   const A = loadApp({ now: "2026-10-19T10:00:00" });
   addLiftSession(A, "2026-10-12", "upperA", [["benchBB", 50, [9, 8, 7]]]);        // last time 9, 8, 7
   const { sess, day } = session(A);
-  const bench = slot(day, "benchBB"), fly = slot(day, "benchDB");
+  const bench = slot(day, "benchBB"), fly = slot(day, "inclineDB");
   assert.equal(A.wmSuggestReps(sess, fly, 0), 6);            // never done: range bottom
   assert.equal(A.wmSuggestReps(sess, bench, 0), 9);          // same set last session
   assert.equal(A.wmSuggestReps(sess, bench, 1), 8);
@@ -102,7 +102,7 @@ test("'all remaining sets' logs only what's missing, at the card weight, and fin
 test("'all remaining' with a chosen rep count uses it for every set", () => {
   const A = loadApp({ now: "2026-10-19T10:00:00" });
   const { id, sess, day } = session(A);
-  A.wmLogRemaining(sess, [slot(day, "benchDB")], 8);
+  A.wmLogRemaining(sess, [slot(day, "inclineDB")], 8);
   const reps = A.S.wm.setLogs.filter(l => l.sessionId === id).map(l => l.reps);
   eq([...reps], [8, 8, 8]);
 });
