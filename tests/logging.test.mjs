@@ -19,7 +19,7 @@ function session(A) {
 }
 const slot = (day, exId) => day.exercises.find(pe => pe.exerciseId === exId);
 
-test("exercises group into supersets: Push A = bench+face pull, OHP+row, incline, lateral+pushdown", () => {
+test("exercises group into supersets: Push = bench+cable fly, OHP+row, incline, lateral+pushdown", () => {
   const A = loadApp({ now: "2026-10-19T10:00:00" });
   const { day } = session(A);
   const g = A.wmGroups(day);
@@ -39,8 +39,8 @@ test("suggested reps: bottom of the range the first time, last session's set nex
   const A = loadApp({ now: "2026-10-19T10:00:00" });
   addLiftSession(A, "2026-10-12", "upperA", [["benchBB", 50, [9, 8, 7]]]);        // last time 9, 8, 7
   const { sess, day } = session(A);
-  const bench = slot(day, "benchBB"), face = slot(day, "facePull");
-  assert.equal(A.wmSuggestReps(sess, face, 0), 10);          // never done: range bottom
+  const bench = slot(day, "benchBB"), fly = slot(day, "cableFly");
+  assert.equal(A.wmSuggestReps(sess, fly, 0), 10);           // never done: range bottom
   assert.equal(A.wmSuggestReps(sess, bench, 0), 9);          // same set last session
   assert.equal(A.wmSuggestReps(sess, bench, 1), 8);
   A.wmLogSet(sess, bench, 0, 52.5, 10);
@@ -102,7 +102,7 @@ test("'all remaining sets' logs only what's missing, at the card weight, and fin
 test("'all remaining' with a chosen rep count uses it for every set", () => {
   const A = loadApp({ now: "2026-10-19T10:00:00" });
   const { id, sess, day } = session(A);
-  A.wmLogRemaining(sess, [slot(day, "facePull")], 12);
+  A.wmLogRemaining(sess, [slot(day, "cableFly")], 12);
   const reps = A.S.wm.setLogs.filter(l => l.sessionId === id).map(l => l.reps);
   eq([...reps], [12, 12, 12]);
 });

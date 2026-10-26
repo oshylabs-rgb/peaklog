@@ -62,7 +62,8 @@ test("loaded posture work lives inside the lift days (face pull, rows, rear delt
     let posture = 0;
     LIFT_DAYS.forEach(d => A0.WM_BLOCKS[id].days[d].ex.forEach(pe => { if (A0.wmEx(pe.exerciseId).posture) posture += pe.sets; }));
     assert.ok(posture >= 25, `${id} has ${posture} posture sets`);
-    assert.ok(A0.WM_BLOCKS[id].days.upperA.ex.some(pe => pe.exerciseId === "facePull"), id + " face pull on Upper A");
+    assert.ok(A0.WM_BLOCKS[id].days.upperA.ex.some(pe => A0.wmEx(pe.exerciseId).posture), id + " a loaded posture lift on Push day");
+    assert.ok(!A0.WM_BLOCKS[id].days.upperA.ex.some(pe => pe.exerciseId === "facePull"), id + " face pulls belong on Pull day, not Push");
     assert.ok(A0.WM_BLOCKS[id].days.lowerB.ex.some(pe => pe.exerciseId === "farmerCarry"), id + " carry on Lower B");
   });
   assert.equal(JSON.stringify(A0.WM_LAYOUTS).match(/posture/gi), null);     // no dedicated posture day in any layout
