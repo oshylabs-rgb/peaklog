@@ -1427,60 +1427,50 @@ function viewToday(root){
   const t=S.targets;
   const planned=tplFor(date);
 
-  // goal countdown
-  const daysLeft=Math.max(0,daysBetween(date,S.profile.goalDate));
+  // the bulk at a glance: where you are and whether the weight is moving the right way
   const latest=latestBody();
   const proj=projection();
-
   const c0=el("div",{class:"card"});
-  c0.appendChild(el("h2",{html:`Goal <span class="sub">${daysLeft} days left</span>`}));
+  c0.appendChild(el("h2",{html:`Bulk <span class="sub">${latest?"weighed "+fmtNice(latest.date):"no weigh-in yet"}</span>`}));
   const g=el("div",{class:"grid3"});
   g.append(
     stat("Weight",latest?latest.weight:"--","kg"),
-    stat("Body fat",latest&&latest.bodyFat!=null?latest.bodyFat:"--","%"),
-    stat("Target",TARGET_WEIGHT,"kg by "+fmtNice(GOAL.date))
+    stat("Body fat",(()=>{const r=S.bodyLog.slice().reverse().find(x=>x.bodyFat!=null);return r?r.bodyFat:"--";})(),"%"),
+    stat("Trend",proj.ok?((proj.ratePerWeek>=0?"+":"")+round(proj.ratePerWeek,2)):"--","kg/wk")
   );
   c0.appendChild(g);
-  if(proj.ok){
-    const f=el("div",{class:"flag "+proj.cls,style:"margin-top:10px"});
-    f.append(el("div",{class:"dot"}),el("div",null,proj.msg));
-    c0.appendChild(f);
-  }
+  c0.appendChild(el("div",{class:"small muted",style:"margin-top:8px"},
+    proj.ok?(proj.ratePerWeek<BULK_RATE.lo?"Too flat to grow — eat a little more.":proj.ratePerWeek<=BULK_RATE.hi?"Gaining inside the lean band (0.15–0.5 kg a week). Keep it there.":"Gaining faster than 0.5 kg a week — pull ~150 kcal back.")
+      :"Log two weigh-ins and the trend appears here."));
+  {const today=S.bodyLog.find(b=>b.date===date);
+   const wrow=el("div",{class:"wsctl",style:"margin-top:10px"});
+   const wi=el("input",{type:"number",inputmode:"decimal",class:"wsw",placeholder:latest?String(latest.weight):"kg"});
+   if(today)wi.value=today.weight;
+   const ok=el("button",{class:"btn sm"},today?"Update":"Log weight");
+   ok.onclick=()=>{const wt=num(wi.value);if(!wt){toast("Enter weight");return;}
+     const e=S.bodyLog.find(x=>x.date===date);
+     if(e)e.weight=wt;else S.bodyLog.push({date:date,weight:wt,bodyFat:null,note:""});
+     S.bodyLog.sort((a,b)=>a.date<b.date?-1:1);save();toast("Weight logged");render(true);};
+   wrow.append(el("div",{class:"small muted",style:"min-width:54px"},today?"Today":"Today?"),wi,el("div",{class:"small muted"},"kg"),ok);
+   c0.appendChild(wrow);}
   root.appendChild(c0);
-
-  // active phase (phase plan)
-  const ph=activePhase(date);
-  if(ph){
-    const di=daysBetween(ph.start,date)+1, dtot=daysBetween(ph.start,ph.end)+1;
-    const cp=el("div",{class:"card"});
-    cp.appendChild(el("h2",{html:`Phase — ${ph.label} <span class="sub">day ${di} of ${dtot}</span>`}));
-    const pg=el("div",{class:"grid2"});
-    pg.append(stat("Calories",ph.targets.kcal,"kcal"),stat("Protein",ph.targets.protein,"g"),
-              stat("Carbs",ph.targets.carbs,"g"),stat("Fat",ph.targets.fat,"g"));
-    cp.appendChild(pg);
-    cp.appendChild(el("div",{class:"small muted",style:"margin-top:8px"},"Fasting: "+ph.fasting));
-    root.appendChild(cp);
-  }
 
   // workout module — today's session card (start / resume, fast-day lock)
   root.appendChild(wmTodayCard(date));
 
-  // today's session
-  const c1=el("div",{class:"card"});
-  c1.appendChild(el("h2",{html:`Today — ${DOW_NAMES[dow(date)]} <span class="sub">${planned.type}</span>`}));
-  const sub=el("div",{class:"spread"});
-  const left=el("div");
-  left.appendChild(el("div",null,w.exercises.length?`${w.exercises.length} exercises planned`:"No lifting today"));
-  if(w.cardio)left.appendChild(el("div",{class:"small muted"},`Cardio: ${w.cardio.type} (${w.cardio.min} min)`));
-  const goB=el("button",{class:"btn sm"},w.completed?"View":"Log workout");
-  goB.onclick=()=>{cursor=date;route="workout";render();};
-  sub.append(left,goB);
-  c1.appendChild(sub);
-  root.appendChild(c1);
-
   // weekly snapshot — last completed week (this week if there's nothing from last week yet)
   {const thisMon=mondayOf(date),last=addDays(thisMon,-7);
-   root.appendChild(snapshotCard(weekSnapshot(last,true).verdict==="none"?thisMon:last,true));}
+   const m=weekSnapshot(last,true).verdict==="none"?thisMon:last,sn=weekSnapshot(m,true),ui=SNAP_UI[sn.verdict];
+   if(sn.verdict!=="none"){
+     const sc=el("div",{class:"card",style:"cursor:pointer"});
+     const row=el("div",{class:"spread"});
+     row.append(el("div",{style:"font-weight:800;font-size:18px;color:"+ui.col},`${ui.sym} ${ui.word}`),
+       el("div",{class:"small muted"},(m===thisMon?"this week":"last week")+" ›"));
+     sc.appendChild(row);
+     sc.appendChild(el("div",{class:"small",style:"margin-top:3px"},sn.headline));
+     sc.onclick=()=>{weekCursor=m;route="review";render();};
+     root.appendChild(sc);
+   }}
 
   // nutrition quick
   const c2=el("div",{class:"card"});
@@ -1535,7 +1525,50 @@ function suppRow(s,sup,date,after){
    ============================================================ */
 function viewWorkout(root){
   dayNav(root,()=>render());
-  const date=cursor;const w=getWorkout(date);
+  const date=cursor;
+  const planned=tplFor(date);
+  // sessions logged on the session screen for this day
+  const sessions=Object.values(S.wm.sessions).filter(s=>s.date===date&&s.endedAt).sort((a,b)=>a.startedAt<b.startedAt?-1:1);
+  sessions.forEach(sess=>{
+    const day=wmSessionDay(sess),c=el("div",{class:"card"});
+    const dur=round((Date.parse(sess.endedAt)-Date.parse(sess.startedAt))/60000);
+    c.appendChild(el("h2",{html:`${day.label} <span class="sub">${dur} min · ${round(wmSessionVolume(sess)).toLocaleString()} kg</span>`}));
+    if(day.type==="lift"){
+      const seen={};
+      (sess.plan||day.exercises).forEach(pe=>{
+        if(seen[pe.exerciseId])return;seen[pe.exerciseId]=1;
+        const ex=wmEx(pe.exerciseId),logs=wmLogsFor(sess.id,ex.id);
+        const r=el("div",{class:"meal"});const info=el("div");
+        info.append(el("div",{class:"mn"},ex.name),el("div",{class:"mm"},logs.length?`${wmKgLabel(ex,logs[logs.length-1].weightKg)} × ${logs.map(l=>l.reps).join(" · ")}${ex.unit==="s"?" s":""}`:"skipped"));
+        r.appendChild(info);c.appendChild(r);
+      });
+    } else {
+      const cl=S.wm.cardioLogs.find(l=>l.sessionId===sess.id);
+      c.appendChild(el("div",{class:"small muted"},cl?`${cl.durationMin} min${cl.avgPacePer500m?" · avg "+cl.avgPacePer500m+" /500m":""}`:"logged"));
+    }
+    root.appendChild(c);
+  });
+  if(date===todayISO()&&!sessions.length&&planned.exercises.length){
+    const c=el("div",{class:"card"});
+    c.appendChild(el("h2",{html:`${DOW_NAMES[dow(date)]} <span class="sub">${planned.type}</span>`}));
+    c.appendChild(el("div",{class:"small muted",style:"margin-bottom:10px"},"Nothing logged yet. The session screen logs sets in a tap or two."));
+    const b=el("button",{class:"btn full"},"Start today's session");
+    b.onclick=()=>{route="today";render();wmStartSession(wmDayIdFor(date));};
+    c.appendChild(b);root.appendChild(c);
+  }
+  // the manual log (legacy days, extra lifts you add yourself) stays below, folded unless it holds something
+  const w=S.workouts[date]||null;
+  const hasManual=w&&((w.exercises||[]).some(e=>(e.sets||[]).some(s=>s.reps))||w.notes||w.rpe||(w.cardio&&w.cardio.actualMin));
+  if(!hasManual){
+    const more=el("div",{class:"card"});
+    expander(more,sessions.length?"add a note, RPE or an extra lift":"log by hand instead",()=>{const box=el("div");viewWorkoutManual(box,date);return box;},!sessions.length&&!planned.exercises.length);
+    root.appendChild(more);
+    return;
+  }
+  viewWorkoutManual(root,date);
+}
+function viewWorkoutManual(root,date){
+  const w=getWorkout(date);
   const planned=tplFor(date);
 
   const head=el("div",{class:"card"});
@@ -2281,7 +2314,7 @@ function wmTodayCard(date){
   c.appendChild(el("div",{style:"font-weight:700"},day.label));
   if(blk&&day.type==="lift"){
     const cue=WM_WEEK_CUES[blk.week-1];
-    c.appendChild(el("div",{class:"small",style:"color:var(--acc2);margin-top:2px"},`Week ${blk.week} — ${cue.name}: ${cue.effort}`));
+    c.appendChild(el("div",{class:"small",style:"color:var(--acc2);margin-top:2px"},cue.effort));
   }
   let sub="";
   if(day.type==="lift"){
@@ -2292,9 +2325,14 @@ function wmTodayCard(date){
   if(day.cardio&&day.cardio.machine==="rower")
     c.appendChild(el("div",{class:"small",style:"color:var(--acc2)"},"Pace target: "+wmRowerTargetLabel()));
   if(day.type==="lift"&&day.exercises.length){
-    c.appendChild(el("div",{class:"sublab"},"Today's exercises — sets × reps @ weight"));
-    c.appendChild(wmPrescriptionList(day));
-    c.appendChild(el("div",{class:"hint",style:"margin:6px 0 0"},wmInBodyLine()));
+    const ul=el("div",{style:"margin-top:8px"});
+    day.exercises.forEach(pe=>{
+      const ex=wmEx(pe.exerciseId),range=wmRange(pe,ex),pr=wmPrescription(ex.id,range,{deload:!!day.deload});
+      const r=el("div",{class:"spread small",style:"padding:5px 0;border-bottom:1px solid var(--line)"});
+      r.append(el("div",null,ex.name+" "),el("div",{class:"muted",style:"white-space:nowrap"},`${pe.sets} × ${range[0]}–${range[1]} · ${wmKgLabel(ex,pr.kg)}`));
+      ul.appendChild(r);
+    });
+    c.appendChild(ul);
   } else if(day.type==="rest"&&blk){
     c.appendChild(el("div",{class:"small",style:"margin-top:6px"},"Nothing to lift. Muscle is built in recovery: hit your calories and protein, sleep 7–9 hours. An easy walk is fine."));
   }
@@ -2318,7 +2356,7 @@ function wmTodayCard(date){
     const b2=el("button",{class:"btn sm sec"},"Start HIIT (10 × 30/90)");b2.onclick=()=>wmStartSession("tmHiit");
     row.append(b1,b2);
   } else {
-    const b=el("button",{class:day.type==="rest"?"btn sm sec":"btn sm"},day.type==="rest"?"Optional easy walk (30 min)":"Start session");
+    const b=el("button",{class:day.type==="rest"?"btn sm sec":"btn full"},day.type==="rest"?"Optional easy walk (30 min)":"Start session");
     b.onclick=()=>wmStartSession(day.type==="rest"?"optZ2":dayId);
     row.appendChild(b);
     if(day.type==="lift"){ // cardio is optional on a bulk, never a replacement for the lifting
@@ -2712,8 +2750,7 @@ function viewPlanProgramme(root){
     const wc=el("div",{class:"card"}),L=wmLayoutFor(today),rs=wmRegionSets(b.block.id);
     wc.appendChild(el("h2",{html:`Your week <span class="sub">layout ${L.half} · rest ${L.rest==="both"?"Fri + Sun":L.rest==="fri"?"Friday":"Sunday"}</span>`}));
     wc.appendChild(el("div",{class:"small"},wmLayoutText(L.half,L.rest)));
-    wc.appendChild(el("div",{class:"small muted",style:"margin-top:6px"},
-      `Legs are trained three times a week (${rs.legs} sets) because your InBody shows your lower body is behind your upper body. The upper body gets three sessions (${rs.upper} sets).`));
+    wc.appendChild(el("div",{class:"small muted",style:"margin-top:6px"},`Legs three times a week (${rs.legs} sets), upper body three times (${rs.upper} sets).`));
     const toNext=b.week<=WM_HALF_WEEKS?WM_HALF_WEEKS-b.week+1:b.weeks-b.week+1;
     wc.appendChild(el("div",{class:"small",style:"margin-top:6px;color:var(--acc2)"},
       b.week<=WM_HALF_WEEKS?`In ${toNext} week${toNext===1?"":"s"} the layout switches to B: the three leg sessions swap days and Push and Pull swap days.`
@@ -2729,7 +2766,7 @@ function viewPlanProgramme(root){
       });
       row.appendChild(seg);wc.appendChild(row);
     });
-    wc.appendChild(el("div",{class:"hint",style:"margin:8px 0 0"},"Rest days are only ever Friday or Sunday, and they alternate week by week. Change a week here and only what's planned changes — anything you've already logged stays. \"Fri + Sun\" drops the shoulders + arms day for a five-day week."));
+    wc.appendChild(el("div",{class:"hint",style:"margin:8px 0 0"},"Fri + Sun drops the shoulders + arms day for a five-day week. Logged sessions are never changed."));
     root.appendChild(wc);
   }
 
@@ -2739,8 +2776,7 @@ function viewPlanProgramme(root){
    const g=el("div",{class:"grid3"});
    g.append(stat("Lean mass",round(wmLBM(ib),1),"kg"),stat("Weight",ib.weightKg,"kg"),stat("Body fat",ib.bodyFatPct,"%"));
    lc.appendChild(g);
-   lc.appendChild(el("div",{class:"small muted",style:"margin-top:8px"},
-     "Every lift's starting weight is a share of your lean body mass (heavier compounds a larger share, accessories a smaller one), set to leave 2–3 reps in the tank. Reps come from the block. After your first session on a lift, your logged numbers take over and the weight moves by double progression: top of the rep range on every set, then the smallest jump."));
+   lc.appendChild(el("div",{class:"small muted",style:"margin-top:8px"},"Starting weights come from your lean mass. Once you've logged a lift, your own numbers take over: hit the top of the rep range on every set and the weight goes up next time."));
    const ub=el("button",{class:"btn sm sec",style:"margin-top:10px"},"Update my InBody scan");
    ub.onclick=()=>{route="data";render();};
    lc.appendChild(ub);
@@ -2750,7 +2786,7 @@ function viewPlanProgramme(root){
   if(b){
     const rm=el("div",{class:"card"});
     rm.appendChild(el("h2",{html:`Roadmap <span class="sub">3 blocks × 6 weeks, then it repeats</span>`}));
-    rm.appendChild(el("div",{class:"hint"},"Each block is five loading weeks plus a deload, and the week's layout changes after three weeks. Every week has one rest day, Friday or Sunday (shown here with Sunday off; Friday-off weeks move the Upper day to Sunday). The deload is planned — the weekly snapshot never counts it as going backward. When the cycle repeats, every weight is re-set from what you actually lifted in the block before."));
+    rm.appendChild(el("div",{class:"hint"},"Five loading weeks and a deload per block. When the cycle repeats, every weight is re-set from what you actually lifted."));
     for(let k=0;k<3;k++){
       const bl=WM_BLOCKS[WM_BLOCK_ORDER[(((b.index+k)%3)+3)%3]];
       const st=addDays(b.startDate,k*42);
@@ -2758,31 +2794,17 @@ function viewPlanProgramme(root){
       const h=el("div",{class:"pd-h"});
       h.append(el("div",{class:"dn"},bl.name),el("div",{class:"tp"},k===0?"NOW":fmtNice(st)));
       pd.appendChild(h);
-      pd.appendChild(el("div",{class:"small muted"},`${fmtNice(st)} → ${fmtNice(addDays(st,41))} · ${bl.tag}`));
-      pd.appendChild(el("div",{class:"small",style:"margin-top:4px"},bl.focus));
-      pd.appendChild(el("div",{class:"small muted",style:"margin-top:4px"},"Weeks 1–3: "+wmLayoutText("A","sun")));
-      pd.appendChild(el("div",{class:"small muted",style:"margin-top:2px"},"Weeks 4–6: "+wmLayoutText("B","sun")));
+      pd.appendChild(el("div",{class:"small muted"},`${fmtNice(st)} → ${fmtNice(addDays(st,41))} · ${bl.focus}`));
       rm.appendChild(pd);
     }
     root.appendChild(rm);
 
-    // squats, deadlifts, posture — where they live this block
-    const pk=el("div",{class:"card"});
-    pk.appendChild(el("h2",{html:`Squats, deadlifts, posture <span class="sub">${b.block.name} block</span>`}));
-    const names=(ids,flt)=>ids.map(id=>b.block.days[id].ex.map(pe=>wmEx(pe.exerciseId)).filter(flt).map(e=>e.name)).flat();
-    const sq=names(["lowerA","lowerB","legsC"],e=>/squat|lunge/i.test(e.name)||e.id==="bulgarian");
-    const dl=names(["lowerA","lowerB","legsC"],e=>e.id==="deadlift"||e.id==="sldl"||e.id==="trapDL");
-    const post=wmPostureSets(b.block.id);
-    [["Squats and single-leg work",sq.join(" • ")],["Deadlifts",dl.join(" • ")],
-     ["Posture, loaded",`${post} sets a week inside the lift days: face pulls, rows, rear delts, hip thrusts, hinges and a farmer's carry. No separate posture day and nothing to do at home.`]]
-      .forEach(([k,v])=>{const r=el("div",{class:"meal"});const info=el("div");info.append(el("div",{class:"mn"},k),el("div",{class:"mm"},v));r.appendChild(info);pk.appendChild(r);});
-    root.appendChild(pk);
   }
 
   // this week, day by day, with the current prescribed weights
   const card=el("div",{class:"card"});
   card.appendChild(el("h2",{html:`This week <span class="sub">${fmtNice(mon)} → ${fmtNice(addDays(mon,6))}</span>`}));
-  card.appendChild(el("div",{class:"hint"},"InBody-anchored starting weights, double progression, 45-minute lift cap. A new exercise starts as a calibration — adjust it freely and the engine re-anchors to what you log."+(wmPhase2(today)?" Phase 2 adds +1 set per exercise.":"")));
+  card.appendChild(el("div",{class:"hint"},"Tap a day to see its lifts and weights."));
   for(let i=0;i<7;i++){
     const date=addDays(mon,i),day=wmDay(wmDayIdFor(date),date);
     const pd=el("div",{class:"plan-day"+(i===dow(today)?" today":"")});
@@ -2793,8 +2815,8 @@ function viewPlanProgramme(root){
     pd.appendChild(el("div",null,day.label));
     if(day.type==="lift"){
       pd.appendChild(el("div",{class:"small",style:"color:var(--acc2)"},
-        `${wmSetQueue(day,date).length} sets · "SS" pairs alternate set for set · about ${wmEstimateMin(day,date)} min`));
-      expander(pd,"exercises, sets × reps, weights",()=>wmPrescriptionList(day),true);
+        `${wmSetQueue(day,date).length} sets · about ${wmEstimateMin(day,date)} min`));
+      expander(pd,"exercises, sets × reps, weights",()=>wmPrescriptionList(day),false);
     } else if(day.cardio){
       pd.appendChild(el("div",{class:"small muted"},day.cardio.protocol+" · "+day.cardio.durationMin+" min"));
       if(day.cardio.machine==="rower")
@@ -2945,6 +2967,11 @@ function snapDays(mon){
 // the first date anything was ever logged — sessions planned before that were never "due"
 function snapFirstDate(sets){
   let f=null;const upd=d=>{if(d&&(!f||d<f))f=d;};
+  // the six-day plan only exists from the rotation's first week: earlier weeks hold history, not misses
+  const a=S.wm.rotation&&S.wm.rotation.anchors&&S.wm.rotation.anchors[0];
+  if(a){let g=null;const upd2=d=>{if(d&&(!g||d<g))g=d;};sets.forEach(s=>upd2(s.date));
+    S.wm.cardioLogs.forEach(c=>{const s=S.wm.sessions[c.sessionId];if(s)upd2(s.date);});
+    return g==null?null:(g<a.startDate?a.startDate:g);}
   sets.forEach(s=>upd(s.date));
   S.wm.cardioLogs.forEach(c=>{const s=S.wm.sessions[c.sessionId];if(s)upd(s.date);});
   for(const d in S.workouts){const w=S.workouts[d];if(w&&w.cardio&&num(w.cardio.actualMin)>0)upd(d);}
