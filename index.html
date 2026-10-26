@@ -565,6 +565,7 @@ const WM_EXERCISES=[
   {id:"benchBB",  name:"Barbell Bench Press",       mg:"Chest",     group:"push",equipment:"barbell",  incrementKg:2.5,repRange:[6,10], lbmMult:0.9},
   {id:"ohpDB",    name:"Seated DB Shoulder Press",  mg:"Shoulders", group:"push",equipment:"dumbbell", incrementKg:2.5,repRange:[6,10], lbmMult:0.55,perHand:true},
   {id:"ohpBB",    name:"Barbell Overhead Press",    mg:"Shoulders", group:"push",equipment:"barbell",  incrementKg:2.5,repRange:[5,8],  lbmMult:0.7},
+  {id:"benchDB",  name:"Flat DB Press",               mg:"Chest",     group:"push",equipment:"dumbbell", incrementKg:2.5,repRange:[6,10], lbmMult:0.75,perHand:true,seedFrom:{id:"benchBB",ratio:0.42}},
   {id:"inclineDB",name:"Incline DB Press",          mg:"Chest",     group:"push",equipment:"dumbbell", incrementKg:2.5,repRange:[6,10], lbmMult:0.7, perHand:true},
   {id:"weightedDips",name:"Weighted Dips",          mg:"Triceps",   group:"push",equipment:"bodyweight",incrementKg:2.5,repRange:[6,10],startKg:0,bwBased:true},
   {id:"cableFly", name:"Cable Fly",                 mg:"Chest",     group:"push",equipment:"cable",    incrementKg:2.5,repRange:[10,15],lbmMult:0.32},
@@ -712,9 +713,9 @@ const WM_BLOCKS={
     why:"Builds muscle while conditioning tendons and your lower back for the heavy block. Add weight only when you top the range on every set.",
     days:{
       upperA:{label:"Push — chest + posture",ex:[
-        wmSlot("benchBB",3,30,"A1"),wmSlot("cableFly",3,90,"A1"),
+        wmSlot("benchBB",3,120),wmSlot("benchDB",3,120),
         wmSlot("ohpDB",3,30,"A2"),wmSlot("csRow",3,90,"A2"),
-        wmSlot("inclineDB",3,120),
+        wmSlot("inclineDB",3,90),
         wmSlot("latRaise",3,60,"A3"),wmSlot("triPush",3,60,"A3")]},
       lowerA:{label:"Legs 1 — squat + stiff-leg deadlift",ex:[
         wmSlot("squatBB",3,120),wmSlot("sldl",3,120),wmSlot("legPress",3,120),
@@ -743,9 +744,9 @@ const WM_BLOCKS={
     why:"After Build your joints and tendons can take heavier loads. Getting stronger here raises the weights you can use for muscle-building reps next block.",
     days:{
       upperA:{label:"Push — heavy chest + posture",ex:[
-        wmSlot("benchBB",4,30,"A1",[4,6]),wmSlot("cableFly",4,90,"A1",[8,12]),
-        wmSlot("ohpBB",3,30,"A2"),wmSlot("csRow",3,90,"A2",[8,12]),
-        wmSlot("weightedDips",3,120),
+        wmSlot("benchBB",4,150,null,[4,6]),wmSlot("benchDB",3,120),
+        wmSlot("ohpBB",3,30,"A2"),wmSlot("csRow",3,75,"A2",[8,12]),
+        wmSlot("weightedDips",2,90),
         wmSlot("latRaise",3,60,"A3",[8,12]),wmSlot("triPush",3,60,"A3",[8,12])]},
       lowerA:{label:"Legs 1 — heavy squat + stiff-leg deadlift",ex:[
         wmSlot("squatBB",4,180,null,[4,6]),wmSlot("sldl",3,150,null,[6,8]),
