@@ -22,11 +22,13 @@ function makeEl() {
 
 const SHIM = `
 ;globalThis.__app={
-  getS:()=>S, setS:(x)=>{S=x;}, save:()=>save(), load, migrate, KEY,
-  WM_EXERCISES,WM_DAYS,WM_WEEK,WM_LAYOUTS,WM_HALF_WEEKS,wmDayIdFor,wmLayoutFor,wmRestKind,wmDefaultRest,wmSetRest,wmRegionSets,WM_BLOCKS,WM_BLOCK_ORDER,WM_BLOCK_WEEKS,WM_WEEK_CUES,
-  wmEx,wmBlockAt,wmDay,wmSessionDay,wmSessionsFor,wmPrescription,wmSets,wmSetQueue,wmEstimateMin,
+  getS:()=>S, setS:(x)=>{S=x;}, save:()=>save(), load, migrate, KEY, BACKUP_KEY, keepBackup,
+  PROG,progAt,progStart,progOptional,wmWeekDays,wmDayIdFor,wmDay,wmSessionDay,
+  WM_EXERCISES,WM_DAYS,SUPPS,SEED_FOODS,TARGETS,PLAN_RULES,RECOVERY,BULK_RATE,
+  wmEx,wmSessionsFor,wmPrescription,wmSets,wmSetQueue,wmEstimateMin,wmIsFastDay,wmCanStart,wmSessionVolume,wmRowerTargetSec,wmNextRowerTarget,wmPaceStr,wmParseTime,wmLBM,wmEstimateKg,
   wmCreateSession,wmFlagRemaining,wmRange,wmE1RM,wmEffKg,wmPhase2,wmRound,
-  tplFor,getWorkout,weekSnapshot,snapSets,snapFirstDate,snapKey,isPristine,
+  viewWmSession,tplFor,getWorkout,weekSnapshot,snapSets,snapFirstDate,snapKey,isPristine,
+  trend2w,calAdvice,projection,waterTarget,getNutrition,nutTotals,
   wmGroups,wmNextSet,wmGroupDone,wmWeightFor,wmSuggestReps,wmRepChips,wmLogSet,wmUndoSet,wmUndoLast,wmLogRemaining,wmLoggedSet,legacyRange,
   wmSetDraft:(k,v)=>{wmDrafts[k]=v;},wmClearDrafts:()=>{wmDrafts={};},
   mondayOf,addDays,dow,todayISO,daysBetween

@@ -1,11 +1,44 @@
 # PeakLog — project memory
 
-Last updated: 20 Oct 2026 (legs 3x, Fri/Sun rest, layouts). Single-file static PWA (`index.html`), localStorage key `peaklog.v1`, no backend. Deploys from GitHub to Vercel (see `DEPLOY.md`). Never store secrets here.
+Last updated: 9 Nov 2026 (13-week upper/lower lean bulk, planRev 11, cache peaklog-v13). Single-file static PWA (`index.html`), localStorage key `peaklog.v1`, no backend. Deploys from GitHub to Vercel (see `DEPLOY.md`). Never store secrets here.
 
 ## Current objective
-Rotating training blocks that suit Arnold's body, deadlifts and squats properly programmed, loaded posture work inside the lift days, and a weekly "growing or slipping?" snapshot — without losing any logged data.
+Run the **13-week upper/lower lean bulk** (Tue 10 Nov 2026 to Tue 9 Feb 2027) from the app: the right session on the right day, start loads, double progression, nutrition targets, supplements and recovery rules as text, no timers, and every logged workout, meal, weigh-in and tick kept.
 
-## PRD — rotation + snapshot (19 Oct 2026)
+## PRD — 13-week programme (9 Nov 2026, on branch `feature/upper-lower-bulk-nov-2026`, not pushed or deployed)
+- **Problem.** The 6-week rotation (Build/Strength/Volume, layouts A/B, Fri/Sun rest chooser, InBody-estimated loads) no longer matched the plan Arnold wants to follow, and workouts ran timers (rest timer, session clock, 45-minute auto-end) he does not want.
+- **User.** One lifter, desk job, bulking for 13 weeks with an InBody scan on 10 Nov, 8 Dec, 5 Jan and 9 Feb.
+- **Success.** 10 Nov shows Upper A week 1 with DB Bench Press 3 x 6-10 at 36 kg each; 11 Nov Lower A (Hack Squat first); 12 Nov rest + Zone 2; 14 Nov Lower B; 15 Nov Upper C; 24 Dec rest (deload); 2 Feb taper Upper A. No RDL, hip thrust or deadlift in any planned session. Targets 2900 kcal / 165 P / 80 F / 380 C. No timers. Old logs intact. Cache name changed, offline works.
+- **Scope.** Programme as data (`PROG`), calendar by weekday with date overrides, new progression engine, nutrition/supplement/recovery text, timer removal, planRev-11 migration with backup, tests, service worker bump. UI unchanged apart from text, data and the removed timer elements.
+- **Constraints.** Plain static page, no new libraries, no build step. Programme weeks run Tuesday to Monday; the start date is never snapped to Monday. No push, no merge, no deploy from the build session: Arnold reviews the diff and deploys.
+
+## Decisions (13-week programme, 9 Nov 2026)
+- **Programme data lives in `PROG`** (phases, day map, overrides, set columns A/B/C, rest, RIR, notes). Rep range, start load and equipment type live on the exercise in `WM_EXERCISES` (`eq` db/mc/bb/bw, `incrementKg`, `grid`). The brief is typed into `tests/programme.test.mjs` independently, so a typo in the data fails a test.
+- **Calendar.** `progAt(date)` gives week and phase from the start date (Tuesday). `wmDayIdFor(date)`: final day 9 Feb, then date overrides (week 8 holiday plan), then the deload week's own weekday map (Tue Upper A, Wed Lower A, optional Sat Upper B, all else rest), then the base weekday map. After 9 Feb and before 10 Nov: plain rest. Review weeks stay Monday-Sunday; a review week reads its programme phase from its Tuesday.
+- **Interpretation: taper top set.** "One top set to RIR 0 to 1 at week-12 load" on the first exercise of each day is read as one of that exercise's 60%-of-column-C sets, not as the only set. Other taper lifts: RIR 3.
+- **Interpretation: RIR shown.** Intro weeks show the week's RIR (3, then 2 to 1) unless the lift asks for more (external rotation, RIR 3); build and peak show the lift's own RIR; deload 4; taper 3.
+- **Interpretation: isolation.** `iso:true` on single-joint lifts (raises, curls, extensions, leg curl/extension, calves, flies, rear delt, pec deck, straight-arm, skull crushers). Face pulls and external rotation are not flagged. Only Block 2 weeks show the lengthened-partials note.
+- **Progression.** Based on the last ended, non-deload, non-taper session of that lift (session screen or Workout-tab log, matched by name, aliases included). All logged sets at the top of the range and none skipped → one step; else same weight and lowest set + 1; reps down two sessions running at the same weight (average reps) → 7.5% off, rounded to the grid. Grid: dumbbell 2 kg, machine/cable/barbell/bodyweight 2.5 kg, Hack Squat and Leg Press 5 kg (step 10). No log → start load. The old "InBody-estimated start" and "re-set load on block change" logic is gone for programme lifts (kept only for retired lifts).
+- **Names.** Exact matches reuse the old id (Incline DB Press, Lat Pulldown, Incline DB Curl, Hack Squat, Leg Press, Leg Extension, calf raises, Bulgarian Split Squat, Cable Fly, Seated DB Shoulder Press, Seated Cable Row, Hammer Curl, Face Pulls, Lateral Raises). Aliases for history: "Hack Squat / Leg Press" = Leg Press; old Pull-up (weighted/assisted) = Weighted Pull-up; Overhead Triceps Extension = Overhead Cable Triceps Extension; Rear Delt Fly = Reverse Pec Deck. Not aliased (different lift or equipment): Chest-Supported Row (machine) vs Chest-Supported DB Row, Lying vs Seated Leg Curl, Flat DB Press vs DB Bench Press, Lateral Raise (DB) vs Cable Lateral Raise.
+- **Timers removed.** No `setInterval`, rest timer, session clock or 45-minute cap. The stored `startedAt`/`endedAt` stay as session metadata; the finished-session summary still shows a static "Duration" computed from them. `buzz()` (a short vibration on tap) stays. The only `setTimeout`s left are the toast fade and scroll-into-view.
+- **Nutrition.** `TARGETS` 2900/165/80/380, carb ceiling 430 (target + 50, same gap as before), water 3000 plus 500 on sauna days (per-day `sauna` flag on the nutrition day, toggled by one new button on the Water card). Calorie advice reads the last 14 days of weigh-ins (`trend2w`), band 0.10-0.25 kg/week, +150 under 0.10, -150 over 0.35, none before programme week 3, body fat 15% stops the surplus. Quick-add foods are the five new meals; the old default foods are removed by update 11, foods added by hand stay.
+- **Supplements.** Four rows. Ids reused from the old stack by slot (`rdust` morning, `d3k2` first meal, `hdust` training, `mag` evening) so older ticks keep meaning; adherence counts only ids in the current list.
+- **Recovery text** (cold, sauna, sleep) is in `RECOVERY` and shown with the other rules on Plan. There is no tickable sleep item in this build; it is a rule line.
+- **Migration 11.** Backs up the raw store to `peaklog.backup.pre-upper-lower-bulk` once, drops only pristine Workout-tab days dated today or later, sets the new targets (the old ones stay in the backup), stores `wm.programme`, freezes `plan` onto any old lift session that lacked one, swaps the quick-add foods. Idempotent by version. Import runs the same migration after backing up the device's data.
+- **Supersedes** the rotation, layout A/B, Fri/Sun rest chooser, 45-minute cap, InBody-driven start loads and the "never touch targets" guard below (Arnold asked for new targets on 9 Nov). Old decisions are kept below as history.
+
+## Validation (9 Nov 2026)
+- `node tests/*.test.mjs`: programme 25, progression 12, migration 15, timers 7, logging 13, workout-module 11, all pass.
+- Chromium (Playwright): every tab and Plan sub-tab on 10 Nov, 12 Nov, 24 Dec, 2 Feb: zero console errors; 3 sets logged, reload, finish, reopen, reset all work; a fake clock jumped 3 hours with a session open and nothing auto-ended; old planRev-10 data migrated with the backup key, 36 sets and 2 sessions kept, reload identical; service worker installed, old caches deleted, offline reload works.
+
+## Known limitations / next actions (13-week programme)
+- Start loads marked "Estimate" are guesses until the first log.
+- The programme ends 9 Feb 2027; after it every day is plain rest until a new plan is added.
+- The Today card's "Optional easy walk" and "Optional Z2" buttons still start the treadmill logger; the bike sessions on Thu and Mon are logged as minutes on the Workout tab.
+- Older Review weeks show supplement adherence against the new four-row list.
+
+## History (before 9 Nov 2026): rotation build
+### PRD — rotation + snapshot (19 Oct 2026)
 - **Problem.** The programme was one static week. No conventional deadlift, RDL as the only hinge, squats thin on the legacy log, posture work not loaded, and no single answer to "am I going backward?".
 - **User.** One lifter, 37, ~78 kg / ~14% body fat, desk job, 45-minute lift cap, Mon/Wed/Fri/Sat lifts + rower Tue + treadmill Z2 Thu + Sunday rest.
 - **Success.** Blocks rotate by date with no manual step; every lift day fits 45 min; every block has squat + deadlift + posture; weights re-set correctly at block changes; all prior data survives; the snapshot gives a verdict and the numbers behind it.
