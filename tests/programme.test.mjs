@@ -324,7 +324,7 @@ test("nutrition targets: 2900 kcal, 165 g protein, 80 g fat, 380 g carbs, water 
 });
 test("supplements: Space Goods coffee + creatine, D3/omega-3, Salte Electrolytes; no magnesium, cacao tea, MCT, ACV or keto items", () => {
   eq(A.SUPPS.map(s => [s.when, s.name]), [
-    ["Morning / pre-workout", "Space Goods coffee (before 13:00) + creatine 5 g"],
+    ["Morning / pre-workout", "Space Goods coffee (about 230 mg caffeine, before 13:00) + creatine 5 g"],
     ["First meal", "Vitamin D3 1000-2000 IU (Oct-Apr), Omega-3 1-2 g EPA+DHA (optional)"],
     ["Training / sauna", "Salte Electrolytes on sauna or heavy-sweat days; whey 25-40 g if needed for protein"]]);
   assert.ok(!/magnesium|cacao|cocoa/i.test(JSON.stringify(A.SUPPS)));
