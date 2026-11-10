@@ -1,5 +1,5 @@
-/* PeakLog service worker — offline-first cache of the app shell */
-const CACHE = "peaklog-v12";
+/* PeakLog service worker — offline-first cache of the app shell. Bump CACHE on every release so clients update; activate deletes the old caches. */
+const CACHE = "peaklog-v14";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", e => {

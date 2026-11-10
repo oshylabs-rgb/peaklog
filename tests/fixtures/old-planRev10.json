@@ -1,0 +1,1568 @@
+{
+ "version": 1,
+ "planRev": 10,
+ "profile": {
+  "height": 176,
+  "age": 37,
+  "sex": "male",
+  "goalDate": "2026-08-12",
+  "goalBF": null
+ },
+ "bodyLog": [
+  {
+   "date": "2026-06-10",
+   "weight": 79.4,
+   "bodyFat": 13.4,
+   "note": "InBody 580 baseline"
+  },
+  {
+   "date": "2026-07-16",
+   "weight": 80,
+   "bodyFat": null,
+   "note": "Phase 1 start — Fat Loss Sprint"
+  },
+  {
+   "date": "2026-10-05",
+   "weight": 78.4,
+   "bodyFat": 14.1,
+   "note": ""
+  },
+  {
+   "date": "2026-10-19",
+   "weight": 79.1,
+   "bodyFat": null,
+   "note": ""
+  },
+  {
+   "date": "2026-11-02",
+   "weight": 79.8,
+   "bodyFat": null,
+   "note": ""
+  }
+ ],
+ "inbody": [
+  {
+   "date": "2026-06-10",
+   "weight": 79.4,
+   "bodyFat": 13.4,
+   "fatMass": 10.6,
+   "smm": 39.5,
+   "ffm": 68.8,
+   "bmi": 25.6,
+   "vfa": 46.1,
+   "vfl": 4,
+   "bmr": 1856,
+   "whr": 0.88,
+   "score": 91
+  },
+  {
+   "date": "2026-09-20",
+   "weight": 78.6,
+   "bodyFat": 14,
+   "smm": 40.1,
+   "note": "fixture scan"
+  }
+ ],
+ "workouts": {
+  "2026-10-19": {
+   "type": "Push — chest + posture",
+   "planned": true,
+   "completed": false,
+   "exercises": [
+    {
+     "name": "Barbell Bench Press",
+     "mg": "Chest",
+     "target": "3x6-10",
+     "wt": 42.5,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "42.5"
+      },
+      {
+       "reps": "",
+       "weight": "42.5"
+      },
+      {
+       "reps": "",
+       "weight": "42.5"
+      }
+     ]
+    },
+    {
+     "name": "Incline DB Press",
+     "mg": "Chest",
+     "target": "3x6-10",
+     "wt": 17.5,
+     "perHand": true,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "17.5"
+      },
+      {
+       "reps": "",
+       "weight": "17.5"
+      },
+      {
+       "reps": "",
+       "weight": "17.5"
+      }
+     ]
+    },
+    {
+     "name": "Seated DB Shoulder Press",
+     "mg": "Shoulders",
+     "target": "3x6-10",
+     "wt": 12.5,
+     "perHand": true,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "12.5"
+      },
+      {
+       "reps": "",
+       "weight": "12.5"
+      },
+      {
+       "reps": "",
+       "weight": "12.5"
+      }
+     ]
+    },
+    {
+     "name": "Chest-Supported Row",
+     "mg": "Back",
+     "target": "3x10-15",
+     "wt": 30,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "30"
+      },
+      {
+       "reps": "",
+       "weight": "30"
+      },
+      {
+       "reps": "",
+       "weight": "30"
+      }
+     ]
+    },
+    {
+     "name": "Flat DB Press",
+     "mg": "Chest",
+     "target": "3x6-10",
+     "wt": 17.5,
+     "perHand": true,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "17.5"
+      },
+      {
+       "reps": "",
+       "weight": "17.5"
+      },
+      {
+       "reps": "",
+       "weight": "17.5"
+      }
+     ]
+    },
+    {
+     "name": "Lateral Raise",
+     "mg": "Shoulders",
+     "target": "3x10-15",
+     "wt": 8,
+     "perHand": true,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "8"
+      },
+      {
+       "reps": "",
+       "weight": "8"
+      },
+      {
+       "reps": "",
+       "weight": "8"
+      }
+     ]
+    },
+    {
+     "name": "Triceps Pushdown",
+     "mg": "Triceps",
+     "target": "3x10-15",
+     "wt": 20,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "20"
+      },
+      {
+       "reps": "",
+       "weight": "20"
+      },
+      {
+       "reps": "",
+       "weight": "20"
+      }
+     ]
+    }
+   ],
+   "cardio": null,
+   "rpe": "",
+   "notes": ""
+  },
+  "2026-10-06": {
+   "type": "Legs 2 (old)",
+   "planned": false,
+   "completed": true,
+   "exercises": [
+    {
+     "name": "Hack Squat / Leg Press",
+     "mg": "Quads",
+     "target": "3x6-10",
+     "wt": 120,
+     "perHand": false,
+     "added": false,
+     "prog": "",
+     "sets": [
+      {
+       "reps": "8",
+       "weight": "120"
+      },
+      {
+       "reps": "8",
+       "weight": "120"
+      },
+      {
+       "reps": "7",
+       "weight": "120"
+      }
+     ]
+    },
+    {
+     "name": "Face Pull",
+     "mg": "Rear Delts",
+     "target": "3x10-15",
+     "wt": 20,
+     "perHand": false,
+     "added": false,
+     "prog": "",
+     "sets": [
+      {
+       "reps": "12",
+       "weight": "20"
+      },
+      {
+       "reps": "12",
+       "weight": "20"
+      },
+      {
+       "reps": "11",
+       "weight": "20"
+      }
+     ]
+    },
+    {
+     "name": "Lateral Raise",
+     "mg": "Shoulders",
+     "target": "3x10-15",
+     "wt": 8,
+     "perHand": true,
+     "added": false,
+     "prog": "",
+     "sets": [
+      {
+       "reps": "14",
+       "weight": "8"
+      },
+      {
+       "reps": "13",
+       "weight": "8"
+      },
+      {
+       "reps": "12",
+       "weight": "8"
+      }
+     ]
+    }
+   ],
+   "cardio": null,
+   "rpe": "8",
+   "notes": "fixture: logged by hand"
+  },
+  "2026-11-04": {
+   "type": "Pull — back + posture",
+   "planned": true,
+   "completed": false,
+   "exercises": [
+    {
+     "name": "Pull-up (weighted/assisted)",
+     "mg": "Back",
+     "target": "3x6-10",
+     "wt": 0,
+     "perHand": false,
+     "added": true,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": ""
+      },
+      {
+       "reps": "",
+       "weight": ""
+      },
+      {
+       "reps": "",
+       "weight": ""
+      }
+     ]
+    },
+    {
+     "name": "Barbell Row",
+     "mg": "Back",
+     "target": "3x6-10",
+     "wt": 40,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "40"
+      },
+      {
+       "reps": "",
+       "weight": "40"
+      },
+      {
+       "reps": "",
+       "weight": "40"
+      }
+     ]
+    },
+    {
+     "name": "Seated Cable Row",
+     "mg": "Back",
+     "target": "3x10-15",
+     "wt": 45,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "45"
+      },
+      {
+       "reps": "",
+       "weight": "45"
+      },
+      {
+       "reps": "",
+       "weight": "45"
+      }
+     ]
+    },
+    {
+     "name": "Face Pull",
+     "mg": "Rear Delts",
+     "target": "3x10-15",
+     "wt": 20,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "20"
+      },
+      {
+       "reps": "",
+       "weight": "20"
+      },
+      {
+       "reps": "",
+       "weight": "20"
+      }
+     ]
+    },
+    {
+     "name": "DB Curl",
+     "mg": "Biceps",
+     "target": "3x10-15",
+     "wt": 10,
+     "perHand": true,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "10"
+      },
+      {
+       "reps": "",
+       "weight": "10"
+      },
+      {
+       "reps": "",
+       "weight": "10"
+      }
+     ]
+    },
+    {
+     "name": "Hammer Curl",
+     "mg": "Biceps",
+     "target": "3x10-15",
+     "wt": 10,
+     "perHand": true,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "10"
+      },
+      {
+       "reps": "",
+       "weight": "10"
+      },
+      {
+       "reps": "",
+       "weight": "10"
+      }
+     ]
+    },
+    {
+     "name": "Rear Delt Fly",
+     "mg": "Rear Delts",
+     "target": "3x10-15",
+     "wt": 15,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "15"
+      },
+      {
+       "reps": "",
+       "weight": "15"
+      },
+      {
+       "reps": "",
+       "weight": "15"
+      }
+     ]
+    }
+   ],
+   "cardio": {
+    "type": "Optional — Zone 2 rower",
+    "min": 20,
+    "actualMin": ""
+   },
+   "rpe": "",
+   "notes": ""
+  },
+  "2026-11-06": {
+   "type": "Upper — shoulders + arms",
+   "planned": true,
+   "completed": false,
+   "exercises": [
+    {
+     "name": "Barbell Overhead Press",
+     "mg": "Shoulders",
+     "target": "3x5-8",
+     "wt": 32.5,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "32.5"
+      },
+      {
+       "reps": "",
+       "weight": "32.5"
+      },
+      {
+       "reps": "",
+       "weight": "32.5"
+      }
+     ]
+    },
+    {
+     "name": "Rear Delt Fly",
+     "mg": "Rear Delts",
+     "target": "3x10-15",
+     "wt": 15,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "15"
+      },
+      {
+       "reps": "",
+       "weight": "15"
+      },
+      {
+       "reps": "",
+       "weight": "15"
+      }
+     ]
+    },
+    {
+     "name": "Weighted Dips",
+     "mg": "Triceps",
+     "target": "3x6-10",
+     "wt": 0,
+     "perHand": false,
+     "added": true,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": ""
+      },
+      {
+       "reps": "",
+       "weight": ""
+      },
+      {
+       "reps": "",
+       "weight": ""
+      }
+     ]
+    },
+    {
+     "name": "Cable Fly",
+     "mg": "Chest",
+     "target": "3x10-15",
+     "wt": 15,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "15"
+      },
+      {
+       "reps": "",
+       "weight": "15"
+      },
+      {
+       "reps": "",
+       "weight": "15"
+      }
+     ]
+    },
+    {
+     "name": "Lateral Raise",
+     "mg": "Shoulders",
+     "target": "3x10-15",
+     "wt": 8,
+     "perHand": true,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "8"
+      },
+      {
+       "reps": "",
+       "weight": "8"
+      },
+      {
+       "reps": "",
+       "weight": "8"
+      }
+     ]
+    },
+    {
+     "name": "Overhead Triceps Extension",
+     "mg": "Triceps",
+     "target": "3x10-15",
+     "wt": 15,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "15"
+      },
+      {
+       "reps": "",
+       "weight": "15"
+      },
+      {
+       "reps": "",
+       "weight": "15"
+      }
+     ]
+    },
+    {
+     "name": "Cable Crunch",
+     "mg": "Core",
+     "target": "3x10-15",
+     "wt": 60,
+     "perHand": false,
+     "added": false,
+     "prog": "",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "60"
+      },
+      {
+       "reps": "",
+       "weight": "60"
+      },
+      {
+       "reps": "",
+       "weight": "60"
+      }
+     ]
+    }
+   ],
+   "cardio": {
+    "type": "Optional — incline Zone 2 walk",
+    "min": 20,
+    "actualMin": ""
+   },
+   "rpe": "",
+   "notes": ""
+  },
+  "2026-11-12": {
+   "type": "Legs 3 — squat variation, glutes + single-leg",
+   "planned": true,
+   "completed": false,
+   "exercises": [
+    {
+     "name": "Front Squat",
+     "mg": "Quads",
+     "target": "3x6-10",
+     "wt": 32.5,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "32.5"
+      },
+      {
+       "reps": "",
+       "weight": "32.5"
+      },
+      {
+       "reps": "",
+       "weight": "32.5"
+      }
+     ]
+    },
+    {
+     "name": "Hip Thrust",
+     "mg": "Glutes",
+     "target": "3x6-10",
+     "wt": 60,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "60"
+      },
+      {
+       "reps": "",
+       "weight": "60"
+      },
+      {
+       "reps": "",
+       "weight": "60"
+      }
+     ]
+    },
+    {
+     "name": "Bulgarian Split Squat",
+     "mg": "Quads",
+     "target": "3x8-12",
+     "wt": 12.5,
+     "perHand": true,
+     "added": false,
+     "prog": "top of the range on every set → +2.5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "12.5"
+      },
+      {
+       "reps": "",
+       "weight": "12.5"
+      },
+      {
+       "reps": "",
+       "weight": "12.5"
+      }
+     ]
+    },
+    {
+     "name": "Lying Leg Curl",
+     "mg": "Hamstrings",
+     "target": "3x10-15",
+     "wt": 42,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "42"
+      },
+      {
+       "reps": "",
+       "weight": "42"
+      },
+      {
+       "reps": "",
+       "weight": "42"
+      }
+     ]
+    },
+    {
+     "name": "Leg Extension",
+     "mg": "Quads",
+     "target": "3x10-15",
+     "wt": 45,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "45"
+      },
+      {
+       "reps": "",
+       "weight": "45"
+      },
+      {
+       "reps": "",
+       "weight": "45"
+      }
+     ]
+    },
+    {
+     "name": "Standing Calf Raise",
+     "mg": "Calves",
+     "target": "3x10-15",
+     "wt": 42,
+     "perHand": false,
+     "added": false,
+     "prog": "top of the range on every set → +5kg",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "42"
+      },
+      {
+       "reps": "",
+       "weight": "42"
+      },
+      {
+       "reps": "",
+       "weight": "42"
+      }
+     ]
+    },
+    {
+     "name": "Hanging Knee Raise",
+     "mg": "Core",
+     "target": "3x10-15",
+     "wt": 42,
+     "perHand": false,
+     "added": false,
+     "prog": "",
+     "sets": [
+      {
+       "reps": "",
+       "weight": "42"
+      },
+      {
+       "reps": "",
+       "weight": "42"
+      },
+      {
+       "reps": "",
+       "weight": "42"
+      }
+     ]
+    }
+   ],
+   "cardio": null,
+   "rpe": "",
+   "notes": ""
+  }
+ },
+ "nutrition": {
+  "2026-10-19": {
+   "meals": [],
+   "water": 0,
+   "firstMeal": "",
+   "lastMeal": ""
+  },
+  "2026-11-03": {
+   "meals": [
+    {
+     "name": "Beef bowl",
+     "kcal": 900,
+     "protein": 60,
+     "netCarbs": 80,
+     "fat": 30,
+     "time": "13:00"
+    },
+    {
+     "name": "Whey shake (1 scoop)",
+     "kcal": 120,
+     "protein": 24,
+     "netCarbs": 2,
+     "fat": 2,
+     "time": "16:00"
+    }
+   ],
+   "water": 2500,
+   "firstMeal": "12:00",
+   "lastMeal": "19:30"
+  },
+  "2026-11-04": {
+   "meals": [
+    {
+     "name": "Oats",
+     "kcal": 600,
+     "protein": 30,
+     "netCarbs": 80,
+     "fat": 15,
+     "time": "10:30"
+    }
+   ],
+   "water": 1800,
+   "firstMeal": "10:30",
+   "lastMeal": "18:00"
+  }
+ },
+ "supplements": {
+  "2026-10-19": {
+   "taken": {}
+  },
+  "2026-11-03": {
+   "taken": {
+    "acv": true,
+    "rdust": true,
+    "coll": true,
+    "d3k2": true,
+    "omega": true,
+    "mag": true
+   }
+  }
+ },
+ "liftWeights": {},
+ "myFoods": [
+  {
+   "name": "Whey shake (1 scoop)",
+   "kcal": 120,
+   "protein": 24,
+   "netCarbs": 2,
+   "fat": 2
+  },
+  {
+   "name": "4 eggs",
+   "kcal": 312,
+   "protein": 24,
+   "netCarbs": 1,
+   "fat": 22
+  },
+  {
+   "name": "Ribeye steak 200g",
+   "kcal": 460,
+   "protein": 46,
+   "netCarbs": 0,
+   "fat": 30
+  },
+  {
+   "name": "Salmon fillet 180g",
+   "kcal": 367,
+   "protein": 39,
+   "netCarbs": 0,
+   "fat": 23
+  },
+  {
+   "name": "Avocado (1)",
+   "kcal": 240,
+   "protein": 3,
+   "netCarbs": 3,
+   "fat": 22
+  },
+  {
+   "name": "Greek yoghurt 200g (full fat)",
+   "kcal": 194,
+   "protein": 18,
+   "netCarbs": 7,
+   "fat": 10
+  },
+  {
+   "name": "Chicken breast 200g",
+   "kcal": 330,
+   "protein": 62,
+   "netCarbs": 0,
+   "fat": 7
+  },
+  {
+   "name": "Basmati rice 250g cooked",
+   "kcal": 325,
+   "protein": 7,
+   "netCarbs": 70,
+   "fat": 1
+  },
+  {
+   "name": "Oats 80g + whole milk 250ml",
+   "kcal": 460,
+   "protein": 19,
+   "netCarbs": 64,
+   "fat": 13
+  },
+  {
+   "name": "Sweet potato 300g",
+   "kcal": 258,
+   "protein": 5,
+   "netCarbs": 57,
+   "fat": 0
+  },
+  {
+   "name": "Banana (1)",
+   "kcal": 105,
+   "protein": 1,
+   "netCarbs": 24,
+   "fat": 0
+  },
+  {
+   "name": "Wholegrain pasta 100g dry",
+   "kcal": 350,
+   "protein": 13,
+   "netCarbs": 62,
+   "fat": 2
+  },
+  {
+   "name": "Sourdough 2 slices + honey",
+   "kcal": 290,
+   "protein": 8,
+   "netCarbs": 56,
+   "fat": 2
+  },
+  {
+   "name": "Whey + banana + oats shake",
+   "kcal": 390,
+   "protein": 30,
+   "netCarbs": 52,
+   "fat": 5
+  },
+  {
+   "name": "My own porridge",
+   "kcal": 500,
+   "protein": 25,
+   "netCarbs": 70,
+   "fat": 10
+  }
+ ],
+ "targets": {
+  "kcal": 2650,
+  "protein": 185,
+  "netCarbs": 290,
+  "netCarbCeiling": 340,
+  "fat": 80,
+  "water": 3000,
+  "windowStart": "10:00",
+  "windowEnd": "20:00",
+  "fastHours": 14
+ },
+ "wm": {
+  "inbody": {
+   "scanDate": "2026-08-01",
+   "weightKg": 78.1,
+   "bodyFatPct": 13.9,
+   "skeletalMuscleKg": null,
+   "segmental": {}
+  },
+  "sessions": {
+   "ws-2026-10-27-mvqil340": {
+    "id": "ws-2026-10-27-mvqil340",
+    "date": "2026-10-27",
+    "programmeDayId": "lowerA",
+    "startedAt": "2026-10-27T10:00:00.000Z",
+    "endedAt": "2026-10-27T10:00:00.000Z",
+    "isFastDay": false,
+    "blockId": "build",
+    "week": 2,
+    "deload": false,
+    "label": "Legs 1 — squat + stiff-leg deadlift",
+    "plan": [
+     {
+      "exerciseId": "squatBB",
+      "sets": 3,
+      "restSeconds": 120
+     },
+     {
+      "exerciseId": "sldl",
+      "sets": 3,
+      "restSeconds": 120
+     },
+     {
+      "exerciseId": "legPress",
+      "sets": 3,
+      "restSeconds": 120
+     },
+     {
+      "exerciseId": "legCurl",
+      "sets": 3,
+      "restSeconds": 60,
+      "supersetGroup": "A1"
+     },
+     {
+      "exerciseId": "calfStand",
+      "sets": 3,
+      "restSeconds": 60,
+      "supersetGroup": "A1"
+     },
+     {
+      "exerciseId": "kneeRaise",
+      "sets": 3,
+      "restSeconds": 60
+     }
+    ]
+   },
+   "ws-2026-10-29-mvtdgsg0": {
+    "id": "ws-2026-10-29-mvtdgsg0",
+    "date": "2026-10-29",
+    "programmeDayId": "lowerB",
+    "startedAt": "2026-10-29T10:00:00.000Z",
+    "endedAt": "2026-10-29T10:00:00.000Z",
+    "isFastDay": false,
+    "blockId": "build",
+    "week": 2,
+    "deload": false,
+    "label": "Legs 2 — deadlift day",
+    "plan": [
+     {
+      "exerciseId": "deadlift",
+      "sets": 3,
+      "restSeconds": 150
+     },
+     {
+      "exerciseId": "hackSquat",
+      "sets": 3,
+      "restSeconds": 120
+     },
+     {
+      "exerciseId": "hipThrust",
+      "sets": 3,
+      "restSeconds": 120
+     },
+     {
+      "exerciseId": "farmerCarry",
+      "sets": 3,
+      "restSeconds": 60,
+      "supersetGroup": "B1"
+     },
+     {
+      "exerciseId": "cableCrunch",
+      "sets": 3,
+      "restSeconds": 60,
+      "supersetGroup": "B1"
+     },
+     {
+      "exerciseId": "calfSeat",
+      "sets": 3,
+      "restSeconds": 60
+     }
+    ]
+   }
+  },
+  "setLogs": [
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "squatBB",
+    "setIndex": 0,
+    "weightKg": 40,
+    "reps": 8,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "squatBB",
+    "setIndex": 1,
+    "weightKg": 41,
+    "reps": 8,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "squatBB",
+    "setIndex": 2,
+    "weightKg": 42,
+    "reps": 8,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "sldl",
+    "setIndex": 0,
+    "weightKg": 40,
+    "reps": 8,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "sldl",
+    "setIndex": 1,
+    "weightKg": 41,
+    "reps": 8,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "sldl",
+    "setIndex": 2,
+    "weightKg": 42,
+    "reps": 8,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "legPress",
+    "setIndex": 0,
+    "weightKg": 40,
+    "reps": 8,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "legPress",
+    "setIndex": 1,
+    "weightKg": 41,
+    "reps": 8,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "legPress",
+    "setIndex": 2,
+    "weightKg": 42,
+    "reps": 8,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "legCurl",
+    "setIndex": 0,
+    "weightKg": 40,
+    "reps": 8,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "legCurl",
+    "setIndex": 1,
+    "weightKg": 41,
+    "reps": 8,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "legCurl",
+    "setIndex": 2,
+    "weightKg": 42,
+    "reps": 8,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "calfStand",
+    "setIndex": 0,
+    "weightKg": 40,
+    "reps": 8,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "calfStand",
+    "setIndex": 1,
+    "weightKg": 41,
+    "reps": 8,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "calfStand",
+    "setIndex": 2,
+    "weightKg": 42,
+    "reps": 8,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "kneeRaise",
+    "setIndex": 0,
+    "weightKg": 40,
+    "reps": 8,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "kneeRaise",
+    "setIndex": 1,
+    "weightKg": 41,
+    "reps": 8,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-27-mvqil340",
+    "exerciseId": "kneeRaise",
+    "setIndex": 2,
+    "weightKg": 42,
+    "reps": 8,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-27T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "deadlift",
+    "setIndex": 0,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     5,
+     8
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "deadlift",
+    "setIndex": 1,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     5,
+     8
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "deadlift",
+    "setIndex": 2,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     5,
+     8
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "hackSquat",
+    "setIndex": 0,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "hackSquat",
+    "setIndex": 1,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "hackSquat",
+    "setIndex": 2,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "hipThrust",
+    "setIndex": 0,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "hipThrust",
+    "setIndex": 1,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "hipThrust",
+    "setIndex": 2,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     6,
+     10
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "farmerCarry",
+    "setIndex": 0,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     30,
+     45
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "farmerCarry",
+    "setIndex": 1,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     30,
+     45
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "farmerCarry",
+    "setIndex": 2,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     30,
+     45
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "cableCrunch",
+    "setIndex": 0,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "cableCrunch",
+    "setIndex": 1,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "cableCrunch",
+    "setIndex": 2,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "calfSeat",
+    "setIndex": 0,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "calfSeat",
+    "setIndex": 1,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   },
+   {
+    "sessionId": "ws-2026-10-29-mvtdgsg0",
+    "exerciseId": "calfSeat",
+    "setIndex": 2,
+    "weightKg": 60,
+    "reps": 6,
+    "range": [
+     10,
+     15
+    ],
+    "timestamp": "2026-10-29T10:00:00.000Z"
+   }
+  ],
+  "cardioLogs": [],
+  "activeSessionId": null,
+  "rowerPaceSec": null,
+  "rotation": {
+   "anchors": [
+    {
+     "startDate": "2026-10-19",
+     "startBlock": 0
+    }
+   ]
+  },
+  "restOverride": {}
+ }
+}

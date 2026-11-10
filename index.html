@@ -152,7 +152,6 @@ ul.tight{margin:4px 0 0;padding-left:17px}
 ul.tight li{margin-bottom:4px;font-size:13px;color:var(--mut)}
 ul.tight li b{color:var(--txt)}
 /* workout module (session screen) */
-.wsclock{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
 .wsrow{border:1px solid var(--line);border-radius:11px;background:var(--panel2);padding:9px 10px;margin-bottom:8px;cursor:pointer}
 .wsrow.done{border-color:#1f5a44;background:#0e1f1a;cursor:default}
 .wsrow.skip{opacity:.55;cursor:default}
@@ -216,11 +215,14 @@ const BASELINE={ // InBody 580, 10 Jun 2026
 };
 // lean-bulk landing zone: ~+1.3kg over the 4-week block
 const TARGET_WEIGHT=+(BASELINE.weight+1.3).toFixed(1); // ~80.7
-const BULK_RATE={lo:0.15, hi:0.5}; // healthy kg/week gain band — above hi is mostly fat
+// lean-gain band 0.10–0.25 kg/week. Calorie advice reads the 2-week trend: under 0.10 → +150 kcal,
+// over 0.35 → −150 kcal, none before programme week 3. At 15% body fat the surplus stops.
+const BULK_RATE={lo:0.10, hi:0.25, cutAbove:0.35, kcalStep:150, bfCeiling:15};
 
-// Lean-bulk macros: BMR 1856 → TDEE ~2450 with 6 lifting days; ~+200 surplus.
-// carbs fuel the sessions now — the keto cut is paused for this block.
-const TARGETS={kcal:2650, protein:180, netCarbs:290, netCarbCeiling:340, fat:80, water:3000,
+// Lean-bulk macros for the 17-week upper/lower programme, every day: 2900 kcal, 165 g protein,
+// 80 g fat, 380 g carbs. Water 3000 ml (+500 ml on sauna days). netCarbCeiling = the point the carb
+// bar and flag turn amber/red (target + 50, the same gap as before).
+const TARGETS={kcal:2900, protein:165, netCarbs:380, netCarbCeiling:430, fat:80, water:3000, waterSauna:500,
   windowStart:"10:00", windowEnd:"20:00", fastHours:14};
 
 /* ---------- phase plan (structured — add future phases to this array) ----------
@@ -257,20 +259,30 @@ function applyPhaseTargets(){
   S.appliedPhase=p.id;save();
 }
 
-/* The lift days are no longer a fixed template: the rotation (WM_BLOCKS, below
-   the workout module) defines them and tplFor(date) turns the rotation's day into
-   the shape the Workout tab logs. The 4-week PPL block (16 Jul → 12 Aug 2026) and
-   its "DB RDL" are retired; anything logged under them stays in S.workouts. */
+/* The lift days are not a fixed template: the 17-week programme (PROG, below the exercise library)
+   defines them and tplFor(date) turns the programme's day into the shape the Workout tab logs. The
+   earlier 6-week rotation and its RDL / deadlift / hip-thrust days are retired; anything logged under
+   them stays in S.workouts and S.wm. */
+// recovery rules, word for word; shown with the other rules on the Plan tab (Progression & bulk rules)
+const RECOVERY={
+  cold:"No cold-water immersion or cold shower within 6 h after lifting. Cold only on rest days or before training.",
+  sauna:"2-4 times a week, 15-20 min at 80-90 C after lifting or on rest days, 0.5-1 L water with electrolytes.",
+  sleep:"In bed by 23:15, 7+ h sleep"
+};
 // program-wide guidance, surfaced on the Plan tab
 const PLAN_RULES={
-  increments:"DB +2 kg · machines/cables +2.5-5 kg · barbell +2.5 kg · added-bodyweight +2.5 kg",
+  increments:"DB +2 kg · machines/cables +2.5 kg (Leg Press and Hack Squat +10 kg) · barbell +2.5 kg · added-bodyweight +2.5 kg",
   rules:[
-    "35-minute cap: 13 working sets, 90s rest on compound lifts, 60s on isolation. Running long? Cut rest, not sets.",
-    "Effort: the last set of every lift ends at 0-2 reps in the tank. Could do 3 more clean? Too light.",
-    "Double progression: stay at a fixed weight, hit the top of the rep range on all sets, then add the increment next session. In a surplus you should be moving up most weeks.",
-    "These weights are starting points. >2 reps in the tank → jump an increment and log the real number; can't hit the bottom of the range with good form → drop one increment.",
-    "Eat to grow: hit the calorie and protein targets daily. If weight isn't rising after a full week, add ~150 kcal (carbs).",
-    "Gaining faster than ~0.5 kg/week means mostly fat — pull ~150 kcal back."
+    "Double progression: stay at one weight until every set reaches the top of the rep range, then take one step up and start again from the bottom of the range. Otherwise keep the weight and aim for one more rep than your lowest set last time.",
+    "If your reps fall two sessions in a row on a lift, drop its weight by 7.5%.",
+    "RIR (reps in reserve) is how many clean reps you could still do. Intro weeks run 3, then 2 to 1; the build and peak blocks run 2 to 0; the deloads (weeks 7 and 13) run 4 and the taper 3. Rest times are guidance only.",
+    "Lean-gain band: 0.10 to 0.25 kg a week. From week 3, if the 2-week trend is under 0.10 add 150 kcal; if it is over 0.35 take 150 kcal off.",
+    "Body-fat ceiling 15%: if you reach it, stop the surplus. Stop the surplus, eat at maintenance until 9 Mar.",
+    "Protein: 4 feedings of 35-45 g across the day. If you eat in a 12:00-20:00 window, train about 10:30-11:45 with 25-30 g whey before and eat at 12:00.",
+    "Alcohol: 2 drinks at most, none on lifting days and none within 4 h of bed.",
+    "Cold rule: "+RECOVERY.cold,
+    "Sauna: "+RECOVERY.sauna+" Mark sauna days on the Nutrition tab to add 500 ml to the water target.",
+    "Sleep checklist: "+RECOVERY.sleep+"."
   ]
 };
 
@@ -533,10 +545,10 @@ const CORE={
 };
 
 /* ============================================================
-   WORKOUT MODULE — PRD build (approved 3 Aug 2026)
-   Upper/Lower lift week + rower/treadmill cardio, InBody-anchored
-   starting weights, double progression, 45-min lift cap with auto
-   skip-flagging, rower pace targeting, Sunday fast-day locks.
+   WORKOUT MODULE — PRD build (approved 3 Aug 2026), now running the
+   17-week upper/lower programme (PROG): programme start loads, double
+   progression, optional rower/treadmill cardio, Sunday fast-day locks.
+   No timers: rest, RIR and notes are guidance text only.
    Own state lives in S.wm. Reads the phase config (PHASES /
    activePhase) READ-ONLY for the Phase 2 switch (8 Aug) and the
    Sunday fast flag — integration point A. Integration point B is
@@ -545,79 +557,83 @@ const CORE={
    ============================================================ */
 
 /* ---------- exercise library ----------
-   lbmMult = estimated 1RM as a multiple of lean body mass (working weight =
-   70% of that, rounded to 2.5, or to roundKg for light dumbbells). Every loaded
-   lift scales with the InBody lean body mass; only unloaded bodyweight moves
-   keep startKg 0. Session-1 progression takes over from the estimate.
-   perHand = the number is per dumbbell. incrementKg: 2.5 upper, 5 lower
-   (DB moves stay 2.5 — that's the rack). repRange = the default range; a
-   rotation block can override it per slot (WM_BLOCKS).
-   mg = muscle group (feeds the Workout tab and the weekly review).
-   posture = upper-back / rear-delt / glute / hinge / carry work that fixes
-   desk posture UNDER LOAD — it lives inside the lift days, no extra day.
-   unit "s" = the reps box holds seconds (carries); repStep = stepper size.
-   bwBased = the load is added to bodyweight (strength maths adds bodyweight).
-   noE1RM = left out of the strength-trend maths (core, timed work).
-   seedFrom = no history of its own yet → start from this lift's logged numbers.
+   One entry per lift. repRange = the default [lo,hi]; startKg = the programme's start load
+   (used until the lift has a log); eq = how the load is counted and stepped:
+     db = per dumbbell (+2 kg) · mc = machine/cable (+2.5 kg) · bb = barbell (+2.5 kg)
+     bw = added load on bodyweight (+2.5 kg). Leg Press and Hack Squat step +10 kg.
+   incrementKg = the progression step AND the +/- button step; grid = what a weight is rounded to.
+   perHand = the number is per dumbbell. bwBased = the load is added to bodyweight (strength maths
+   adds bodyweight). mg = muscle group (feeds the Workout tab and the weekly review).
+   iso = single-joint isolation lift: in Block 2 its last set gets lengthened partials.
+   alias = older exercise ids whose logs count as this lift's history ("last time", progression).
    retired = no longer programmed; kept so logged history still resolves. */
 const WM_EXERCISES=[
-  // pressing
-  {id:"benchBB",  name:"Barbell Bench Press",       mg:"Chest",     group:"push",equipment:"barbell",  incrementKg:2.5,repRange:[6,10], lbmMult:0.9},
-  {id:"ohpDB",    name:"Seated DB Shoulder Press",  mg:"Shoulders", group:"push",equipment:"dumbbell", incrementKg:2.5,repRange:[6,10], lbmMult:0.55,perHand:true},
-  {id:"ohpBB",    name:"Barbell Overhead Press",    mg:"Shoulders", group:"push",equipment:"barbell",  incrementKg:2.5,repRange:[5,8],  lbmMult:0.7},
-  {id:"benchDB",  name:"Flat DB Press",               mg:"Chest",     group:"push",equipment:"dumbbell", incrementKg:2.5,repRange:[6,10], lbmMult:0.75,perHand:true,seedFrom:{id:"benchBB",ratio:0.42}},
-  {id:"inclineDB",name:"Incline DB Press",          mg:"Chest",     group:"push",equipment:"dumbbell", incrementKg:2.5,repRange:[6,10], lbmMult:0.7, perHand:true},
-  {id:"weightedDips",name:"Weighted Dips",          mg:"Triceps",   group:"push",equipment:"bodyweight",incrementKg:2.5,repRange:[6,10],startKg:0,bwBased:true},
-  {id:"cableFly", name:"Cable Fly",                 mg:"Chest",     group:"push",equipment:"cable",    incrementKg:2.5,repRange:[10,15],lbmMult:0.32},
-  {id:"latRaise", name:"Lateral Raise",             mg:"Shoulders", group:"push",equipment:"dumbbell", incrementKg:2.5,repRange:[10,15],roundKg:2,lbmMult:0.34, perHand:true},
-  {id:"ohTri",    name:"Overhead Triceps Extension",mg:"Triceps",group:"push",equipment:"cable",incrementKg:2.5,repRange:[10,15],lbmMult:0.32},
-  {id:"triPush",  name:"Triceps Pushdown",          mg:"Triceps",   group:"push",equipment:"cable",    incrementKg:2.5,repRange:[10,15],lbmMult:0.42},
-  // pulling + posture
-  {id:"csRow",    name:"Chest-Supported Row",       mg:"Back",      group:"pull",equipment:"machine",  incrementKg:2.5,repRange:[10,15],lbmMult:0.64,posture:true},
-  {id:"pullUp",   name:"Pull-up (weighted/assisted)",mg:"Back",     group:"pull",equipment:"bodyweight",incrementKg:2.5,repRange:[6,10],startKg:0,bwBased:true},
-  {id:"rowBB",    name:"Barbell Row",               mg:"Back",      group:"pull",equipment:"barbell",  incrementKg:2.5,repRange:[6,10], lbmMult:0.85,posture:true},
-  {id:"cableRow", name:"Seated Cable Row",          mg:"Back",      group:"pull",equipment:"cable",    incrementKg:2.5,repRange:[10,15],lbmMult:0.96,posture:true},
-  {id:"latPulldown",name:"Lat Pulldown",            mg:"Back",      group:"pull",equipment:"cable",    incrementKg:2.5,repRange:[8,12], lbmMult:1.38},
-  {id:"dbRow",    name:"Single-Arm DB Row",         mg:"Back",      group:"pull",equipment:"dumbbell", incrementKg:2.5,repRange:[8,12], lbmMult:0.9,perHand:true,posture:true},
-  {id:"facePull", name:"Face Pull",                 mg:"Rear Delts",group:"pull",equipment:"cable",    incrementKg:2.5,repRange:[10,15],lbmMult:0.42,posture:true},
-  {id:"rearFly",  name:"Rear Delt Fly",             mg:"Rear Delts",group:"pull",equipment:"machine",  incrementKg:2.5,repRange:[10,15],lbmMult:0.32,posture:true},
-  {id:"yRaise",   name:"Incline Y-Raise",           mg:"Rear Delts",group:"pull",equipment:"dumbbell", incrementKg:2,  repRange:[10,15],roundKg:2,lbmMult:0.17, perHand:true,posture:true},
-  {id:"dbCurl",   name:"DB Curl",                   mg:"Biceps",    group:"pull",equipment:"dumbbell", incrementKg:2.5,repRange:[10,15],lbmMult:0.42,perHand:true},
-  {id:"inclineCurl",name:"Incline DB Curl",         mg:"Biceps",    group:"pull",equipment:"dumbbell", incrementKg:2.5,repRange:[10,15],lbmMult:0.42,perHand:true},
-  {id:"hammerCurl",name:"Hammer Curl",              mg:"Biceps",    group:"pull",equipment:"dumbbell", incrementKg:2.5,repRange:[10,15],lbmMult:0.42,perHand:true},
-  // squat pattern
-  {id:"squatBB",  name:"Back Squat",                mg:"Quads",     group:"legs",equipment:"barbell",  incrementKg:5,  repRange:[6,10], lbmMult:1.2},
-  {id:"frontSquat",name:"Front Squat",              mg:"Quads",     group:"legs",equipment:"barbell",  incrementKg:5,  repRange:[6,10], lbmMult:0.95,seedFrom:{id:"squatBB",ratio:0.8}},
-  {id:"hackSquat",name:"Hack Squat",                mg:"Quads",     group:"legs",equipment:"machine",  incrementKg:5,  repRange:[6,10], lbmMult:1.2},
-  {id:"legPress", name:"Leg Press",                 mg:"Quads",     group:"legs",equipment:"machine",  incrementKg:5,  repRange:[6,10], lbmMult:1.5},
-  {id:"bulgarian",name:"Bulgarian Split Squat",     mg:"Quads",     group:"legs",equipment:"dumbbell", incrementKg:2.5,repRange:[8,12], lbmMult:0.53,perHand:true},
-  {id:"lunge",    name:"Walking Lunge (DB)",        mg:"Glutes",    group:"legs",equipment:"dumbbell", incrementKg:2.5,repRange:[6,10], lbmMult:0.42,perHand:true},
-  {id:"legExt",   name:"Leg Extension",             mg:"Quads",     group:"legs",equipment:"machine",  incrementKg:5,  repRange:[10,15],lbmMult:0.96},
-  // hinge pattern
-  {id:"deadlift", name:"Deadlift",                  mg:"Posterior chain",group:"legs",equipment:"barbell",incrementKg:5,repRange:[5,8], lbmMult:1.5,posture:true},
-  {id:"sldl",     name:"Stiff-Legged Deadlift",     mg:"Hamstrings",group:"legs",equipment:"barbell",  incrementKg:5,  repRange:[6,10], lbmMult:1.0,seedFrom:{id:"rdl",ratio:0.9},posture:true},
-  {id:"trapDL",   name:"Trap-Bar Deadlift (or Sumo)",mg:"Posterior chain",group:"legs",equipment:"barbell",incrementKg:5,repRange:[6,10],lbmMult:1.5,seedFrom:{id:"deadlift",ratio:1},posture:true},
+  // ---- the 17-week programme (PROG, below) ----
+  {id:"dbBench",    name:"DB Bench Press",                  mg:"Chest",              eq:"db",equipment:"dumbbell",  incrementKg:2,  grid:2,  repRange:[6,10],  startKg:36,  perHand:true},
+  {id:"csDbRow",    name:"Chest-Supported DB Row",          mg:"Back",               eq:"db",equipment:"dumbbell",  incrementKg:2,  grid:2,  repRange:[8,12],  startKg:30,  perHand:true},
+  {id:"inclineDB",  name:"Incline DB Press",                mg:"Upper chest",        eq:"db",equipment:"dumbbell",  incrementKg:2,  grid:2,  repRange:[8,12],  startKg:28,  perHand:true},
+  {id:"latPulldown",name:"Lat Pulldown",                    mg:"Back",               eq:"mc",equipment:"cable",     incrementKg:2.5,grid:2.5,repRange:[8,12],  startKg:60},
+  {id:"cableLat",   name:"Cable Lateral Raise",             mg:"Side delts",         eq:"mc",equipment:"cable",     incrementKg:2.5,grid:2.5,repRange:[12,20], startKg:7.5, iso:true},
+  {id:"ohTriCable", name:"Overhead Cable Triceps Extension",mg:"Triceps",            eq:"mc",equipment:"cable",     incrementKg:2.5,grid:2.5,repRange:[10,15], startKg:20,  iso:true,alias:["ohTri"]},
+  {id:"inclineCurl",name:"Incline DB Curl",                 mg:"Biceps",             eq:"db",equipment:"dumbbell",  incrementKg:2,  grid:2,  repRange:[10,15], startKg:12,  perHand:true,iso:true},
+  {id:"hackSquat",  name:"Hack Squat",                      mg:"Quads + glutes",     eq:"mc",equipment:"machine",   incrementKg:10, grid:5,  repRange:[6,10],  startKg:80},
+  {id:"seatedLegCurl",name:"Seated Leg Curl",               mg:"Hamstrings",         eq:"mc",equipment:"machine",   incrementKg:2.5,grid:2.5,repRange:[10,15], startKg:50,  iso:true},
+  {id:"legExt",     name:"Leg Extension",                   mg:"Quads",              eq:"mc",equipment:"machine",   incrementKg:2.5,grid:2.5,repRange:[12,15], startKg:55,  iso:true},
+  {id:"backExt",    name:"45 Degree Back Extension",        mg:"Hamstrings + glutes",eq:"bw",equipment:"bodyweight",incrementKg:2.5,grid:2.5,repRange:[10,15], startKg:10,  bwBased:true},
+  {id:"calfStand",  name:"Standing Calf Raise",             mg:"Calves",             eq:"mc",equipment:"machine",   incrementKg:2.5,grid:2.5,repRange:[10,15], startKg:75,  iso:true},
+  {id:"wPullUp",    name:"Weighted Pull-up",                mg:"Back",               eq:"bw",equipment:"bodyweight",incrementKg:2.5,grid:2.5,repRange:[6,10],  startKg:5,   bwBased:true,alias:["pullUp"]},
+  {id:"machChest",  name:"Machine Chest Press",             mg:"Chest",              eq:"mc",equipment:"machine",   incrementKg:2.5,grid:2.5,repRange:[8,12],  startKg:60},
+  {id:"cableRow",   name:"Seated Cable Row",                mg:"Back",               eq:"mc",equipment:"cable",     incrementKg:2.5,grid:2.5,repRange:[10,12], startKg:55},
+  {id:"cableFly",   name:"Cable Fly",                       mg:"Chest",              eq:"mc",equipment:"cable",     incrementKg:2.5,grid:2.5,repRange:[10,15], startKg:12.5,iso:true},
+  {id:"ohpDB",      name:"Seated DB Shoulder Press",        mg:"Shoulders",          eq:"db",equipment:"dumbbell",  incrementKg:2,  grid:2,  repRange:[8,12],  startKg:20,  perHand:true},
+  {id:"revPec",     name:"Reverse Pec Deck",                mg:"Rear delts",         eq:"mc",equipment:"machine",   incrementKg:2.5,grid:2.5,repRange:[12,20], startKg:35,  iso:true,alias:["rearFly"]},
+  {id:"extRot",     name:"Cable External Rotation",         mg:"Rotator cuff",       eq:"mc",equipment:"cable",     incrementKg:2.5,grid:2.5,repRange:[12,15], startKg:5},
+  {id:"legPress",   name:"Leg Press",                       mg:"Quads + glutes",     eq:"mc",equipment:"machine",   incrementKg:10, grid:5,  repRange:[8,12],  startKg:150},
+  {id:"bulgarian",  name:"Bulgarian Split Squat",           mg:"Quads + glutes",     eq:"db",equipment:"dumbbell",  incrementKg:2,  grid:2,  repRange:[8,12],  startKg:18,  perHand:true},
+  {id:"calfSeat",   name:"Seated Calf Raise",               mg:"Calves",             eq:"mc",equipment:"machine",   incrementKg:2.5,grid:2.5,repRange:[12,20], startKg:40,  iso:true},
+  {id:"latRaise",   name:"Lateral Raises",                  mg:"Side delts",         eq:"db",equipment:"dumbbell",  incrementKg:2,  grid:2,  repRange:[12,20], startKg:8,   perHand:true,iso:true},
+  {id:"skull",      name:"EZ-Bar Skull Crusher",            mg:"Triceps",            eq:"bb",equipment:"barbell",   incrementKg:2.5,grid:2.5,repRange:[8,12],  startKg:25,  iso:true},
+  {id:"bayCurl",    name:"Bayesian Cable Curl",             mg:"Biceps",             eq:"mc",equipment:"cable",     incrementKg:2.5,grid:2.5,repRange:[10,15], startKg:10,  iso:true},
+  {id:"pecDeck",    name:"Pec Deck",                        mg:"Chest",              eq:"mc",equipment:"machine",   incrementKg:2.5,grid:2.5,repRange:[12,15], startKg:50,  iso:true},
+  {id:"straightArm",name:"Straight-Arm Cable Pulldown",     mg:"Lats",               eq:"mc",equipment:"cable",     incrementKg:2.5,grid:2.5,repRange:[12,15], startKg:25,  iso:true},
+  {id:"hammerCurl", name:"Hammer Curl",                     mg:"Biceps",             eq:"db",equipment:"dumbbell",  incrementKg:2,  grid:2,  repRange:[10,12], startKg:16,  perHand:true,iso:true},
+  {id:"facePull",   name:"Face Pulls",                      mg:"Rear delts",         eq:"mc",equipment:"cable",     incrementKg:2.5,grid:2.5,repRange:[15,20], startKg:20},
+  // ---- retired: not in any plan, kept so logged history still resolves ----
+  {id:"benchBB",  name:"Barbell Bench Press",       mg:"Chest",     group:"push",equipment:"barbell",  incrementKg:2.5,repRange:[6,10], lbmMult:0.9,retired:true},
+  {id:"ohpBB",    name:"Barbell Overhead Press",    mg:"Shoulders", group:"push",equipment:"barbell",  incrementKg:2.5,repRange:[5,8],  lbmMult:0.7,retired:true},
+  {id:"benchDB",  name:"Flat DB Press",             mg:"Chest",     group:"push",equipment:"dumbbell", incrementKg:2.5,repRange:[6,10], lbmMult:0.75,perHand:true,retired:true},
+  {id:"weightedDips",name:"Weighted Dips",          mg:"Triceps",   group:"push",equipment:"bodyweight",incrementKg:2.5,repRange:[6,10],startKg:0,bwBased:true,retired:true},
+  {id:"ohTri",    name:"Overhead Triceps Extension",mg:"Triceps",   group:"push",equipment:"cable",    incrementKg:2.5,repRange:[10,15],lbmMult:0.32,retired:true},
+  {id:"triPush",  name:"Triceps Pushdown",          mg:"Triceps",   group:"push",equipment:"cable",    incrementKg:2.5,repRange:[10,15],lbmMult:0.42,retired:true},
+  {id:"csRow",    name:"Chest-Supported Row",       mg:"Back",      group:"pull",equipment:"machine",  incrementKg:2.5,repRange:[10,15],lbmMult:0.64,posture:true,retired:true},
+  {id:"pullUp",   name:"Pull-up (weighted/assisted)",mg:"Back",     group:"pull",equipment:"bodyweight",incrementKg:2.5,repRange:[6,10],startKg:0,bwBased:true,retired:true},
+  {id:"rowBB",    name:"Barbell Row",               mg:"Back",      group:"pull",equipment:"barbell",  incrementKg:2.5,repRange:[6,10], lbmMult:0.85,posture:true,retired:true},
+  {id:"dbRow",    name:"Single-Arm DB Row",         mg:"Back",      group:"pull",equipment:"dumbbell", incrementKg:2.5,repRange:[8,12], lbmMult:0.9,perHand:true,posture:true,retired:true},
+  {id:"rearFly",  name:"Rear Delt Fly",             mg:"Rear Delts",group:"pull",equipment:"machine",  incrementKg:2.5,repRange:[10,15],lbmMult:0.32,posture:true,retired:true},
+  {id:"yRaise",   name:"Incline Y-Raise",           mg:"Rear Delts",group:"pull",equipment:"dumbbell", incrementKg:2,  repRange:[10,15],roundKg:2,lbmMult:0.17,perHand:true,posture:true,retired:true},
+  {id:"dbCurl",   name:"DB Curl",                   mg:"Biceps",    group:"pull",equipment:"dumbbell", incrementKg:2.5,repRange:[10,15],lbmMult:0.42,perHand:true,retired:true},
+  {id:"squatBB",  name:"Back Squat",                mg:"Quads",     group:"legs",equipment:"barbell",  incrementKg:5,  repRange:[6,10], lbmMult:1.2,retired:true},
+  {id:"frontSquat",name:"Front Squat",              mg:"Quads",     group:"legs",equipment:"barbell",  incrementKg:5,  repRange:[6,10], lbmMult:0.95,seedFrom:{id:"squatBB",ratio:0.8},retired:true},
+  {id:"lunge",    name:"Walking Lunge (DB)",        mg:"Glutes",    group:"legs",equipment:"dumbbell", incrementKg:2.5,repRange:[6,10], lbmMult:0.42,perHand:true,retired:true},
+  {id:"deadlift", name:"Deadlift",                  mg:"Posterior chain",group:"legs",equipment:"barbell",incrementKg:5,repRange:[5,8], lbmMult:1.5,posture:true,retired:true},
+  {id:"sldl",     name:"Stiff-Legged Deadlift",     mg:"Hamstrings",group:"legs",equipment:"barbell",  incrementKg:5,  repRange:[6,10], lbmMult:1.0,seedFrom:{id:"rdl",ratio:0.9},posture:true,retired:true},
+  {id:"trapDL",   name:"Trap-Bar Deadlift (or Sumo)",mg:"Posterior chain",group:"legs",equipment:"barbell",incrementKg:5,repRange:[6,10],lbmMult:1.5,seedFrom:{id:"deadlift",ratio:1},posture:true,retired:true},
   {id:"rdl",      name:"Romanian Deadlift",         mg:"Hamstrings",group:"legs",equipment:"barbell",  incrementKg:5,  repRange:[6,10], lbmMult:1.1,retired:true},
-  {id:"hipThrust",name:"Hip Thrust",                mg:"Glutes",    group:"legs",equipment:"barbell",  incrementKg:5,  repRange:[6,10], lbmMult:1.2,posture:true},
-  {id:"legCurl",  name:"Lying Leg Curl",            mg:"Hamstrings",group:"legs",equipment:"machine",  incrementKg:5,  repRange:[10,15],lbmMult:0.85},
-  // calves, core, carries
-  {id:"calfStand",name:"Standing Calf Raise",       mg:"Calves",    group:"legs",equipment:"machine",  incrementKg:5,  repRange:[10,15],lbmMult:1.27},
-  {id:"calfSeat", name:"Seated Calf Raise",         mg:"Calves",    group:"legs",equipment:"machine",  incrementKg:5,  repRange:[10,15],lbmMult:0.85},
-  {id:"kneeRaise",name:"Hanging Knee Raise",        mg:"Core",      group:"core",equipment:"bodyweight",incrementKg:2.5,repRange:[10,15],startKg:0,noE1RM:true},
-  {id:"hangingLegRaise",name:"Hanging Leg Raise",   mg:"Core",      group:"core",equipment:"bodyweight",incrementKg:2.5,repRange:[8,12], startKg:0,noE1RM:true},
-  {id:"cableCrunch",name:"Cable Crunch",            mg:"Core",      group:"core",equipment:"cable",    incrementKg:2.5,repRange:[10,15],lbmMult:0.64,noE1RM:true},
-  {id:"farmerCarry",name:"Farmer's Carry",          mg:"Core",      group:"core",equipment:"dumbbell", incrementKg:2.5,repRange:[30,45],lbmMult:1.06,perHand:true,unit:"s",repStep:5,noE1RM:true,posture:true}
+  {id:"hipThrust",name:"Hip Thrust",                mg:"Glutes",    group:"legs",equipment:"barbell",  incrementKg:5,  repRange:[6,10], lbmMult:1.2,posture:true,retired:true},
+  {id:"legCurl",  name:"Lying Leg Curl",            mg:"Hamstrings",group:"legs",equipment:"machine",  incrementKg:5,  repRange:[10,15],lbmMult:0.85,retired:true},
+  {id:"kneeRaise",name:"Hanging Knee Raise",        mg:"Core",      group:"core",equipment:"bodyweight",incrementKg:2.5,repRange:[10,15],startKg:0,noE1RM:true,retired:true},
+  {id:"hangingLegRaise",name:"Hanging Leg Raise",   mg:"Core",      group:"core",equipment:"bodyweight",incrementKg:2.5,repRange:[8,12], startKg:0,noE1RM:true,retired:true},
+  {id:"cableCrunch",name:"Cable Crunch",            mg:"Core",      group:"core",equipment:"cable",    incrementKg:2.5,repRange:[10,15],lbmMult:0.64,noE1RM:true,retired:true},
+  {id:"farmerCarry",name:"Farmer's Carry",          mg:"Core",      group:"core",equipment:"dumbbell", incrementKg:2.5,repRange:[30,45],lbmMult:1.06,perHand:true,unit:"s",repStep:5,noE1RM:true,posture:true,retired:true}
 ];
 
 /* ---------- programme days ----------
-   The cardio / rest days are live and shared by every block. The four LIFT
-   days here are the FROZEN pre-rotation week (Aug–Oct 2026, with Romanian
-   deadlifts): they only resolve for dates before the rotation began, so
-   sessions logged under them still display exactly as they were done. From
-   the rotation start the lift days come from WM_BLOCKS via wmDay().
-   sets are the base — Phase 2 (read from the phase config) adds +1
-   automatically. supersetGroup: exercises sharing a group alternate
-   set-for-set. fastDayAllowed is true only for rest and FLAT treadmill Z2. */
+   WM_DAYS is the registry of day ids. Rest and cardio days are live. The lift days from before the
+   programme (upperA … lowerB, pullA, pushB, legsC) are FROZEN history: they exist only so sessions
+   logged under them resolve (the update copies their exercises into the session as `plan`), and they
+   are never planned. The new programme's lift days (uA … uC) get their exercises from PROG via wmDay().
+   sets are the base — Phase 2 (read from the phase config, ended Sep 2026) adds +1 automatically.
+   fastDayAllowed is true only for rest and FLAT treadmill Z2. */
 const WM_DAYS={
   upperA:{id:"upperA",label:"Upper A — push bias",type:"lift",fastDayAllowed:false,exercises:[
     {exerciseId:"benchBB",sets:3,restSeconds:120},
@@ -662,161 +678,118 @@ const WM_DAYS={
   optZ2:{id:"optZ2",label:"Optional Z2 — flat (Phase 2 extra)",type:"treadmill_z2",fastDayAllowed:true,
     cardio:{machine:"treadmill",protocol:"Flat Zone 2 walk",hrBand:[115,135],inclinePct:[0,0],speedKmh:[5.5,6],durationMin:30}}
 };
-const WM_WEEK=["upperA","rowInt","lowerA","z2Tread","upperB","lowerB","sunRest"]; // Mon..Sun — the pre-rotation week
-/* Rotation week. Legs are trained three times a week (Tue / Thu / Sat) because the InBody shows the
-   lower body behind the upper body; the upper-body trio (push, pull, shoulders + arms) fills the other
-   days. Plan ids (kept from earlier versions so logged history resolves):
-     upperA = Push · upperB = Pull · pushB = Upper (shoulders + arms)
-     lowerA = Legs 1 (squat) · lowerB = Legs 2 (deadlift) · legsC = Legs 3 (glutes, single-leg, calves)
-     pullA  = the old Tuesday pull day, retired (only past sessions point at it).
-   There is one rest day a week and it is only ever Friday or Sunday; it alternates week by week unless
-   the lifter picks. "both" drops the shoulders + arms day for a five-day week with Friday and Sunday off.
-   The layout changes half-way through every block (weeks 1–3 layout A, weeks 4–6 layout B): the three
-   leg sessions swap days and push / pull swap days, so the week doesn't go stale. */
-const WM_HALF_WEEKS=3;
-const WM_LAYOUTS={ // Mon..Sun
-  A:{sun:["upperA","lowerA","upperB","lowerB","pushB","legsC","restDay"],
-     fri:["upperA","lowerA","upperB","lowerB","restDay","legsC","pushB"],
-     both:["upperA","lowerA","upperB","lowerB","restDay","legsC","restDay"]},
-  B:{sun:["upperB","lowerB","upperA","legsC","pushB","lowerA","restDay"],
-     fri:["upperB","lowerB","upperA","legsC","restDay","lowerA","pushB"],
-     both:["upperB","lowerB","upperA","legsC","restDay","lowerA","restDay"]}
-};
 WM_DAYS.pullA={id:"pullA",label:"Pull A",type:"lift",fastDayAllowed:false,exercises:[]};   // retired — history only
-WM_DAYS.pushB={id:"pushB",label:"Upper",type:"lift",fastDayAllowed:false,exercises:[]};   // defined by WM_BLOCKS only
-WM_DAYS.legsC={id:"legsC",label:"Legs 3",type:"lift",fastDayAllowed:false,exercises:[]};  // defined by WM_BLOCKS only
+WM_DAYS.pushB={id:"pushB",label:"Upper",type:"lift",fastDayAllowed:false,exercises:[]};    // retired — history only
+WM_DAYS.legsC={id:"legsC",label:"Legs 3",type:"lift",fastDayAllowed:false,exercises:[]};   // retired — history only
 WM_DAYS.restDay=Object.assign({},WM_DAYS.sunRest,{id:"restDay"});
-const WM_CAP_SEC=45*60;                 // lift session hard cap
+// the programme's days. Lift days take their exercises from PROG.days; rest days carry text only.
+WM_DAYS.uA={id:"uA",label:"Upper A: Chest + Back (heavy)",type:"lift",fastDayAllowed:false,exercises:[]};
+WM_DAYS.lA={id:"lA",label:"Lower A: Quads + Hamstrings",type:"lift",fastDayAllowed:false,exercises:[]};
+WM_DAYS.uB={id:"uB",label:"Upper B: Back + Chest (volume)",type:"lift",fastDayAllowed:false,exercises:[]};
+WM_DAYS.lB={id:"lB",label:"Lower B: Quads + Hamstrings + Calves",type:"lift",fastDayAllowed:false,exercises:[]};
+WM_DAYS.uC={id:"uC",label:"Upper C: Arms + Delts",type:"lift",fastDayAllowed:false,exercises:[]};
+WM_DAYS.restZ2={id:"restZ2",label:"Rest from lifting (Zone 2)",type:"rest",fastDayAllowed:true};
+WM_DAYS.restVO2={id:"restVO2",label:"Rest from lifting (VO2max 4x4)",type:"rest",fastDayAllowed:true};
+WM_DAYS.restFinal={id:"restFinal",label:"Final review + InBody",type:"rest",fastDayAllowed:true};
+delete WM_DAYS.restDay.cardio;   // the programme's rest days are text; the optional walk starts the "optZ2" session
 const WM_ROWER_SEED={lo:120,hi:130};    // 2:00–2:10 /500m seed band
 const WM_ROWER_FLOOR=110;               // 1:50 floor
 
-/* ---------- rotation: three 6-week blocks, repeating ----------
-   Why this shape: a lifter in his late 30s with a desk job and a 45-minute cap
-   gets the most from alternating the stimulus rather than grinding one plan.
-   BUILD (moderate reps) conditions muscle, tendons and the lower back; STRENGTH
-   (heavy, low reps) raises the ceiling every later block works under; VOLUME
-   (lighter, higher reps, joint-friendlier variations) harvests the strength with
-   less spinal load. Each block is 5 loading weeks + 1 deload. Squat, deadlift,
-   press and pull stay in every block (the anchors); the variations rotate.
-   Posture is trained under load inside the lift days: face pulls, rows, rear
-   delts, hip thrusts, hinges and a farmer's carry, paired into supersets so
-   they cost ~no extra time. Slot = {exerciseId, sets, restSeconds,
-   supersetGroup, repRange}. A repRange only appears where it differs from the
-   exercise default. In a compound+posture superset the compound's rest is a
-   30 s swap and the partner carries the real rest (so the pair lands at 90 s). */
-const wmSlot=(e,sets,rest,ss,r)=>({exerciseId:e,sets:sets,restSeconds:rest,supersetGroup:ss||undefined,repRange:r||undefined});
-const WM_BLOCK_WEEKS=6;
-const WM_BLOCK_ORDER=["build","strength","volume"];
-const WM_BLOCKS={
-  build:{id:"build",name:"Build",tag:"Hypertrophy base",
-    focus:"Moderate loads, controlled reps: 6–10 on the big lifts, 10–15 on accessories (deadlift 5–8).",
-    why:"Builds muscle while conditioning tendons and your lower back for the heavy block. Add weight only when you top the range on every set.",
-    days:{
-      upperA:{label:"Push — chest + posture",ex:[
-        wmSlot("benchBB",3,120),wmSlot("inclineDB",3,120),
-        wmSlot("ohpDB",3,30,"A2"),wmSlot("csRow",3,90,"A2"),
-        wmSlot("benchDB",3,90),
-        wmSlot("latRaise",3,60,"A3"),wmSlot("triPush",3,60,"A3")]},
-      lowerA:{label:"Legs 1 — squat + stiff-leg deadlift",ex:[
-        wmSlot("squatBB",3,120),wmSlot("sldl",3,120),wmSlot("legPress",3,120),
-        wmSlot("legCurl",3,60,"A1"),wmSlot("calfStand",3,60,"A1"),
-        wmSlot("kneeRaise",3,60)]},
-      pushB:{label:"Upper — shoulders + arms",ex:[
-        wmSlot("ohpBB",3,30,"B1"),wmSlot("rearFly",3,90,"B1"),
-        wmSlot("weightedDips",3,120),
-        wmSlot("cableFly",3,60,"B2"),wmSlot("latRaise",3,60,"B2"),
-        wmSlot("ohTri",3,60),
-        wmSlot("cableCrunch",3,60)]},
-      upperB:{label:"Pull — back + posture",ex:[
-        wmSlot("pullUp",3,120),wmSlot("rowBB",3,120),wmSlot("cableRow",3,60),
-        wmSlot("facePull",3,60,"B1"),wmSlot("dbCurl",3,60,"B1"),
-        wmSlot("hammerCurl",3,60,"B2"),wmSlot("rearFly",3,60,"B2")]},
-      lowerB:{label:"Legs 2 — deadlift day",ex:[
-        wmSlot("deadlift",3,150),wmSlot("hackSquat",3,120),wmSlot("hipThrust",3,120),
-        wmSlot("farmerCarry",3,60,"B1"),wmSlot("cableCrunch",3,60,"B1"),
-        wmSlot("calfSeat",3,60)]},
-      legsC:{label:"Legs 3 — squat variation, glutes + single-leg",ex:[
-        wmSlot("frontSquat",3,120),wmSlot("hipThrust",3,120),wmSlot("bulgarian",3,90),
-        wmSlot("legCurl",3,60,"C1"),wmSlot("legExt",3,60,"C1"),
-        wmSlot("calfStand",3,60,"C2"),wmSlot("kneeRaise",3,60,"C2")]}}},
-  strength:{id:"strength",name:"Strength",tag:"Heavy, low reps",
-    focus:"Heavy and low: 3–6 reps on squat, deadlift, bench, press and pull-ups; 8–12 on the accessories. Longer rests, same 45 minutes.",
-    why:"After Build your joints and tendons can take heavier loads. Getting stronger here raises the weights you can use for muscle-building reps next block.",
-    days:{
-      upperA:{label:"Push — heavy chest + posture",ex:[
-        wmSlot("benchBB",4,150,null,[4,6]),wmSlot("inclineDB",3,120),
-        wmSlot("ohpBB",3,30,"A2"),wmSlot("csRow",3,75,"A2",[8,12]),
-        wmSlot("weightedDips",2,90),
-        wmSlot("latRaise",3,60,"A3",[8,12]),wmSlot("triPush",3,60,"A3",[8,12])]},
-      lowerA:{label:"Legs 1 — heavy squat + stiff-leg deadlift",ex:[
-        wmSlot("squatBB",4,180,null,[4,6]),wmSlot("sldl",3,150,null,[6,8]),
-        wmSlot("legCurl",3,60,"A1",[8,12]),wmSlot("calfStand",3,60,"A1",[8,12]),
-        wmSlot("hangingLegRaise",3,60)]},
-      pushB:{label:"Upper — shoulders + arms",ex:[
-        wmSlot("inclineDB",3,30,"B1"),wmSlot("rearFly",3,90,"B1",[8,12]),
-        wmSlot("ohpDB",3,120),
-        wmSlot("latRaise",3,60,"B2",[8,12]),wmSlot("ohTri",3,60,"B2",[8,12]),
-        wmSlot("cableCrunch",3,60,null,[8,12])]},
-      upperB:{label:"Pull — heavy back + posture",ex:[
-        wmSlot("pullUp",4,150,null,[4,6]),wmSlot("rowBB",3,150,null,[5,8]),
-        wmSlot("facePull",3,60,"B1",[8,12]),wmSlot("dbCurl",3,60,"B1",[8,12]),
-        wmSlot("rearFly",3,60,"B2",[8,12]),wmSlot("hammerCurl",3,60,"B2",[8,12])]},
-      lowerB:{label:"Legs 2 — heavy deadlift day",ex:[
-        wmSlot("deadlift",4,180,null,[3,5]),wmSlot("frontSquat",3,150,null,[5,8]),
-        wmSlot("hipThrust",3,120,null,[6,8]),
-        wmSlot("farmerCarry",3,60,"B1"),wmSlot("cableCrunch",3,60,"B1",[8,12])]},
-      legsC:{label:"Legs 3 — lighter volume legs",ex:[
-        wmSlot("legPress",3,90,null,[8,12]),wmSlot("bulgarian",3,90),wmSlot("lunge",3,90),
-        wmSlot("legCurl",3,60,"C1",[8,12]),wmSlot("legExt",3,60,"C1",[8,12]),
-        wmSlot("calfSeat",3,60,"C2",[8,12]),wmSlot("hangingLegRaise",3,60,"C2")]}}},
-  volume:{id:"volume",name:"Volume",tag:"Higher reps, new angles",
-    focus:"Lighter, higher reps: 8–12 on the compounds, 12–15 on accessories, with new angles (incline DB, lat pulldown, trap-bar, split squat).",
-    why:"Harvests the strength you just built with less spinal and joint load. Fresh movement angles give tendons a break from the heavy barbell lifts.",
-    days:{
-      upperA:{label:"Push — volume chest + posture",ex:[
-        wmSlot("inclineDB",4,30,"A1",[8,12]),wmSlot("ohTri",4,90,"A1",[12,15]),
-        wmSlot("ohpDB",3,30,"A2",[8,12]),wmSlot("csRow",3,90,"A2",[12,15]),
-        wmSlot("cableFly",3,60,"A3",[12,15]),wmSlot("latRaise",3,60,"A3",[12,15]),
-        wmSlot("triPush",3,60,null,[12,15])]},
-      lowerA:{label:"Legs 1 — volume squat + stiff-leg deadlift",ex:[
-        wmSlot("squatBB",3,120,null,[8,12]),wmSlot("sldl",3,120,null,[8,12]),
-        wmSlot("legPress",3,90,null,[10,15]),
-        wmSlot("legCurl",3,60,"A1",[12,15]),wmSlot("calfStand",3,60,"A1",[12,15]),
-        wmSlot("hangingLegRaise",3,60,null,[10,15])]},
-      pushB:{label:"Upper — shoulders + arms",ex:[
-        wmSlot("ohpBB",3,30,"B1",[8,12]),wmSlot("rearFly",3,90,"B1",[12,15]),
-        wmSlot("weightedDips",3,120,null,[8,12]),
-        wmSlot("latRaise",3,60,"B2",[12,15]),wmSlot("ohTri",3,60,"B2",[12,15]),
-        wmSlot("cableCrunch",3,60,null,[12,15])]},
-      upperB:{label:"Pull — volume back + posture",ex:[
-        wmSlot("latPulldown",3,90),wmSlot("dbRow",3,90),wmSlot("cableRow",3,60,null,[12,15]),
-        wmSlot("yRaise",3,60,"B1"),wmSlot("inclineCurl",3,60,"B1"),
-        wmSlot("rearFly",3,60,"B2",[12,15]),wmSlot("hammerCurl",3,60,"B2")]},
-      lowerB:{label:"Legs 2 — trap-bar deadlift day",ex:[
-        wmSlot("trapDL",3,150),wmSlot("bulgarian",3,90),wmSlot("hipThrust",3,90,null,[8,12]),
-        wmSlot("legExt",3,60,"B1",[12,15]),wmSlot("calfSeat",3,60,"B1",[12,15]),
-        wmSlot("farmerCarry",3,60,"B2"),wmSlot("cableCrunch",3,60,"B2",[12,15])]},
-      legsC:{label:"Legs 3 — quads, glutes + single-leg",ex:[
-        wmSlot("hackSquat",3,90,null,[8,12]),wmSlot("hipThrust",3,120,null,[8,12]),wmSlot("lunge",3,90,null,[8,12]),
-        wmSlot("legCurl",3,60,"C1",[12,15]),wmSlot("legExt",3,60,"C1",[12,15]),
-        wmSlot("calfSeat",3,60,"C2",[12,15]),wmSlot("hangingLegRaise",3,60,"C2",[10,15])]}}}
+/* ---------- the programme: 17-week upper/lower lean bulk ----------
+   Starts Tue 10 Nov 2026. A programme week runs Tuesday to Monday (week 1 = 10–16 Nov, week 17 =
+   2–8 Mar 2027); the start date is never snapped to a Monday. The final review + InBody day is 9 Mar.
+   The weekday decides the session (dayByDow, Mon..Sun). A week's phase decides which set column
+   (A/B/C) applies, plus the deload (about 50% of column B sets, week-6 loads) and the taper (about
+   60% of column C sets, the last regular week's loads). The week-13 deload is a normal week at about
+   50% of column C sets. overrides = date → day id (Christmas deload and holiday
+   weeks); optional = dates whose session is optional. Slot = [exerciseId, setsA, setsB, setsC,
+   rest, RIR, note, estimate?]; rep range, start load and equipment live in the exercise library. */
+const PROG={
+  id:"ul-bulk-2026-11",name:"17-week upper/lower lean bulk",start:"2026-11-10",weeks:17,final:"2027-03-09",
+  scanDays:["2026-11-10","2026-12-08","2027-01-05","2027-02-09","2027-03-09"],
+  scanNote:"InBody scan today. Fasted, before training, no sauna or alcohol in the previous 24 h.",
+  dayByDow:["restVO2","uA","lA","restZ2","uB","lB","uC"],   // Mon..Sun
+  phases:[
+    {id:"1a",name:"Block 1a Intro",tag:"Set column A",from:1,to:3,kind:"intro",col:0,rir:["3","2 to 1","2 to 1"],
+      focus:"Set column A. Learn the lifts and find clean working weights. Week 1 stays 3 reps from failure, weeks 2 and 3 move to 2 to 1."},
+    {id:"1b",name:"Block 1b Build",tag:"Set column B",from:4,to:6,kind:"build",col:1,rir:["2 to 0"],
+      focus:"Set column B. More sets, closer to failure: 2 to 0 reps in reserve."},
+    {id:"dl",name:"Deload (Christmas)",tag:"About 50% of column B sets",from:7,to:7,kind:"deload",col:1,rir:["4"],
+      dowMap:{1:"uA",2:"lA",5:"uB"},   // Tue Upper A, Wed Lower A, optional Sat Upper B; every other day is rest
+      focus:"About 50% of the column B sets (rounded down, at least 1), week-6 loads, 4 reps in reserve. Sessions only on Tue Upper A, Wed Lower A and an optional Sat Upper B. Every other day is rest."},
+    {id:"2",name:"Block 2 Peak volume",tag:"Set column C",from:8,to:12,kind:"peak",col:2,rir:["2 to 0"],
+      focus:"Set column C, the most sets of the plan: 2 to 0 reps in reserve. On isolation exercises, the last set gets lengthened partials after you reach the RIR target."},
+    {id:"dl2",name:"Deload",tag:"About 50% of column C sets",from:13,to:13,kind:"deload",col:2,rir:["4"],
+      focus:"All five sessions at about 50% of the column C sets (rounded down, at least 1), week-12 loads, 4 reps in reserve. Recover before the last block."},
+    {id:"2b",name:"Block 2b Peak volume",tag:"Set column C",from:14,to:16,kind:"peak",col:2,rir:["2 to 0"],
+      focus:"Back to column C for three more weeks: 2 to 0 reps in reserve, lengthened partials on the last set of isolation exercises. Weights carry on from week 12."},
+    {id:"tp",name:"Taper + test",tag:"About 60% of column C sets",from:17,to:17,kind:"taper",col:2,rir:["3"],
+      focus:"About 60% of the column C sets (rounded, at least 1), 3 reps in reserve, week-16 loads. The first exercise of each day includes one top set to 0 to 1 reps in reserve at the week-16 load."}
+  ],
+  overrides:{   // week 8 (29 Dec to 4 Jan) holiday plan: Upper A, Lower A, rest, rest, Upper B, Lower B, no Upper C
+    "2026-12-29":"uA","2026-12-30":"lA","2026-12-31":"restDay","2027-01-01":"restDay","2027-01-02":"uB","2027-01-03":"lB"},
+  optional:["2026-12-26"],
+  weekNotes:{
+    7:"Christmas deload: only Tue 22 Dec Upper A and Wed 23 Dec Lower A, plus an optional Sat 26 Dec Upper B. Every other day is rest.",
+    8:"Holiday week: Tue 29 Dec Upper A, Wed 30 Dec Lower A, Thu 31 Dec and Fri 1 Jan rest, Sat 2 Jan Upper B, Sun 3 Jan Lower B. No Upper C this week.",
+    13:"Deload week: the normal five sessions, about half the sets, week-12 loads, 4 reps in reserve."},
+  restNotes:{
+    restZ2:"No lifting. Zone 2 bike 30-40 min, talk-test pace.",
+    restVO2:"No lifting. VO2max 4x4 on bike: 4 x 4 min at 85-95% HRmax, 3 min easy between, about 35 min total.",
+    restDay:"Rest day, no lifting. Muscle is built in recovery: hit your calories and protein, sleep 7+ hours.",
+    restFinal:"Final review day. InBody scan, then compare weight, body fat and your key lifts with 10 Nov."},
+  isoPartials:"last set: add lengthened partials after reaching the RIR target",
+  days:{
+    uA:[
+      ["dbBench",3,4,4,"2.5-3 min","2","3 s lowering, 1 s pause at chest"],
+      ["csDbRow",3,4,4,"2 min","2","",1],
+      ["inclineDB",3,3,3,"2 min","1-2","30 degree bench",1],
+      ["latPulldown",3,3,4,"2 min","1-2","1 s stretch at top",1],
+      ["cableLat",3,3,4,"60-90 s","1","Cable behind body",1],
+      ["ohTriCable",2,3,3,"90 s","1","",1],
+      ["inclineCurl",2,3,3,"90 s","1","45-60 degree bench",1]],
+    lA:[
+      ["hackSquat",3,4,4,"3 min","2","Plate load, deep range",1],
+      ["seatedLegCurl",3,3,4,"90 s","1","Lean torso forward",1],
+      ["legExt",3,3,4,"90 s","1","",1],
+      ["backExt",2,3,3,"90 s","1-2","Round upper back slightly, drive with hamstrings",1],
+      ["calfStand",3,3,4,"60 s","1","2 s pause at bottom",1]],
+    uB:[
+      ["wPullUp",3,4,4,"2.5 min","2","Bodyweight if under 6 reps",1],
+      ["machChest",3,3,4,"2 min","1-2","",1],
+      ["cableRow",3,3,4,"2 min","1-2","",1],
+      ["cableFly",2,3,3,"90 s","1","Per side, stretch focus",1],
+      ["ohpDB",3,3,3,"2 min","2","",1],
+      ["revPec",2,2,3,"60 s","1","",1],
+      ["extRot",2,2,2,"60 s","3","",1]],
+    lB:[
+      ["legPress",3,4,4,"2.5 min","1-2","Deep range",1],
+      ["bulgarian",2,2,3,"2 min","2","Reps per leg",1],
+      ["seatedLegCurl",3,3,4,"90 s","1","",1],
+      ["legExt",2,3,3,"90 s","1","",1],
+      ["calfSeat",3,3,4,"60 s","1","",1]],
+    uC:[
+      ["latRaise",4,4,5,"60-90 s","1","Seated",1],
+      ["skull",3,3,4,"90 s","1-2","Swap to overhead cable if elbows hurt",1],
+      ["bayCurl",3,4,4,"90 s","1","",1],
+      ["pecDeck",2,3,3,"90 s","1","",1],
+      ["straightArm",2,3,3,"60 s","1","",1],
+      ["hammerCurl",2,2,2,"60 s","1","",1],
+      ["facePull",2,2,2,"60 s","2","",1]]
+  }
 };
-// the six-week wave inside every block (effort cue only; deload also trims load and sets)
-const WM_WEEK_CUES=[
-  {n:1,name:"Settle in",effort:"Leave 3 reps in the tank on every set. Find clean working weights."},
-  {n:2,name:"Build",effort:"Leave 2–3 reps in the tank. Add load only if you topped the range on every set."},
-  {n:3,name:"Build",effort:"Leave 2 reps in the tank. Chase one more rep on each set."},
-  {n:4,name:"Push",effort:"Leave 1–2 reps in the tank on the last set of each lift."},
-  {n:5,name:"Peak",effort:"Last set of each lift goes to 0–1 reps in the tank, form strict. The week to hit PRs."},
-  {n:6,name:"Deload",effort:"About 10% lighter and one set fewer, 4 reps in the tank, cardio easy. This is where the last five weeks consolidate."}
-];
+// names that older logs used for the same lift (the history matches by name too)
+const SNAP_BASE=n=>String(n).toLowerCase().replace(/[^a-z0-9]/g,"").replace(/s$/,"");
+const SNAP_ALIAS={};
+[["Hack Squat / Leg Press","Leg Press"],["Pull-up (weighted/assisted)","Weighted Pull-up"],
+ ["Overhead Triceps Extension","Overhead Cable Triceps Extension"],["Rear Delt Fly","Reverse Pec Deck"]
+].forEach(p=>{SNAP_ALIAS[SNAP_BASE(p[0])]=SNAP_BASE(p[1]);});
 
 /* ---------- workout-module store slice ---------- */
 function wmBlank(){
-  const mon=mondayOf(todayISO());
   return {inbody:{scanDate:"2026-08-01",weightKg:78.1,bodyFatPct:13.9,skeletalMuscleKg:null,segmental:{}},
     sessions:{},setLogs:[],cardioLogs:[],activeSessionId:null,rowerPaceSec:null,
-    rotation:{anchors:[{startDate:mon,startBlock:0}]},restOverride:{}};
+    programme:{id:PROG.id,start:PROG.start,weeks:PROG.weeks}};
 }
 
 /* ---------- phase reads (integration point A — read-only) ---------- */
@@ -836,69 +809,97 @@ function wmCanStart(day,date){
 }
 function wmSets(pe,date){return pe.sets+(wmPhase2(date)?1:0);} // Phase 2: +1 set per exercise
 
-/* ---------- rotation: which block and week is a date in? ----------
-   S.wm.rotation.anchors = [{startDate, startBlock}] sorted by date. The week
-   starting at an anchor's (Monday) startDate is week 1 of block number startBlock,
-   cycling Build → Strength → Volume; it runs on from there until the next anchor.
-   "Start next block now" appends an anchor, so weeks already done keep the
-   labels they had. Dates before the first anchor are pre-rotation (the frozen
-   week). Week 6 of every block is the deload. */
-function wmBlockAt(date){
-  const r=S.wm&&S.wm.rotation,mon=mondayOf(date);
-  const a=r&&r.anchors&&r.anchors.filter(x=>x.startDate<=mon).pop();
-  if(!a)return null;
-  const n=WM_BLOCK_ORDER.length,W=WM_BLOCK_WEEKS;
-  const wk=Math.round(daysBetween(a.startDate,mon)/7);
-  const abs=(a.startBlock||0)+Math.floor(wk/W);
-  const week=wk%W+1;
-  const startDate=addDays(a.startDate,Math.floor(wk/W)*W*7);
-  return {block:WM_BLOCKS[WM_BLOCK_ORDER[((abs%n)+n)%n]],index:abs,week:week,weeks:W,deload:week===W,
-    half:week<=WM_HALF_WEEKS?"A":"B",
-    startDate:startDate,endDate:addDays(startDate,W*7-1),
-    next:WM_BLOCKS[WM_BLOCK_ORDER[(((abs+1)%n)+n)%n]]};
+/* ---------- the programme calendar: which phase, week and session is a date? ----------
+   The 17 weeks run from the start date (a Tuesday), never from a Monday: week 1 = 10–16 Nov 2026,
+   week 17 = 2–8 Mar 2027. progAt(date) is null before the start and after week 17. */
+function progStart(){
+  try{const p=S.wm.programme;if(p&&p.id===PROG.id&&/^\d{4}-\d\d-\d\d$/.test(p.start))return p.start;}catch(e){}
+  return PROG.start;
 }
-// the week's rest day: "sun" or "fri" (alternating from the first rotation week), or "both"; the lifter can override
-function wmDefaultRest(mon){
-  const a=S.wm.rotation&&S.wm.rotation.anchors&&S.wm.rotation.anchors[0];
-  const k=a?Math.round(daysBetween(a.startDate,mon)/7):0;
-  return ((k%2)+2)%2===0?"sun":"fri";
+function progAt(date){
+  const st=progStart(),k=daysBetween(st,date);
+  if(k<0||k>=PROG.weeks*7)return null;
+  const week=Math.floor(k/7)+1,ph=PROG.phases.find(p=>week>=p.from&&week<=p.to);
+  const weekStart=addDays(st,(week-1)*7);
+  return {week:week,weeks:PROG.weeks,phase:ph,weekStart:weekStart,weekEnd:addDays(weekStart,6),
+    rir:ph.rir[Math.min(week-ph.from,ph.rir.length-1)],
+    deload:ph.kind==="deload",taper:ph.kind==="taper",noProg:ph.kind==="deload"||ph.kind==="taper",
+    note:PROG.weekNotes[week]||""};
 }
-function wmRestKind(mon){
-  const ov=S.wm.restOverride&&S.wm.restOverride[mon];
-  return (ov==="sun"||ov==="fri"||ov==="both")?ov:wmDefaultRest(mon);
+function progOptional(date){return PROG.optional.indexOf(date)>=0;}
+// the seven dates of the programme week that holds `date` (Tuesday to Monday). Before the start: week 1.
+// After the last week: a plain Monday to Sunday week.
+function wmWeekDays(date){
+  const b=progAt(date),st=b?b.weekStart:(date<progStart()?progStart():mondayOf(date));
+  return Array.from({length:7},(_,i)=>addDays(st,i));
 }
-function wmSetRest(mon,kind){ // pick a week's rest day; choosing the default again clears the override
-  S.wm.restOverride=S.wm.restOverride||{};
-  if(kind===wmDefaultRest(mon))delete S.wm.restOverride[mon];else S.wm.restOverride[mon]=kind;
-  save();
+// the day id for a date: the weekday decides, a date override beats it, the deload week has its own map
+function wmDayIdFor(date){
+  if(date===PROG.final)return "restFinal";
+  const b=progAt(date);
+  if(!b)return "restDay";
+  if(PROG.overrides[date])return PROG.overrides[date];
+  const d=dow(date),dm=b.phase.dowMap;
+  return dm?(dm[d]||"restDay"):PROG.dayByDow[d];
 }
-// the layout in force on a date, e.g. {half:"B",rest:"fri",days:[…Mon..Sun plan ids]}
-function wmLayoutFor(date){
-  const b=wmBlockAt(date);if(!b)return null;
-  const rest=wmRestKind(mondayOf(date));
-  return {half:b.half,rest:rest,days:WM_LAYOUTS[b.half][rest]};
+// sets for one exercise this week: column A / B / C by phase; deload ≈ 50% of the phase's column
+// (B in week 7, C in week 13; round down, min 1); taper ≈ 60% of C (round, min 1)
+function progSets(row,b){
+  if(!b)return row[1];
+  if(b.phase.kind==="deload")return Math.max(1,Math.floor(row[1+b.phase.col]*0.5));   // wk 7: column B, wk 13: column C
+  if(b.phase.kind==="taper")return Math.max(1,Math.round(row[1+b.phase.col]*0.6));
+  return row[1+b.phase.col];
 }
-// which programme day falls on a date: the week's layout once the rotation has begun, the old week before
-function wmDayIdFor(date){const L=wmLayoutFor(date);return (L?L.days:WM_WEEK)[dow(date)];}
-// the day to do on `date`: lift days come from the active block; the Sunday rest day is relabelled
-// (it was "Fast day" under the cut phases)
+// "2.5-3 min" → 165 s, "60-90 s" → 75 s (only used to estimate session length; nothing counts down)
+function progRestSec(txt){
+  const m=/([\d.]+)(?:\s*-\s*([\d.]+))?\s*(min|s)/.exec(txt||"");
+  if(!m)return 90;
+  return Math.round((+m[1]+(m[2]?+m[2]:+m[1]))/2*(m[3]==="min"?60:1));
+}
+// the reps-in-reserve to show: the week's own target in the intro (unless the lift asks for more),
+// the lift's own target in the build and peak blocks, 4 in the deload, 3 in the taper
+function progRir(slotRir,b,first){
+  const own=String(slotRir).split("-").map(Number),ownTxt=own.length>1?own[0]+" to "+own[1]:String(own[0]);
+  if(!b)return ownTxt;
+  const k=b.phase.kind;
+  if(k==="deload")return "4";
+  if(k==="taper")return first?"3 (top set 0 to 1)":"3";
+  if(k==="intro"){const hi=Math.max.apply(null,String(b.rir).split(" to ").map(Number));return own[0]>hi?ownTxt:b.rir;}
+  return ownTxt;
+}
+function progSlot(row,b,first){
+  const ex=wmEx(row[0]),k=b?b.phase.kind:"",notes=[];
+  if(row[6])notes.push(row[6]);
+  if(k==="peak"&&ex.iso)notes.push(PROG.isoPartials);
+  if(k==="taper"&&first)notes.push("one top set to 0 to 1 reps in reserve at the week-16 load, the other sets at 3");
+  return {exerciseId:row[0],sets:progSets(row,b),rest:row[4],restSeconds:progRestSec(row[4]),
+    rir:progRir(row[5],b,first),note:notes.join(". "),est:!!row[7]};
+}
+// the day to do on `date`: lift days are built from the programme (this week's sets, RIR and notes);
+// rest days carry their text; anything else is the registry entry
 function wmDay(dayId,date){
   const base=WM_DAYS[dayId];
-  if(base&&(dayId==="sunRest"||dayId==="restDay")&&wmBlockAt(date))return Object.assign({},base,{label:"Rest day — recovery"});
-  if(!base||base.type!=="lift")return base;
-  const b=wmBlockAt(date);
-  const plan=b&&b.block.days[dayId];
-  if(!plan)return base; // before the rotation began → the frozen week
-  return Object.assign({},base,{label:plan.label,blockId:b.block.id,week:b.week,deload:b.deload,
-    exercises:plan.ex.map(pe=>Object.assign({},pe,{sets:Math.max(2,pe.sets-(b.deload?1:0))}))});
+  if(!base)return base;
+  const scan=PROG.scanDays.indexOf(date)>=0;
+  if(PROG.days[dayId]){
+    const b=progAt(date);
+    return Object.assign({},base,{blockId:b?b.phase.id:null,week:b?b.week:null,deload:!!(b&&b.deload),
+      noProg:!!(b&&b.noProg),taper:!!(b&&b.taper),optional:progOptional(date),scan:scan,rirWeek:b?b.rir:"",
+      exercises:PROG.days[dayId].map((row,i)=>progSlot(row,b,i===0))});
+  }
+  if(base.type==="rest")
+    return Object.assign({},base,{label:dayId==="restDay"?"Rest day — recovery":base.label,
+      note:PROG.restNotes[dayId]||PROG.restNotes.restDay,scan:scan});
+  return base;
 }
 // a session keeps the plan it started with, so editing the programme never rewrites what was done
 function wmSessionDay(sess){
   const base=WM_DAYS[sess.programmeDayId];
   if(sess.plan)return Object.assign({},base,{label:sess.label||base.label,blockId:sess.blockId,week:sess.week,
-    deload:!!sess.deload,exercises:sess.plan});
+    deload:!!sess.deload,noProg:!!sess.noProg,exercises:sess.plan});
   return wmDay(sess.programmeDayId,sess.date);
 }
+
 function wmRange(pe,ex){return (pe&&pe.repRange)||ex.repRange;}
 function wmRangeLabel(ex,range){range=range||ex.repRange;return range[0]+"–"+range[1]+(ex.unit==="s"?" s":" reps");}
 
@@ -906,9 +907,9 @@ function wmRangeLabel(ex,range){range=range||ex.repRange;return range[0]+"–"+r
 function wmEx(id){return WM_EXERCISES.find(e=>e.id===id);}
 function wmLBM(ib){return ib.weightKg*(1-ib.bodyFatPct/100);}
 function wmRound(kg,step){step=step||2.5;return Math.round(kg/step)*step;}
-// conservative start: est 1RM = LBM × multiplier, work at 70% of that
+// retired lifts only: conservative start = est 1RM (LBM × multiplier), work at 70% of that
 function wmEstimateKg(ex,ib){
-  if(ex.lbmMult==null)return ex.startKg||0;
+  if(ex.startKg!=null||ex.lbmMult==null)return ex.startKg||0;   // programme lifts carry their own start load
   let w=wmLBM(ib)*ex.lbmMult*0.7;
   if(ex.perHand)w/=2;
   return Math.max(0,wmRound(w,ex.roundKg));
@@ -924,59 +925,71 @@ function wmLoadFromE1RM(ex,e1rm,range){
   return Math.max(0,wmRound(ex.bwBased?eff-wmBodyKg():eff));
 }
 function wmSameRange(a,b){return !!a&&!!b&&a[0]===b[0]&&a[1]===b[1];}
-// ended sessions that hold performed (non-skipped) sets of this exercise, oldest first.
-// Deload sessions never feed progression; each session carries the rep range it was done at.
-function wmSessionsFor(exId){
-  const ex=wmEx(exId);
-  const by={};
-  S.wm.setLogs.forEach(l=>{if(l.exerciseId===exId&&!l.skipped)(by[l.sessionId]=by[l.sessionId]||[]).push(l);});
-  return Object.keys(by)
-    .map(id=>({sess:S.wm.sessions[id],logs:by[id].slice().sort((a,b)=>a.setIndex-b.setIndex)}))
-    .filter(x=>x.sess&&x.sess.endedAt&&!x.sess.deload)
-    .map(x=>{x.range=x.logs[0].range||(ex?ex.repRange:null);return x;})
-    .sort((a,b)=>a.sess.startedAt<b.sess.startedAt?-1:1);
+// logs of the same lift typed on the Workout tab (matched by name, aliases included), shaped like session logs,
+// so "last time" and progression see everything logged under that name
+function wmManualSessions(ex){
+  const keys={};
+  [ex.name].concat((ex.alias||[]).map(a=>(wmEx(a)||{}).name)).forEach(n=>{if(n)keys[snapKey(n)]=1;});
+  const out=[];
+  for(const d in S.workouts){
+    (S.workouts[d].exercises||[]).forEach(e=>{
+      if(!keys[snapKey(e.name)])return;
+      const logs=[];
+      (e.sets||[]).forEach((st,i)=>{const r=num(st.reps);if(r>0)logs.push({sessionId:"manual-"+d,exerciseId:ex.id,setIndex:i,weightKg:num(st.weight),reps:r});});
+      if(logs.length)out.push({sess:{id:"manual-"+d,date:d,startedAt:d+"T12:00:00.000Z",endedAt:d+"T12:00:00.000Z",manual:true},logs:logs,range:ex.repRange});
+    });
+  }
+  return out;
 }
-/* No history → carried over from a related lift if one is logged (RDL → stiff-leg
-   deadlift, back squat → front squat), else the InBody estimate (calibration; adjust
-   freely, the engine re-anchors to what was actually logged). With history the logs
-   govern — a new scan re-baselines estimates but never drags earned progression down.
-   Same rep range as last time: double progression — top of range on all sets two
-   sessions running → +increment; below the bottom two sessions running → deload 10%.
-   Different rep range (a new block): re-set the load from the last session's estimated
-   1RM so 12-rep weights don't get used for 5s. opts.deload = the block's deload week. */
+// ended sessions that hold performed (non-skipped) sets of this lift (or an alias of it), oldest first.
+// Deload and taper sessions never feed progression; each session carries the rep range it was done at.
+function wmSessionsFor(exId){
+  const ex=wmEx(exId),ids={};
+  ids[exId]=1;((ex&&ex.alias)||[]).forEach(a=>{ids[a]=1;});
+  const by={},skipped={};
+  S.wm.setLogs.forEach(l=>{
+    if(!ids[l.exerciseId])return;
+    if(l.skipped)skipped[l.sessionId]=(skipped[l.sessionId]||0)+1;
+    else(by[l.sessionId]=by[l.sessionId]||[]).push(l);
+  });
+  const real=Object.keys(by)
+    .map(id=>({sess:S.wm.sessions[id],logs:by[id].slice().sort((a,b)=>a.setIndex-b.setIndex),skipped:skipped[id]||0}))
+    .filter(x=>x.sess&&x.sess.endedAt&&!x.sess.deload&&!x.sess.noProg)
+    .map(x=>{x.range=x.logs[0].range||(ex?ex.repRange:null);return x;});
+  return real.concat(ex?wmManualSessions(ex):[]).sort((a,b)=>a.sess.startedAt<b.sess.startedAt?-1:1);
+}
+/* Next weight and target reps for a lift (double progression).
+   No log under this name (session screen or Workout tab) → the programme's start load, aiming for the
+   bottom of the range. Otherwise, from the last non-deload, non-taper session:
+   · every set (none skipped) reached the top of the range → one step up (db +2 kg, machine/cable +2.5, barbell +2.5,
+     added bodyweight +2.5, Hack Squat and Leg Press +10) and the target reps reset to the bottom;
+   · reps fell two sessions running at the same weight → 7.5% lighter, rounded to the lift's grid;
+   · otherwise the same weight and one more rep than the lowest set last time (capped at the top).
+   opts.noProg (deload and taper weeks) shows the weight last used and changes nothing. */
 function wmPrescription(exId,range,opts){
-  const ex=wmEx(exId);
-  range=range||ex.repRange;
-  const hist=wmSessionsFor(exId);
-  let res;
+  const ex=wmEx(exId),hist=wmSessionsFor(exId);
+  range=range||ex.repRange;opts=opts||{};
   if(!hist.length){
     const sf=ex.seedFrom,src=sf&&wmEx(sf.id),sh=src?wmSessionsFor(src.id):[];
-    if(sh.length&&!ex.noE1RM)
-      res={kg:wmLoadFromE1RM(ex,wmBestE1RM(src,sh[sh.length-1].logs)*sf.ratio,range),why:"carried",from:src.name};
-    else res={kg:wmEstimateKg(ex,S.wm.inbody),why:"calibration"};
-  } else {
-    const last=hist[hist.length-1];
-    const anchor=Math.max(...last.logs.map(l=>num(l.weightKg)));
-    if(!wmSameRange(last.range,range)){
-      res=ex.noE1RM?{kg:anchor,why:"hold"}:{kg:wmLoadFromE1RM(ex,wmBestE1RM(ex,last.logs),range),why:"converted"};
-    } else {
-      let kg=anchor,why="hold";
-      const prev=hist.length>=2&&wmSameRange(hist[hist.length-2].range,range)?hist[hist.length-2]:null;
-      if(prev){
-        const topAll=x=>x.logs.length&&x.logs.every(l=>num(l.reps)>=range[1]);
-        const below=x=>x.logs.some(l=>num(l.reps)<range[0]);
-        if(topAll(last)&&topAll(prev)){kg=anchor+ex.incrementKg;why="progress";}
-        else if(below(last)&&below(prev)){kg=wmRound(anchor*0.9);why="deload";}
-      }
-      res={kg,why};
-    }
+    if(sh.length&&!ex.noE1RM&&ex.startKg==null)
+      return {kg:wmLoadFromE1RM(ex,wmBestE1RM(src,sh[sh.length-1].logs)*sf.ratio,range),why:"carried",from:src.name,reps:range[0]};
+    return {kg:wmEstimateKg(ex,S.wm.inbody),why:"start",reps:range[0]};
   }
-  if(opts&&opts.deload&&res.kg>0)res={kg:wmRound(res.kg*0.9),why:"deloadweek"};
-  return res;
+  const last=hist[hist.length-1],anchor=Math.max.apply(null,last.logs.map(l=>num(l.weightKg)));
+  if(opts.noProg)return {kg:anchor,why:"frozen",reps:range[0]};
+  const hi=range[1],step=ex.incrementKg||2.5,grid=ex.grid||step;
+  if(!last.skipped&&last.logs.every(l=>num(l.reps)>=hi))return {kg:anchor+step,why:"progress",reps:range[0]};   // a skipped set means not ALL sets reached the top
+  if(hist.length>=3){
+    const avg=x=>x.logs.reduce((a,l)=>a+num(l.reps),0)/x.logs.length,wt=x=>Math.max.apply(null,x.logs.map(l=>num(l.weightKg)));
+    const h2=hist[hist.length-3],h1=hist[hist.length-2];
+    if(wt(h2)===anchor&&wt(h1)===anchor&&avg(h1)<avg(h2)&&avg(last)<avg(h1))
+      return {kg:Math.max(0,wmRound(anchor*0.925,grid)),why:"deload",reps:range[0]};
+  }
+  return {kg:anchor,why:"hold",reps:Math.min(hi,Math.min.apply(null,last.logs.map(l=>num(l.reps)))+1)};
 }
-function wmWhyLabel(w,from){return w==="progress"?"↑ progressed":w==="deload"?"↓ deload −10%":w==="deloadweek"?"deload week −10%":
-  w==="converted"?"re-set for this block's reps":w==="carried"?("carried over from "+(from||"your last lift")):
-  w==="calibration"?"from your InBody — adjust freely":"hold";}
+function wmWhyLabel(w,from,reps){return w==="progress"?"↑ progressed":w==="deload"?"↓ 7.5% lighter":
+  w==="frozen"?"same weight as last time — no progression this week":w==="carried"?("carried over from "+(from||"your last lift")):
+  w==="start"?"programme start load — adjust freely":"same weight"+(reps?" — aim for "+reps+" reps":"");}
 function wmKgLabel(ex,kg){
   kg=num(kg);
   if(ex.equipment==="bodyweight")return kg>0?("BW+"+round(kg,1)+"kg"):"BW";
@@ -1027,7 +1040,7 @@ function wmCreateSession(dayId,date){
   const id="ws-"+date+"-"+Date.now().toString(36);
   const day=wmDay(dayId,date);
   S.wm.sessions[id]={id,date,programmeDayId:dayId,startedAt:new Date().toISOString(),endedAt:null,isFastDay:wmIsFastDay(date),
-    blockId:day.blockId||null,week:day.week||null,deload:!!day.deload,label:day.label,
+    blockId:day.blockId||null,week:day.week||null,deload:!!day.deload,noProg:!!day.noProg,label:day.label,
     plan:day.type==="lift"?day.exercises.map(pe=>Object.assign({},pe)):null};
   S.wm.activeSessionId=id;save();return id;
 }
@@ -1039,12 +1052,11 @@ function wmStartSession(dayId){
   }
   const act=S.wm.activeSessionId&&S.wm.sessions[S.wm.activeSessionId];
   if(act&&!act.endedAt){route="wmsession";render();return;} // resume, don't stack
-  wmCreateSession(dayId,date);wmDrafts={};wmRestUntil=0;wmUI={sess:null,open:null,shown:null};
+  wmCreateSession(dayId,date);wmDrafts={};wmUI={sess:null,open:null,shown:null};
   route="wmsession";render();
 }
 function wmLoggedSet(sid,exId,si){return S.wm.setLogs.find(l=>l.sessionId===sid&&l.exerciseId===exId&&l.setIndex===si);}
-function wmElapsedSec(sess){return Math.max(0,(Date.now()-Date.parse(sess.startedAt))/1000);}
-// end a lift session: anything not logged is flagged skipped (45-min cap rule)
+// end a lift session: anything not logged is flagged skipped
 function wmFlagRemaining(sess){
   const day=wmSessionDay(sess);
   if(day.type==="lift"){
@@ -1085,7 +1097,7 @@ function wmWeightFor(sess,pe){
   if(d!=null&&isFinite(d))return num(d);
   const mine=wmLogsFor(sess.id,ex.id);
   if(mine.length)return num(mine[mine.length-1].weightKg);
-  return wmPrescription(ex.id,wmRange(pe,ex),{deload:!!sess.deload}).kg;
+  return wmPrescription(ex.id,wmRange(pe,ex),{noProg:!!(sess.noProg||sess.deload)}).kg;
 }
 function wmSuggestReps(sess,pe,setIndex){
   const ex=wmEx(pe.exerciseId),range=wmRange(pe,ex),mine=wmLogsFor(sess.id,ex.id);
@@ -1132,18 +1144,23 @@ function wmLogRemaining(sess,pes,reps){
   return n;
 }
 
+// ids are reused from the old stack where the slot is the same (Space Goods morning stack, first meal, Salte at training), so past
+// ticks stay meaningful. No magnesium and no cacao tea; older "mag"/"cacao" ticks stay in the data and are no longer counted.
 const SUPPS=[
-  {id:"acv",   name:"Apple cider vinegar",       when:"Morning",        tm:"~07:00"},
-  {id:"rdust", name:"Rainbow Dust + creatine",   when:"Morning stack",  tm:"~07:30"},
-  {id:"hdust", name:"Salte Electrolytes",        when:"Intra-workout",  tm:"training"},
-  {id:"coll",  name:"Collagen",                  when:"First meal",     tm:"12:00"},
-  {id:"d3k2",  name:"D3 + K2",                   when:"With first meal",tm:"12:00"},
-  {id:"omega", name:"Omega-3 (high dose)",       when:"With a meal",    tm:"midday"},
-  {id:"cacao", name:"Aduna cacao tea",           when:"Afternoon",      tm:"~15:30"},
-  {id:"mag",   name:"Magnesium glycinate",       when:"Sleep wind-down",tm:"19:30"}
+  {id:"rdust", name:"Space Goods coffee (about 230 mg caffeine, before 13:00) + creatine 5 g", when:"Morning / pre-workout", tm:"morning"},
+  {id:"d3k2",  name:"Vitamin D3 1000-2000 IU (Oct-Apr), Omega-3 1-2 g EPA+DHA (optional)", when:"First meal",            tm:"first meal"},
+  {id:"hdust", name:"Salte Electrolytes on sauna or heavy-sweat days; whey 25-40 g if needed for protein", when:"Training / sauna", tm:"training"}
 ];
 
-// bulk staples — carbs are back on the menu for this block
+// the quick-add list: five go-to meals (the older default foods are replaced by update 11; foods you added yourself stay)
+const SEED_FOODS=[
+  {name:"Chicken, rice + veg bowl",kcal:760,protein:60,netCarbs:95,fat:18},
+  {name:"Oats, milk, whey, banana",kcal:740,protein:50,netCarbs:100,fat:12},
+  {name:"Salmon, potatoes, veg + knackebrod",kcal:790,protein:38,netCarbs:95,fat:30},
+  {name:"Proteinkvarg, berries, granola, honey",kcal:540,protein:38,netCarbs:70,fat:12},
+  {name:"Lean beef wholewheat pasta",kcal:670,protein:52,netCarbs:76,fat:15}
+];
+// older defaults, kept only so the update can tell them apart from foods you added yourself
 const BULK_FOODS=[
   {name:"Basmati rice 250g cooked",kcal:325,protein:7,netCarbs:70,fat:1},
   {name:"Oats 80g + whole milk 250ml",kcal:460,protein:19,netCarbs:64,fat:13},
@@ -1153,21 +1170,17 @@ const BULK_FOODS=[
   {name:"Sourdough 2 slices + honey",kcal:290,protein:8,netCarbs:56,fat:2},
   {name:"Whey + banana + oats shake",kcal:390,protein:30,netCarbs:52,fat:5}
 ];
-const SEED_FOODS=[
-  {name:"Whey shake (1 scoop)",kcal:120,protein:24,netCarbs:2,fat:2},
-  {name:"4 eggs",kcal:312,protein:24,netCarbs:1,fat:22},
-  {name:"Ribeye steak 200g",kcal:460,protein:46,netCarbs:0,fat:30},
-  {name:"Salmon fillet 180g",kcal:367,protein:39,netCarbs:0,fat:23},
-  {name:"Avocado (1)",kcal:240,protein:3,netCarbs:3,fat:22},
-  {name:"Greek yoghurt 200g (full fat)",kcal:194,protein:18,netCarbs:7,fat:10},
-  {name:"Chicken breast 200g",kcal:330,protein:62,netCarbs:0,fat:7}
-].concat(BULK_FOODS);
+const LEGACY_SEED_NAMES=["Whey shake (1 scoop)","4 eggs","Ribeye steak 200g","Salmon fillet 180g","Avocado (1)",
+  "Greek yoghurt 200g (full fat)","Chicken breast 200g"].concat(BULK_FOODS.map(f=>f.name));
 
 /* ---------- store ---------- */
 const KEY="peaklog.v1";
+// raw copy of the stored data, written once, before the update to the upper/lower programme changes anything
+const BACKUP_KEY="peaklog.backup.pre-upper-lower-bulk";
+function keepBackup(raw){try{if(raw!=null&&localStorage.getItem(BACKUP_KEY)==null)localStorage.setItem(BACKUP_KEY,raw);}catch(e){}}
 let S=load();
 function blank(){
-  return {version:1, planRev:10, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
+  return {version:1, planRev:12, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
     bodyLog:[{date:BASELINE.date,weight:BASELINE.weight,bodyFat:BASELINE.bodyFat,note:"InBody 580 baseline"},
              Object.assign({},PHASE_START_BODY)],
     inbody:[BASELINE],
@@ -1180,6 +1193,8 @@ function load(){
   try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o&&o.version){
     // one-time safety copy of the raw data before any migration rewrites it
     if((o.planRev||0)<10){try{const bk=KEY+".bak-planRev"+(o.planRev||0);if(localStorage.getItem(bk)==null)localStorage.setItem(bk,r);}catch(e){}}
+    if((o.planRev||0)<11)keepBackup(r);
+    if(o.planRev===11){try{const bk=KEY+".bak-planRev11";if(localStorage.getItem(bk)==null)localStorage.setItem(bk,r);}catch(e){}}
     const m=migrate(o);try{localStorage.setItem(KEY,JSON.stringify(m));}catch(e){}
     return m;}}}catch(e){}
   // never replace data we could not read with a blank slate without keeping the original
@@ -1203,10 +1218,6 @@ function migrate(o){ // forward-compatible defaults
   o.wm.cardioLogs=o.wm.cardioLogs||[];
   if(o.wm.activeSessionId===undefined)o.wm.activeSessionId=null;
   if(o.wm.rowerPaceSec===undefined)o.wm.rowerPaceSec=null;
-  // rotation: the 6-week block cycle starts the week this version first opens; nothing logged is touched
-  if(!o.wm.rotation||!Array.isArray(o.wm.rotation.anchors)||!o.wm.rotation.anchors.length)
-    o.wm.rotation={anchors:[{startDate:mondayOf(todayISO()),startBlock:0}]};
-  if(!o.wm.restOverride)o.wm.restOverride={};
   if(!o.planRev||o.planRev<2){
     // goal pushed to end Aug 2026
     if(!o.profile.goalDate||o.profile.goalDate==="2026-07-31")o.profile.goalDate=GOAL.date;
@@ -1271,6 +1282,36 @@ function migrate(o){ // forward-compatible defaults
     for(const d in o.workouts){if(d>=today&&isPristine(o.workouts[d]))delete o.workouts[d];}
     o.planRev=10;
   }
+  if(o.planRev<11){
+    // 13-week upper/lower lean bulk from 10 Nov 2026. Everything logged stays. Only auto-generated Workout-tab
+    // days that were never logged into, dated today or later, are dropped so they regenerate from the new plan.
+    const today=todayISO();
+    for(const d in o.workouts){if(d>=today&&isPristine(o.workouts[d]))delete o.workouts[d];}
+    // new nutrition targets (the previous ones are in the backup copy)
+    Object.assign(o.targets,{kcal:TARGETS.kcal,protein:TARGETS.protein,fat:TARGETS.fat,netCarbs:TARGETS.netCarbs,
+      netCarbCeiling:TARGETS.netCarbCeiling,water:TARGETS.water,waterSauna:TARGETS.waterSauna});
+    // programme start; the old rotation and rest-day choices are no longer used (left in place, never read)
+    o.wm.programme={id:PROG.id,start:PROG.start,weeks:PROG.weeks};
+    // sessions logged before the update keep the exact lifts they were done with
+    for(const id in o.wm.sessions){
+      const ss=o.wm.sessions[id],base=WM_DAYS[ss.programmeDayId];
+      if(!ss.plan&&base&&base.type==="lift"&&base.exercises&&base.exercises.length){
+        ss.plan=base.exercises.map(pe=>Object.assign({},pe));ss.label=ss.label||base.label;
+      }
+    }
+    // quick-add foods: the five new meals first; the old default foods go, foods you added yourself stay
+    const keep=o.myFoods.filter(f=>LEGACY_SEED_NAMES.indexOf(f.name)<0&&!SEED_FOODS.some(n=>n.name===f.name));
+    o.myFoods=SEED_FOODS.map(f=>Object.assign({},f)).concat(keep);
+    o.planRev=11;
+  }
+  if(o.planRev<12){
+    // the same plan now runs 17 weeks to 9 Mar 2027 (deload week 13, Block 2b weeks 14-16, taper week 17).
+    // Weeks 1-12 are unchanged. Untouched auto-generated days dated today or later rebuild; logged days stay.
+    const today=todayISO();
+    for(const d in o.workouts){if(d>=today&&isPristine(o.workouts[d]))delete o.workouts[d];}
+    o.wm.programme={id:PROG.id,start:(o.wm.programme&&o.wm.programme.id===PROG.id&&o.wm.programme.start)||PROG.start,weeks:PROG.weeks};
+    o.planRev=12;
+  }
   return o;
 }
 // "pristine" = auto-generated and never logged into (prefilled weights don't count as logged)
@@ -1294,34 +1335,23 @@ function round(n,p=0){const f=Math.pow(10,p);return Math.round(n*f)/f;}
    same rotation as the session screen, so both always show the same exercises and
    weights. Days already logged are stored in full and never rebuilt. */
 function tplFor(date){
-  const day=wmDay(wmDayIdFor(date),date);
+  const day=wmDay(wmDayIdFor(date),date),b=progAt(date);
   if(day.type==="lift"){
-    const b=wmBlockAt(date),cue=b?WM_WEEK_CUES[b.week-1]:null;
-    const dayId=wmDayIdFor(date);
-    const optCardio=dayId==="upperB"?{type:"Optional — Zone 2 rower",min:20,ref:"z2row",
-        detail:"Optional on a bulk, after the lifting. Easy conversation pace, HR 125–132. Skip it if recovery or appetite is the limit."}
-      :dayId==="pushB"?{type:"Optional — incline Zone 2 walk",min:20,ref:"z2walk",
-        detail:"Optional on a bulk, after the lifting. 5.5 km/h at 7–9%, HR 125–132, hands off the rails."}:null;
-    return {type:day.label,cardio:optCardio,
-      note:b?`${b.block.name} block · week ${b.week} of ${b.weeks} (${cue.name}). ${cue.effort}`:"",
+    const note=[b?`${b.phase.name} · week ${b.week} of ${b.weeks}. RIR ${day.rirWeek}.`:"",day.optional?"Optional session this week.":"",
+      b&&b.note?b.note:"",day.scan?PROG.scanNote:""].filter(Boolean).join(" ");
+    return {type:day.label,cardio:null,note:note,
       exercises:day.exercises.map(pe=>{
         const ex=wmEx(pe.exerciseId),range=wmRange(pe,ex);
         return {name:ex.name,mg:ex.mg,sets:wmSets(pe,date),reps:range[0]+"-"+range[1]+(ex.unit==="s"?"s":""),
-          wt:wmPrescription(ex.id,range,{deload:!!day.deload}).kg,perHand:!!ex.perHand,added:!!ex.bwBased,
-          prog:ex.noE1RM&&ex.unit!=="s"?"":`top of the range on every set → +${ex.incrementKg}kg`};
+          wt:wmPrescription(ex.id,range,{noProg:!!day.noProg}).kg,perHand:!!ex.perHand,added:!!ex.bwBased,
+          prog:ex.noE1RM&&ex.unit!=="s"?"":`every set at ${range[1]} reps → +${ex.incrementKg}kg`};
       })};
   }
-  const c=day.cardio;
-  if(day.id==="rowInt")return {type:day.label,exercises:[],
-    note:"Intervals are logged from the Today card (Start session).",
-    cardio:{type:"Rower intervals",min:c.durationMin,ref:"rowint",detail:c.protocol+" · pace target "+wmRowerTargetLabel()+"."}};
-  if(day.id==="z2Tread")return {type:day.label,exercises:[],
-    note:"Easy conversation pace. Log it from the Today card (Start session).",
-    cardio:{type:"Zone 2 — Incline walk",min:c.durationMin,ref:"z2walk",
-      detail:`HR ${c.hrBand[0]}–${c.hrBand[1]} · incline ${c.inclinePct[0]}–${c.inclinePct[1]}% · ${c.speedKmh[0]}–${c.speedKmh[1]} km/h · hands off the rails.`}};
-  return {type:"Rest",exercises:[],
-    note:"Full rest day. The walk is optional and should feel like nothing — if it feels like training, you've missed the point.",
-    cardio:{type:"Optional easy walk",min:30,ref:null,detail:"Optional. Flat or 2–3% · HR under 118 · podcast pace. Recovery, not a session."}};
+  // rest days are text; Thursday and Monday carry their bike session as the optional cardio minutes box
+  const bike=day.id==="restZ2"?{type:"Zone 2 bike",min:35,ref:null,detail:PROG.restNotes.restZ2}
+    :day.id==="restVO2"?{type:"VO2max 4x4 bike",min:35,ref:null,detail:PROG.restNotes.restVO2}
+    :{type:"Optional easy walk",min:30,ref:null,detail:"Optional. Flat or 2–3% · HR under 118 · podcast pace. Recovery, not a session."};
+  return {type:day.label,rest:true,exercises:[],note:[b&&b.note?b.note:"",bike.ref===null&&day.id!=="restDay"&&day.id!=="restFinal"?"":day.note,day.scan?PROG.scanNote:""].filter(Boolean).join(" "),cardio:bike};
 }
 
 /* ---------- per-day accessors ---------- */
@@ -1350,6 +1380,8 @@ function getSupps(date){
   if(!S.supplements[date])S.supplements[date]={taken:{}};
   return S.supplements[date];
 }
+// water target for a day: the base target, plus the sauna-day extra when the day is marked as a sauna day
+function waterTarget(date){const t=S.targets;return num(t.water,3000)+(getNutrition(date).sauna?num(t.waterSauna,500):0);}
 function nutTotals(date){
   const n=getNutrition(date);let k=0,p=0,c=0,f=0;
   n.meals.forEach(m=>{k+=num(m.kcal);p+=num(m.protein);c+=num(m.netCarbs);f+=num(m.fat);});
@@ -1436,12 +1468,11 @@ function viewToday(root){
   g.append(
     stat("Weight",latest?latest.weight:"--","kg"),
     stat("Body fat",(()=>{const r=S.bodyLog.slice().reverse().find(x=>x.bodyFat!=null);return r?r.bodyFat:"--";})(),"%"),
-    stat("Trend",proj.ok?((proj.ratePerWeek>=0?"+":"")+round(proj.ratePerWeek,2)):"--","kg/wk")
+    stat("Trend",proj.rate2w!=null?((proj.rate2w>=0?"+":"")+round(proj.rate2w,2)):"--","kg/wk")
   );
   c0.appendChild(g);
   c0.appendChild(el("div",{class:"small muted",style:"margin-top:8px"},
-    proj.ok?(proj.ratePerWeek<BULK_RATE.lo?"Too flat to grow — eat a little more.":proj.ratePerWeek<=BULK_RATE.hi?"Gaining inside the lean band (0.15–0.5 kg a week). Keep it there.":"Gaining faster than 0.5 kg a week — pull ~150 kcal back.")
-      :"Log two weigh-ins and the trend appears here."));
+    proj.advice?proj.advice.msg:"Log two weigh-ins a week or more apart and the 2-week trend appears here."));
   {const today=S.bodyLog.find(b=>b.date===date);
    const wrow=el("div",{class:"wsctl",style:"margin-top:10px"});
    const wi=el("input",{type:"number",inputmode:"decimal",class:"wsw",placeholder:latest?String(latest.weight):"kg"});
@@ -1478,7 +1509,7 @@ function viewToday(root){
   c2.appendChild(macroBar("Protein",n.protein,t.protein,"g",false));
   c2.appendChild(macroBar("Carbs",n.netCarbs,t.netCarbs,"g",true,t.netCarbCeiling));
   c2.appendChild(macroBar("Fat",n.fat,t.fat,"g",false));
-  c2.appendChild(macroBar("Water",n.water,t.water,"ml",false));
+  c2.appendChild(macroBar("Water",n.water,waterTarget(date),"ml",false));
   const nb=el("button",{class:"btn sm sec",style:"margin-top:6px"},"Log food / water");
   nb.onclick=()=>{cursor=date;route="nutrition";render();};
   c2.appendChild(nb);
@@ -1587,7 +1618,7 @@ function viewWorkoutManual(root,date){
   // exercises
   const list=el("div",{class:"card"});
   list.appendChild(el("h2",{html:`Lifts <span class="sub">${w.exercises.length} exercises</span>`}));
-  if(!w.exercises.length)list.appendChild(el("div",{class:"empty"},planned.type==="Rest"
+  if(!w.exercises.length)list.appendChild(el("div",{class:"empty"},planned.rest
     ?"Rest day — nothing to lift. Muscle is built in recovery: eat, sleep, walk if you like."
     :"No lifts planned. Add one below if you train."));
   w.exercises.forEach((ex,ei)=>list.appendChild(exerciseCard(ex,ei,w)));
@@ -1792,9 +1823,12 @@ function viewNutrition(root){
 
   // water + body
   const cw=el("div",{class:"card"});
-  cw.appendChild(el("h2",{html:`Water <span class="sub">${n.water||0} / ${t.water} ml</span>`}));
+  cw.appendChild(el("h2",{html:`Water <span class="sub">${n.water||0} / ${waterTarget(date)} ml</span>`}));
   const wr=el("div",{class:"row"});
   [250,500,750].forEach(v=>{const b=el("button",{class:"btn sm sec"},"+"+v);b.onclick=()=>{n.water=(n.water||0)+v;save();render();};wr.appendChild(b);});
+  const sauna=el("button",{class:"btn sm "+(n.sauna?"":"sec")},"Sauna day +"+num(t.waterSauna,500));
+  sauna.onclick=()=>{n.sauna=!n.sauna;save();render();};
+  wr.appendChild(sauna);
   const wreset=el("button",{class:"btn sm ghost"},"reset");wreset.onclick=()=>{n.water=0;save();render();};
   wr.appendChild(wreset);cw.appendChild(wr);
   root.appendChild(cw);
@@ -1850,7 +1884,7 @@ function viewSupps(root){
   const cs=el("div",{class:"card"});
   cs.appendChild(el("h2",null,"Adherence streak"));
   let streak=0;let d=todayISO();
-  for(let i=0;i<60;i++){const s=S.supplements[d];const tk=s?Object.values(s.taken).filter(Boolean).length:0;
+  for(let i=0;i<60;i++){const s=S.supplements[d];const tk=s?SUPPS.filter(x=>s.taken[x.id]).length:0;
     if(tk>=Math.ceil(SUPPS.length*0.8))streak++;else break;d=addDays(d,-1);}
   cs.appendChild(el("div",{class:"v",style:"font-size:30px;font-weight:800",html:`${streak} <small class="muted" style="font-size:14px">day${streak===1?"":"s"} ≥80% stack</small>`}));
   root.appendChild(cs);
@@ -1874,15 +1908,14 @@ function viewPlan(root){
   if(planTab==="core"){viewPlanCore(root);return;}
 
   const c=el("div",{class:"card"});
-  const wkB=wmBlockAt(todayISO());
-  c.appendChild(el("h2",{html:`Weekly plan <span class="sub">${wkB?`${wkB.block.name} · week ${wkB.week} of ${wkB.weeks}`:"pre-rotation"}</span>`}));
-  c.appendChild(el("div",{class:"hint"},"This week's sessions, straight from the rotation (see the Rotation tab for the whole 18-week cycle). Four lift days of 45 minutes or less, rower intervals Tuesday, incline Zone 2 Thursday, Sunday rest. Posture work is built into the lift days as supersets — no separate session."));
-  const thisMon=mondayOf(todayISO());
-  for(let i=0;i<7;i++){
-    const t=tplFor(addDays(thisMon,i));const isToday=i===dow(todayISO());
+  const wkB=progAt(todayISO());
+  c.appendChild(el("h2",{html:`Weekly plan <span class="sub">${wkB?`${wkB.phase.name} · week ${wkB.week} of ${wkB.weeks}`:"outside the programme"}</span>`}));
+  c.appendChild(el("div",{class:"hint"},"This week's sessions, straight from the programme (the Rotation tab has all 17 weeks). Weeks run Tuesday to Monday: Upper A, Lower A, a Zone 2 rest day, Upper B, Lower B, Upper C, then a VO2max rest day. Recovery rules are in the list below."));
+  for(const date of wmWeekDays(todayISO())){
+    const t=tplFor(date);const isToday=date===todayISO();
     const pd=el("div",{class:"plan-day"+(isToday?" today":"")});
     const h=el("div",{class:"pd-h"});
-    h.append(el("div",{class:"dn"},DOW_NAMES[i]),el("div",{class:"tp"},isToday?"TODAY":""));
+    h.append(el("div",{class:"dn"},DOW_NAMES[dow(date)]),el("div",{class:"tp"},isToday?"TODAY":""));
     pd.appendChild(h);
     pd.appendChild(el("div",null,t.type));
     if(t.cardio){
@@ -1941,7 +1974,7 @@ function viewPlan(root){
     i.oninput=()=>{t[k]=num(i.value);save();};l.appendChild(i);grid.appendChild(l);
   });
   cn.appendChild(grid);
-  cn.appendChild(el("div",{class:"hint"},`Targets follow the active phase (see Phase plan below) and switch automatically on phase change. Manual edits here stick until the next phase starts. BMR ${BASELINE.bmr} kcal.`));
+  cn.appendChild(el("div",{class:"hint"},`Daily targets for the 17-week programme, the same every day. Water gets +${num(t.waterSauna,500)} ml on sauna days (switch on the Nutrition tab). Manual edits here stick. BMR ${BASELINE.bmr} kcal.`));
   root.appendChild(cn);
 
   // supplement reference
@@ -2297,44 +2330,48 @@ function cutWeekIndex(date){
    week view, InBody baseline settings. Same card/flag/meal-row
    patterns as the rest of the app.
    ============================================================ */
-let wmTimer=null,wmRestUntil=0,wmDrafts={},wmUI={sess:null,open:null,shown:null};
+let wmDrafts={},wmUI={sess:null,open:null,shown:null};
 
 // one-line statement of what the starting weights are built from
 function wmInBodyLine(){
   const ib=S.wm.inbody;
-  return `Weights come from your InBody scan of ${fmtNice(ib.scanDate)} (${ib.weightKg} kg, ${ib.bodyFatPct}% body fat, lean mass ${round(wmLBM(ib),1)} kg) until you've logged a lift — then your own numbers take over. Scanned since? Update it on the Data tab.`;
+  return `Start loads come from the programme until you've logged a lift, then your own numbers take over. Your InBody scan of ${fmtNice(ib.scanDate)} (${ib.weightKg} kg, ${ib.bodyFatPct}% body fat, lean mass ${round(wmLBM(ib),1)} kg) sets the bodyweight used for strength maths. Scanned since? Update it on the Data tab.`;
 }
 function wmTodayCard(date){
   const dayId=wmDayIdFor(date);const day=wmDay(dayId,date);
   const p2=wmPhase2(date);const fast=wmIsFastDay(date);
-  const blk=wmBlockAt(date);
+  const blk=progAt(date);
   const c=el("div",{class:"card"});
-  c.appendChild(el("h2",{html:blk?`Workout <span class="sub">${blk.block.name} block · week ${blk.week} of ${blk.weeks}${p2?" · Phase 2 +1 set":""}</span>`
-    :`Workout module <span class="sub">${p2?"Phase 2 — +1 set, HIIT unlocked":"Phase 1"}</span>`}));
-  c.appendChild(el("div",{style:"font-weight:700"},day.label));
-  if(blk&&day.type==="lift"){
-    const cue=WM_WEEK_CUES[blk.week-1];
-    c.appendChild(el("div",{class:"small",style:"color:var(--acc2);margin-top:2px"},cue.effort));
-  }
+  c.appendChild(el("h2",{html:blk?`Workout <span class="sub">${blk.phase.name} · week ${blk.week} of ${blk.weeks}</span>`
+    :`Workout <span class="sub">${date<progStart()?"programme starts "+fmtNice(progStart()):"programme finished"}</span>`}));
+  c.appendChild(el("div",{style:"font-weight:700"},day.label+(day.optional?" (optional)":"")));
+  if(blk&&day.type==="lift")
+    c.appendChild(el("div",{class:"small",style:"color:var(--acc2);margin-top:2px"},`${blk.phase.tag} · RIR ${day.rirWeek}`));
   let sub="";
   if(day.type==="lift"){
     const uniq={};day.exercises.forEach(pe=>uniq[pe.exerciseId]=1);
-    sub=`${Object.keys(uniq).length} exercises · ${wmSetQueue(day,date).length} sets · 45-min cap`;
+    sub=`${Object.keys(uniq).length} exercises · ${wmSetQueue(day,date).length} sets`;
   } else if(day.cardio) sub=`${day.cardio.protocol} · ${day.cardio.durationMin} min`;
   if(sub)c.appendChild(el("div",{class:"small muted"},sub));
   if(day.cardio&&day.cardio.machine==="rower")
     c.appendChild(el("div",{class:"small",style:"color:var(--acc2)"},"Pace target: "+wmRowerTargetLabel()));
+  if(blk&&blk.note)c.appendChild(el("div",{class:"small muted",style:"margin-top:4px"},blk.note));
   if(day.type==="lift"&&day.exercises.length){
     const ul=el("div",{style:"margin-top:8px"});
     day.exercises.forEach(pe=>{
-      const ex=wmEx(pe.exerciseId),range=wmRange(pe,ex),pr=wmPrescription(ex.id,range,{deload:!!day.deload});
+      const ex=wmEx(pe.exerciseId),range=wmRange(pe,ex),pr=wmPrescription(ex.id,range,{noProg:!!day.noProg});
       const r=el("div",{class:"spread small",style:"padding:5px 0;border-bottom:1px solid var(--line)"});
       r.append(el("div",null,ex.name+" "),el("div",{class:"muted",style:"white-space:nowrap"},`${pe.sets} × ${range[0]}–${range[1]} · ${wmKgLabel(ex,pr.kg)}`));
       ul.appendChild(r);
     });
     c.appendChild(ul);
-  } else if(day.type==="rest"&&blk){
-    c.appendChild(el("div",{class:"small",style:"margin-top:6px"},"Nothing to lift. Muscle is built in recovery: hit your calories and protein, sleep 7–9 hours. An easy walk is fine."));
+  } else if(day.type==="rest"&&day.note){
+    c.appendChild(el("div",{class:"small",style:"margin-top:6px"},day.note));
+  }
+  if(day.scan){
+    const f=el("div",{class:"flag ok",style:"margin-top:9px"});
+    f.append(el("div",{class:"dot"}),el("div",null,PROG.scanNote));
+    c.appendChild(f);
   }
   if(fast){
     const f=el("div",{class:"flag warn",style:"margin-top:9px"});
@@ -2359,10 +2396,9 @@ function wmTodayCard(date){
     const b=el("button",{class:day.type==="rest"?"btn sm sec":"btn full"},day.type==="rest"?"Optional easy walk (30 min)":"Start session");
     b.onclick=()=>wmStartSession(day.type==="rest"?"optZ2":dayId);
     row.appendChild(b);
-    if(day.type==="lift"){ // cardio is optional on a bulk, never a replacement for the lifting
-      const opt=dayId==="upperB"?["Optional: rower intervals","rowInt"]:dayId==="pushB"?["Optional: incline Z2 (40 min)","z2Tread"]:["Optional Z2 (30 min)","optZ2"];
-      const b3=el("button",{class:"btn sm ghost"},opt[0]);
-      b3.onclick=()=>wmStartSession(opt[1]);
+    if(day.type==="lift"){ // cardio is optional, never a replacement for the lifting
+      const b3=el("button",{class:"btn sm ghost"},"Optional Z2 (30 min)");
+      b3.onclick=()=>wmStartSession("optZ2");
       row.appendChild(b3);
     }
   }
@@ -2375,35 +2411,9 @@ function viewWmSession(root){
   const sess=S.wm.activeSessionId&&S.wm.sessions[S.wm.activeSessionId];
   if(!sess){route="today";render();return;}
   const day=wmSessionDay(sess);
-  // resumed past the cap (e.g. after reload) → close it out immediately
-  if(!sess.endedAt&&day.type==="lift"&&wmElapsedSec(sess)>=WM_CAP_SEC){
-    wmFlagRemaining(sess);toast("45-min cap — remaining sets skipped");
-  }
   if(sess.endedAt){wmSummary(root,sess,day);return;}
   if(day.type==="lift")wmLiftView(root,sess,day);
   else wmCardioView(root,sess,day);
-  wmEnsureTick();
-}
-function wmClockStr(sec){sec=Math.max(0,Math.floor(sec));return Math.floor(sec/60)+":"+pad(sec%60);}
-function wmEnsureTick(){
-  if(wmTimer)return;
-  wmTimer=setInterval(()=>{
-    const sess=S.wm.activeSessionId&&S.wm.sessions[S.wm.activeSessionId];
-    if(route!=="wmsession"||!sess){clearInterval(wmTimer);wmTimer=null;return;}
-    if(sess.endedAt)return;
-    const day=wmSessionDay(sess);
-    const e=wmElapsedSec(sess);
-    const clk=$("#wmClock");if(clk)clk.textContent=wmClockStr(e);
-    const cap=$("#wmCap");
-    if(cap&&day.type==="lift")cap.textContent=wmClockStr(WM_CAP_SEC-e)+" left of 45:00";
-    const rc=$("#wmRestChip");
-    if(rc){const left=Math.ceil((wmRestUntil-Date.now())/1000);
-      if(left>0){rc.style.display="";rc.textContent="Rest "+wmClockStr(left)+" · tap to skip";}
-      else rc.style.display="none";}
-    if(day.type==="lift"&&e>=WM_CAP_SEC){
-      wmFlagRemaining(sess);toast("45-min cap — remaining sets skipped");render();
-    }
-  },1000);
 }
 function wmStep(t,fn){const b=el("button",{class:"stepbtn"},t);b.onclick=e=>{e.stopPropagation();fn();};return b;}
 
@@ -2413,19 +2423,12 @@ function wmLiftView(root,sess,day){
   const done=queue.filter(q=>wmLoggedSet(sess.id,q.pe.exerciseId,q.setIndex)).length;
   const head=el("div",{class:"card"});
   head.appendChild(el("h2",{html:`${day.label} <span class="sub">${done}/${queue.length} sets</span>`}));
-  const cl=el("div",{class:"spread"});
-  cl.append(el("div",{class:"wsclock",id:"wmClock"},wmClockStr(wmElapsedSec(sess))),
-    el("div",{class:"small muted",id:"wmCap"},wmClockStr(WM_CAP_SEC-wmElapsedSec(sess))+" left of 45:00"));
-  head.appendChild(cl);
-  const rc=el("div",{class:"pill",id:"wmRestChip",style:"margin-top:8px;display:none;cursor:pointer"},"");
-  rc.onclick=()=>{wmRestUntil=0;rc.style.display="none";};
-  head.appendChild(rc);
   if(sess.blockId&&sess.week){
-    const cue=WM_WEEK_CUES[sess.week-1];
+    const ph=PROG.phases.find(x=>x.id===sess.blockId);
     head.appendChild(el("div",{class:"small",style:"margin-top:8px;color:var(--acc2)"},
-      `${WM_BLOCKS[sess.blockId].name} block · week ${sess.week} (${cue.name}) — ${cue.effort}`));
+      ph?`${ph.name} · week ${sess.week} of ${PROG.weeks} — ${ph.tag}`:`${sess.blockId} block · week ${sess.week}`));
   }
-  head.appendChild(el("div",{class:"hint",style:"margin:8px 0 0"},"Tap a set to log it at the weight shown. Got a different number? Tap the reps instead. \"All sets\" logs the rest of an exercise. Tap a logged set to undo it. At 45:00 the remaining sets are flagged skipped and the session ends."));
+  head.appendChild(el("div",{class:"hint",style:"margin:8px 0 0"},"Tap a set to log it at the weight shown. Got a different number? Tap the reps instead. \"All sets\" logs the rest of an exercise. Tap a logged set to undo it. Rest and RIR (reps in reserve) are guidance only; nothing counts down."));
   const btns=el("div",{class:"row",style:"margin-top:10px"});
   const undo=el("button",{class:"btn sm sec"},"↩ Undo last set");
   undo.onclick=()=>{const l=wmUndoLast(sess);if(!l){toast("Nothing to undo");return;}
@@ -2442,7 +2445,7 @@ function wmLiftView(root,sess,day){
   if(left>0){
     const all=el("button",{class:"btn sm full",style:"margin-top:8px"},`✓ Log all ${left} remaining sets as prescribed`);
     all.onclick=()=>{if(confirm(`Log all ${left} remaining sets exactly as shown — the weight on each card and the suggested reps? You can still undo or change any set.`)){
-      const n=wmLogRemaining(sess,day.exercises);wmRestUntil=0;wmUI.open=null;toast(n+" sets logged");buzz();render(true);}};
+      const n=wmLogRemaining(sess,day.exercises);wmUI.open=null;toast(n+" sets logged");buzz();render(true);}};
     head.appendChild(all);
   }
   root.appendChild(head);
@@ -2480,10 +2483,9 @@ function wmGroupCard(sess,g,gi,isOpen){
   g.list.forEach(pe=>c.appendChild(wmExBlock(sess,g,pe)));
   return c;
 }
-// log one set from a tap, start the rest timer, and move on when the exercise (pair) is finished
+// log one set from a tap, and move on when the exercise (pair) is finished
 function wmTapLog(sess,g,pe,setIndex,reps){
   wmLogSet(sess,pe,setIndex,wmWeightFor(sess,pe),reps!=null?reps:wmSuggestReps(sess,pe,setIndex));
-  wmRestUntil=Date.now()+pe.restSeconds*1000;
   if(wmGroupDone(sess,g))wmUI.open=null;
   buzz();render(true);
 }
@@ -2497,11 +2499,17 @@ function wmExBlock(sess,g,pe){
   b.appendChild(top);
   // what you did last time, and where today's weight comes from
   const hist=wmSessionsFor(ex.id),last=hist.length?hist[hist.length-1]:null;
-  const pres=wmPrescription(ex.id,range,{deload:!!sess.deload});
+  const pres=wmPrescription(ex.id,range,{noProg:!!(sess.noProg||sess.deload)});
   let sub=last?`Last time: ${wmKgLabel(ex,last.logs[last.logs.length-1].weightKg)} × ${last.logs.map(l=>l.reps).join(" · ")}${unit}`:"First time on this lift";
-  if(pres.why!=="hold"&&pres.why!=="calibration")sub+=" · "+wmWhyLabel(pres.why,pres.from);
-  else if(!last)sub+=" · weight from your InBody";
-  b.appendChild(el("div",{class:"small muted",style:"margin:2px 0 8px"},sub));
+  sub+=" · "+wmWhyLabel(pres.why,pres.from,pres.reps);
+  b.appendChild(el("div",{class:"small muted",style:"margin:2px 0 4px"},sub));
+  // the programme's guidance for this lift, as text: rest, reps in reserve, form note
+  const guide=[];
+  if(pe.rest||pe.restSeconds)guide.push("Rest "+(pe.rest||pe.restSeconds+" s"));
+  if(pe.rir)guide.push("RIR "+pe.rir);
+  if(pe.note)guide.push(pe.note);
+  if(pe.est&&!last)guide.push("start load is an estimate");
+  if(guide.length)b.appendChild(el("div",{class:"small",style:"margin:0 0 8px;color:var(--acc2)"},guide.join(" · ")));
 
   // weight: type it or step it — it applies to every set of this exercise
   const wrow=el("div",{class:"wsctl",style:"margin:0 0 8px"});
@@ -2542,7 +2550,7 @@ function wmExBlock(sess,g,pe){
     const rem=[...Array(n).keys()].filter(i=>!wmLoggedSet(sess.id,ex.id,i)).length;
     if(rem>=2){
       const all=el("button",{class:"btn sm sec full"},`✓ All ${rem} remaining sets × ${R}${unit}`);
-      all.onclick=()=>{wmLogRemaining(sess,[pe],R);wmRestUntil=Date.now()+pe.restSeconds*1000;
+      all.onclick=()=>{wmLogRemaining(sess,[pe],R);
         if(wmGroupDone(sess,g))wmUI.open=null;buzz();render(true);};
       b.appendChild(all);
     }
@@ -2554,7 +2562,6 @@ function wmCardioView(root,sess,day){
   const c=day.cardio;
   const head=el("div",{class:"card"});
   head.appendChild(el("h2",{html:`${day.label} <span class="sub">${c.durationMin} min</span>`}));
-  head.appendChild(el("div",{class:"wsclock",id:"wmClock"},wmClockStr(wmElapsedSec(sess))));
   head.appendChild(el("div",{class:"small",style:"margin-top:6px"},c.protocol));
   const sp=el("div",{class:"spec"});
   const specs=[];
@@ -2647,18 +2654,18 @@ function wmSummary(root,sess,day){
       stat("Volume",round(wmSessionVolume(sess)).toLocaleString(),"kg"));
     c.appendChild(g);
     if(skipN){const f=el("div",{class:"flag warn",style:"margin-top:10px"});
-      f.append(el("div",{class:"dot"}),el("div",null,`${skipN} set${skipN===1?"":"s"} flagged skipped at the 45-min cap.`));c.appendChild(f);}
-    let nxt=wmDay(sess.programmeDayId,addDays(sess.date,7));
-    if(!nxt.exercises||!nxt.exercises.length)nxt=wmSessionDay(sess); // retired plan: show the same lifts
-    const nxtB=wmBlockAt(addDays(sess.date,7));
-    c.appendChild(el("div",{class:"sublab"},"Next time"+(nxtB?` — ${nxtB.block.name} block, week ${nxtB.week}`:"")));
+      f.append(el("div",{class:"dot"}),el("div",null,`${skipN} set${skipN===1?"":"s"} flagged skipped when the session was ended.`));c.appendChild(f);}
+    const nxtB=progAt(addDays(sess.date,7));
+    // next time: the same weekday next programme week; a session from before the programme just repeats its own lifts
+    const nxt=PROG.days[sess.programmeDayId]?(nxtB?wmDay(sess.programmeDayId,addDays(sess.date,7)):{exercises:[]}):wmSessionDay(sess);
+    c.appendChild(el("div",{class:"sublab"},"Next time"+(nxtB&&PROG.days[sess.programmeDayId]?` — ${nxtB.phase.name}, week ${nxtB.week}`:"")));
     const seen={};
     nxt.exercises.forEach(pe=>{
       if(seen[pe.exerciseId])return;seen[pe.exerciseId]=1;
-      const ex=wmEx(pe.exerciseId),range=wmRange(pe,ex);const p=wmPrescription(ex.id,range,{deload:!!nxt.deload});
+      const ex=wmEx(pe.exerciseId),range=wmRange(pe,ex);const p=wmPrescription(ex.id,range,{noProg:!!nxt.noProg});
       const r=el("div",{class:"meal"});
       const info=el("div");info.append(el("div",{class:"mn"},ex.name),
-        el("div",{class:"mm"},`${wmRangeLabel(ex,range)} · ${wmWhyLabel(p.why,p.from)}`));
+        el("div",{class:"mm"},`${wmRangeLabel(ex,range)} · ${wmWhyLabel(p.why,p.from,p.reps)}`));
       r.append(info,el("div",{class:"mk"},wmKgLabel(ex,p.kg)));
       c.appendChild(r);
     });
@@ -2677,158 +2684,93 @@ function wmSummary(root,sess,day){
   root.appendChild(c);
 }
 
-/* ---------- rotation view (Plan tab → Rotation) ---------- */
-function wmSetAnchor(startDate,startBlock){
-  const r=S.wm.rotation;
-  r.anchors=r.anchors.filter(a=>a.startDate<startDate);
-  r.anchors.push({startDate:startDate,startBlock:startBlock});
-  wmDrafts={};save();render();
-}
-const WM_SHORT={upperA:"Push",upperB:"Pull",pushB:"Shoulders + arms",lowerA:"Legs 1 (squat)",lowerB:"Legs 2 (deadlift)",legsC:"Legs 3 (glutes, single-leg)",restDay:"Rest"};
+/* ---------- programme view (Plan tab → Rotation) ---------- */
 const WM_DOW3=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-function wmLayoutText(half,rest){return WM_LAYOUTS[half][rest].map((id,i)=>WM_DOW3[i]+" "+WM_SHORT[id]).join(" · ");}
-// working sets a week in a block's full six-day layout: lower body, upper body, core
-function wmRegionSets(blockId){
-  const r={legs:0,upper:0,core:0,legDays:0};
-  ["upperA","upperB","pushB","lowerA","lowerB","legsC"].forEach(id=>{
-    let legs=0;
-    WM_BLOCKS[blockId].days[id].ex.forEach(pe=>{
-      const mg=wmEx(pe.exerciseId).mg;
-      if(/Quads|Hamstrings|Glutes|Calves|Posterior/.test(mg)){r.legs+=pe.sets;legs+=pe.sets;}
-      else if(mg==="Core")r.core+=pe.sets;else r.upper+=pe.sets;
-    });
-    if(legs>=9)r.legDays++;
-  });
-  return r;
-}
-function wmPostureSets(blockId){ // loaded posture sets across a block's lift days
-  let n=0;
-  for(const id in WM_BLOCKS[blockId].days)
-    WM_BLOCKS[blockId].days[id].ex.forEach(pe=>{if(wmEx(pe.exerciseId).posture)n+=pe.sets;});
-  return n;
-}
 function viewPlanProgramme(root){
-  const today=todayISO(),mon=mondayOf(today);
-  const b=wmBlockAt(today);
+  const today=todayISO(),b=progAt(today),start=progStart();
   const c=el("div",{class:"card"});
   if(b){
-    c.appendChild(el("h2",{html:`Rotation <span class="sub">${b.block.name} block · week ${b.week} of ${b.weeks}</span>`}));
-    c.appendChild(el("div",{style:"font-weight:800;font-size:18px"},`${b.block.name} — ${b.block.tag}`));
-    c.appendChild(el("div",{class:"small muted",style:"margin:2px 0 8px"},`${fmtNice(b.startDate)} → ${fmtNice(b.endDate)} · next: ${b.next.name} (${b.next.tag.toLowerCase()})`));
-    c.appendChild(el("div",{class:"small"},b.block.focus));
-    c.appendChild(el("div",{class:"small muted",style:"margin-top:6px"},b.block.why));
-    // week strip — the wave inside the block
+    c.appendChild(el("h2",{html:`Programme <span class="sub">${b.phase.name} · week ${b.week} of ${b.weeks}</span>`}));
+    c.appendChild(el("div",{style:"font-weight:800;font-size:18px"},`${b.phase.name} — ${b.phase.tag}`));
+    c.appendChild(el("div",{class:"small muted",style:"margin:2px 0 8px"},`${fmtNice(b.weekStart)} → ${fmtNice(b.weekEnd)} · ${PROG.name}`));
+    c.appendChild(el("div",{class:"small"},b.phase.focus));
+    // week strip: where you are in the 17 weeks
     const strip=el("div",{class:"row",style:"margin:12px 0 6px;gap:6px"});
-    WM_WEEK_CUES.forEach(cue=>{
-      const on=cue.n===b.week;
-      strip.appendChild(el("span",{class:"pill",style:"padding:4px 9px;font-size:12px;"+(on?"border-color:var(--acc);color:var(--acc);font-weight:700":(cue.n<b.week?"opacity:.55":""))},
-        `W${cue.n} ${cue.name}`));
-    });
+    for(let w=1;w<=PROG.weeks;w++){
+      const on=w===b.week;
+      strip.appendChild(el("span",{class:"pill",style:"padding:4px 9px;font-size:12px;"+(on?"border-color:var(--acc);color:var(--acc);font-weight:700":(w<b.week?"opacity:.55":""))},"W"+w));
+    }
     c.appendChild(strip);
-    const cue=WM_WEEK_CUES[b.week-1];
-    const f=el("div",{class:"flag "+(b.deload?"warn":"ok")});
-    f.append(el("div",{class:"dot"}),el("div",null,`This week — ${cue.name}: ${cue.effort}`));
+    const f=el("div",{class:"flag "+(b.noProg?"warn":"ok")});
+    f.append(el("div",{class:"dot"}),el("div",null,`This week: RIR ${b.rir}.${b.note?" "+b.note:""}`));
     c.appendChild(f);
-    const row=el("div",{class:"row",style:"margin-top:8px"});
-    const nb=el("button",{class:"btn sm sec"},`Start ${b.next.name} now`);
-    nb.onclick=()=>{if(confirm(`Switch to the ${b.next.name} block starting this week? Everything you've logged stays. Weights are re-set from your last sessions.`))
-      {wmSetAnchor(mon,b.index+1);toast(b.next.name+" block started");}};
-    const rb=el("button",{class:"btn sm ghost"},"Restart this block");
-    rb.onclick=()=>{if(confirm(`Restart the ${b.block.name} block from week 1 this week?`)){wmSetAnchor(mon,b.index);toast("Block restarted");}};
-    row.append(nb,rb);c.appendChild(row);
   } else {
-    c.appendChild(el("h2",null,"Rotation"));
-    c.appendChild(el("div",{class:"empty"},"The rotation has not started on this device yet."));
-    const sb=el("button",{class:"btn sm"},"Start the rotation this week");
-    sb.onclick=()=>{S.wm.rotation={anchors:[{startDate:mon,startBlock:0}]};save();render();};
-    c.appendChild(sb);
+    c.appendChild(el("h2",null,"Programme"));
+    c.appendChild(el("div",{class:"empty"},today<start
+      ?`${PROG.name} starts ${fmtNice(start)}: ${PROG.weeks} weeks, then a final review and InBody scan on ${fmtNice(PROG.final)}.`
+      :`${PROG.name} has finished. Final review and InBody scan: ${fmtNice(PROG.final)}.`));
   }
   root.appendChild(c);
 
-  // your week: the layout, the rest day, and why legs come three times
-  if(b){
-    const wc=el("div",{class:"card"}),L=wmLayoutFor(today),rs=wmRegionSets(b.block.id);
-    wc.appendChild(el("h2",{html:`Your week <span class="sub">layout ${L.half} · rest ${L.rest==="both"?"Fri + Sun":L.rest==="fri"?"Friday":"Sunday"}</span>`}));
-    wc.appendChild(el("div",{class:"small"},wmLayoutText(L.half,L.rest)));
-    wc.appendChild(el("div",{class:"small muted",style:"margin-top:6px"},`Legs three times a week (${rs.legs} sets), upper body three times (${rs.upper} sets).`));
-    const toNext=b.week<=WM_HALF_WEEKS?WM_HALF_WEEKS-b.week+1:b.weeks-b.week+1;
-    wc.appendChild(el("div",{class:"small",style:"margin-top:6px;color:var(--acc2)"},
-      b.week<=WM_HALF_WEEKS?`In ${toNext} week${toNext===1?"":"s"} the layout switches to B: the three leg sessions swap days and Push and Pull swap days.`
-        :`Layout B runs to the end of the block. Next block starts on layout A with new exercises.`));
-    [["This week",mon],["Next week",addDays(mon,7)]].forEach(([lab,m])=>{
-      const cur=wmRestKind(m),row=el("div",{style:"margin-top:10px"});
-      row.appendChild(el("div",{class:"small muted",style:"margin-bottom:4px"},lab+" — rest day"+(wmDefaultRest(m)===cur?" (default)":"")));
-      const seg=el("div",{class:"seg",style:"margin-bottom:0"});
-      [["fri","Friday"],["sun","Sunday"],["both","Fri + Sun"]].forEach(([k,txt])=>{
-        const bt=el("button",{class:cur===k?"on":""},txt);
-        bt.onclick=()=>{wmSetRest(m,k);render(true);};
-        seg.appendChild(bt);
-      });
-      row.appendChild(seg);wc.appendChild(row);
-    });
-    wc.appendChild(el("div",{class:"hint",style:"margin:8px 0 0"},"Fri + Sun drops the shoulders + arms day for a five-day week. Logged sessions are never changed."));
-    root.appendChild(wc);
-  }
+  // your week: the fixed weekday pattern, the two special weeks, the scan days
+  {const wc=el("div",{class:"card"});
+   wc.appendChild(el("h2",{html:`Your week <span class="sub">Tuesday to Monday</span>`}));
+   wc.appendChild(el("div",{class:"small"},[1,2,3,4,5,6,0].map(i=>WM_DOW3[i]+" "+WM_DAYS[PROG.dayByDow[i]].label.replace(/^Rest from lifting/,"Rest")).join(" · ")));
+   Object.keys(PROG.weekNotes).forEach(w=>wc.appendChild(el("div",{class:"small",style:"margin-top:6px;color:var(--acc2)"},`Week ${w}: ${PROG.weekNotes[w]}`)));
+   wc.appendChild(el("div",{class:"small muted",style:"margin-top:6px"},`InBody scans: ${PROG.scanDays.map(fmtNice).join(" · ")}. ${PROG.scanNote}`));
+   root.appendChild(wc);}
 
   // where the weights come from
   {const ib=S.wm.inbody,lc=el("div",{class:"card"});
-   lc.appendChild(el("h2",{html:`Your weights <span class="sub">from InBody · ${fmtNice(ib.scanDate)}</span>`}));
+   lc.appendChild(el("h2",{html:`Your weights <span class="sub">InBody · ${fmtNice(ib.scanDate)}</span>`}));
    const g=el("div",{class:"grid3"});
    g.append(stat("Lean mass",round(wmLBM(ib),1),"kg"),stat("Weight",ib.weightKg,"kg"),stat("Body fat",ib.bodyFatPct,"%"));
    lc.appendChild(g);
-   lc.appendChild(el("div",{class:"small muted",style:"margin-top:8px"},"Starting weights come from your lean mass. Once you've logged a lift, your own numbers take over: hit the top of the rep range on every set and the weight goes up next time."));
+   lc.appendChild(el("div",{class:"small muted",style:"margin-top:8px"},"Start loads come from the programme, shown on each lift. Once you've logged a lift your own numbers take over: reach the top of the rep range on every set and the weight goes up next time. The scan sets the bodyweight used for strength maths."));
    const ub=el("button",{class:"btn sm sec",style:"margin-top:10px"},"Update my InBody scan");
    ub.onclick=()=>{route="data";render();};
    lc.appendChild(ub);
    root.appendChild(lc);}
 
-  // roadmap — the next 18 weeks
-  if(b){
-    const rm=el("div",{class:"card"});
-    rm.appendChild(el("h2",{html:`Roadmap <span class="sub">3 blocks × 6 weeks, then it repeats</span>`}));
-    rm.appendChild(el("div",{class:"hint"},"Five loading weeks and a deload per block. When the cycle repeats, every weight is re-set from what you actually lifted."));
-    for(let k=0;k<3;k++){
-      const bl=WM_BLOCKS[WM_BLOCK_ORDER[(((b.index+k)%3)+3)%3]];
-      const st=addDays(b.startDate,k*42);
-      const pd=el("div",{class:"plan-day"+(k===0?" today":"")});
-      const h=el("div",{class:"pd-h"});
-      h.append(el("div",{class:"dn"},bl.name),el("div",{class:"tp"},k===0?"NOW":fmtNice(st)));
-      pd.appendChild(h);
-      pd.appendChild(el("div",{class:"small muted"},`${fmtNice(st)} → ${fmtNice(addDays(st,41))} · ${bl.focus}`));
-      rm.appendChild(pd);
-    }
-    root.appendChild(rm);
-
-  }
+  // roadmap — the phases
+  {const rm=el("div",{class:"card"});
+   rm.appendChild(el("h2",{html:`Roadmap <span class="sub">${PROG.weeks} weeks, then a review</span>`}));
+   PROG.phases.forEach(ph=>{
+     const st=addDays(start,(ph.from-1)*7),en=addDays(start,ph.to*7-1),cur=!!(b&&b.phase.id===ph.id);
+     const pd=el("div",{class:"plan-day"+(cur?" today":"")});
+     const h=el("div",{class:"pd-h"});
+     h.append(el("div",{class:"dn"},ph.name),el("div",{class:"tp"},cur?"NOW":""));
+     pd.appendChild(h);
+     pd.appendChild(el("div",{class:"small muted"},`${fmtNice(st)} → ${fmtNice(en)} · week${ph.from===ph.to?" "+ph.from:"s "+ph.from+"-"+ph.to} · RIR ${ph.rir.join(", ")}`));
+     pd.appendChild(el("div",{class:"small"},ph.focus));
+     rm.appendChild(pd);
+   });
+   rm.appendChild(el("div",{class:"small",style:"margin-top:8px"},`Final review + InBody scan: ${fmtNice(PROG.final)}.`));
+   root.appendChild(rm);}
 
   // this week, day by day, with the current prescribed weights
+  const days=wmWeekDays(today);
   const card=el("div",{class:"card"});
-  card.appendChild(el("h2",{html:`This week <span class="sub">${fmtNice(mon)} → ${fmtNice(addDays(mon,6))}</span>`}));
+  card.appendChild(el("h2",{html:`This week <span class="sub">${fmtNice(days[0])} → ${fmtNice(days[6])}</span>`}));
   card.appendChild(el("div",{class:"hint"},"Tap a day to see its lifts and weights."));
-  for(let i=0;i<7;i++){
-    const date=addDays(mon,i),day=wmDay(wmDayIdFor(date),date);
-    const pd=el("div",{class:"plan-day"+(i===dow(today)?" today":"")});
+  days.forEach(date=>{
+    const day=wmDay(wmDayIdFor(date),date);
+    const pd=el("div",{class:"plan-day"+(date===today?" today":"")});
     const h=el("div",{class:"pd-h"});
-    h.append(el("div",{class:"dn"},DOW_NAMES[i]),
-      el("div",{class:"tp"},day.type==="lift"?"LIFT":day.type==="rest"?"REST":"CARDIO"));
+    h.append(el("div",{class:"dn"},DOW_NAMES[dow(date)]),
+      el("div",{class:"tp"},day.type==="lift"?(day.optional?"OPTIONAL":"LIFT"):"REST"));
     pd.appendChild(h);
     pd.appendChild(el("div",null,day.label));
     if(day.type==="lift"){
       pd.appendChild(el("div",{class:"small",style:"color:var(--acc2)"},
-        `${wmSetQueue(day,date).length} sets · about ${wmEstimateMin(day,date)} min`));
+        `${wmSetQueue(day,date).length} sets · about ${wmEstimateMin(day,date)} min · RIR ${day.rirWeek}`));
       expander(pd,"exercises, sets × reps, weights",()=>wmPrescriptionList(day),false);
-    } else if(day.cardio){
-      pd.appendChild(el("div",{class:"small muted"},day.cardio.protocol+" · "+day.cardio.durationMin+" min"));
-      if(day.cardio.machine==="rower")
-        pd.appendChild(el("div",{class:"small",style:"color:var(--acc2)"},"Pace target: "+wmRowerTargetLabel()));
-      if(day.cardio.hrBand)
-        pd.appendChild(el("div",{class:"small muted"},`HR ${day.cardio.hrBand[0]}–${day.cardio.hrBand[1]}`+
-          (day.cardio.inclinePct?` · incline ${day.cardio.inclinePct[0]}–${day.cardio.inclinePct[1]}%`:"")+
-          (day.cardio.speedKmh?` · ${day.cardio.speedKmh[0]}–${day.cardio.speedKmh[1]} km/h`:"")));
+    } else if(day.note){
+      pd.appendChild(el("div",{class:"small muted"},day.note));
     }
-    if(i===3&&wmPhase2(date))pd.appendChild(el("div",{class:"small",style:"color:var(--acc2)"},"or Treadmill HIIT — 10 × 30 s hard / 90 s easy"));
+    if(day.scan)pd.appendChild(el("div",{class:"small",style:"color:var(--acc2)"},PROG.scanNote));
     card.appendChild(pd);
-  }
+  });
   root.appendChild(card);
 }
 // rough session length for planning: 35 s a set, rests as prescribed, 15 s swap inside a superset, 30 s set-up per exercise
@@ -2848,12 +2790,16 @@ function wmEstimateMin(day,date){
 function wmPrescriptionList(day){
   const box=el("div");
   day.exercises.forEach(pe=>{
-    const ex=wmEx(pe.exerciseId),range=wmRange(pe,ex);const p=wmPrescription(ex.id,range,{deload:!!day.deload});
+    const ex=wmEx(pe.exerciseId),range=wmRange(pe,ex);const p=wmPrescription(ex.id,range,{noProg:!!day.noProg});
     const r=el("div",{class:"meal"});
-    const swap=pe.supersetGroup&&pe.restSeconds<=30; // compound paired with a posture lift: straight across, rest after the pair
-    const note=(p.why==="calibration"||p.why==="hold")?"":" · "+wmWhyLabel(p.why,p.from); // the InBody basis is stated once, not on every row
-    const info=el("div");info.append(el("div",{class:"mn"},ex.name),
-      el("div",{class:"mm"},`${pe.sets} × ${wmRangeLabel(ex,range)} · ${swap?"straight to the next lift":"rest "+pe.restSeconds+"s"}${pe.supersetGroup?" · SS "+pe.supersetGroup:""}${ex.posture?" · posture":""}${note}`));
+    const bits=[`${pe.sets} × ${wmRangeLabel(ex,range)}`];
+    if(pe.rest)bits.push("rest "+pe.rest);
+    if(pe.rir)bits.push("RIR "+pe.rir);
+    if(pe.note)bits.push(pe.note);
+    if(p.why==="start"&&pe.est)bits.push("start load is an estimate");
+    else if(p.why!=="start"&&p.why!=="hold")bits.push(wmWhyLabel(p.why,p.from,p.reps));
+    else if(p.why==="hold")bits.push("aim for "+p.reps+" reps");
+    const info=el("div");info.append(el("div",{class:"mn"},ex.name),el("div",{class:"mm"},bits.join(" · ")));
     r.append(info,el("div",{class:"mk"},wmKgLabel(ex,p.kg)));
     box.appendChild(r);
   });
@@ -2865,7 +2811,7 @@ function wmInBodyCard(){
   const ib=S.wm.inbody;
   const c=el("div",{class:"card"});
   c.appendChild(el("h2",{html:`InBody — workout module <span class="sub">scan ${fmtNice(ib.scanDate)}</span>`}));
-  c.appendChild(el("div",{class:"hint"},"Baseline behind the starting-weight estimates. A new scan re-baselines the estimates; logged sessions and earned progression are never pulled down."));
+  c.appendChild(el("div",{class:"hint"},"Your bodyweight for strength maths and the lean mass on file. Programme start loads don't depend on it; logged sessions and earned progression are never changed."));
   const g=el("div",{class:"grid2"});
   const wf=mini("Weight kg","number","78.1");wf.i.value=ib.weightKg;
   const bf=mini("Body fat %","number","13.9");bf.i.value=ib.bodyFatPct;
@@ -2885,16 +2831,16 @@ function wmInBodyCard(){
     return b;
   },false);
   c.appendChild(el("div",{class:"small muted",style:"margin:8px 0"},`Lean body mass on file: ${round(wmLBM(ib),1)} kg`));
-  const b=el("button",{class:"btn sm warn"},"Save & re-baseline prescriptions");
+  const b=el("button",{class:"btn sm warn"},"Save scan");
   b.onclick=()=>{
-    if(!confirm("Re-baseline starting-weight estimates from this scan? Logged history is untouched."))return;
+    if(!confirm("Save this scan? Logged history is untouched."))return;
     ib.weightKg=num(wf.i.value,ib.weightKg);
     ib.bodyFatPct=num(bf.i.value,ib.bodyFatPct);
     ib.skeletalMuscleKg=sf.i.value===""?null:num(sf.i.value);
     if(df.i.value)ib.scanDate=df.i.value;
     ib.segmental=ib.segmental||{};
     segFields.forEach(([k])=>{if(segInputs[k])ib.segmental[k]=segInputs[k].value===""?null:num(segInputs[k].value);});
-    save();render();toast("Re-baselined");
+    save();render();toast("Scan saved");
   };
   c.appendChild(b);
   return c;
@@ -2912,9 +2858,9 @@ function wmInBodyCard(){
    Body weight / body fat are shown for context, not scored.
    ============================================================ */
 const SNAP_UP=0.01, SNAP_DOWN=-0.02;   // vs the median of the last three non-deload weeks
-function snapKey(name){return String(name).toLowerCase().replace(/[^a-z0-9]/g,"").replace(/s$/,"");}
+function snapKey(name){const k=SNAP_BASE(name);return SNAP_ALIAS[k]||k;}   // same lift under an older name ("Hack Squat / Leg Press" → Leg Press) shares one key
 function snapMedian(a){const s=a.slice().sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
-function snapIsDeload(mon){const b=wmBlockAt(mon);return !!(b&&b.deload);}
+function snapIsDeload(mon){const b=progAt(addDays(mon,1));return !!(b&&b.noProg);}   // deload and taper weeks are planned light; the programme week starts on the Tuesday
 // every performed set from both logging systems, in one shape
 function snapSets(){
   const out=[];
@@ -2966,16 +2912,11 @@ function snapDays(mon){
 }
 // the first date anything was ever logged — sessions planned before that were never "due"
 function snapFirstDate(sets){
-  let f=null;const upd=d=>{if(d&&(!f||d<f))f=d;};
-  // the six-day plan only exists from the rotation's first week: earlier weeks hold history, not misses
-  const a=S.wm.rotation&&S.wm.rotation.anchors&&S.wm.rotation.anchors[0];
-  if(a){let g=null;const upd2=d=>{if(d&&(!g||d<g))g=d;};sets.forEach(s=>upd2(s.date));
-    S.wm.cardioLogs.forEach(c=>{const s=S.wm.sessions[c.sessionId];if(s)upd2(s.date);});
-    return g==null?null:(g<a.startDate?a.startDate:g);}
-  sets.forEach(s=>upd(s.date));
-  S.wm.cardioLogs.forEach(c=>{const s=S.wm.sessions[c.sessionId];if(s)upd(s.date);});
-  for(const d in S.workouts){const w=S.workouts[d];if(w&&w.cardio&&num(w.cardio.actualMin)>0)upd(d);}
-  return f;
+  // the plan only exists from the programme's first day: earlier weeks hold history, not misses
+  let g=null;const upd=d=>{if(d&&(!g||d<g))g=d;};
+  sets.forEach(x=>upd(x.date));
+  S.wm.cardioLogs.forEach(c=>{const x=S.wm.sessions[c.sessionId];if(x)upd(x.date);});
+  return g==null?null:(g<progStart()?progStart():g);
 }
 function weekSnapshot(mon,noTrail){
   const today=todayISO(),sun=addDays(mon,6);
@@ -2986,7 +2927,7 @@ function weekSnapshot(mon,noTrail){
     w.vol+=s.vol;
     if(s.e1rm!=null){const k=w.keys[s.key]||(w.keys[s.key]={name:s.name,best:0});k.best=Math.max(k.best,s.e1rm);}
   });
-  const blk=wmBlockAt(mon),deload=snapIsDeload(mon);
+  const blk=progAt(addDays(mon,1)),deload=snapIsDeload(mon);
   const cur=byWeek[mon]||{vol:0,keys:{}};
 
   // ---- strength: this week against recent history ----
@@ -3014,7 +2955,7 @@ function weekSnapshot(mon,noTrail){
   for(let i=0;i<7;i++){
     const d=addDays(mon,i),t=WM_DAYS[wmDayIdFor(d)].type;
     const kind=t==="lift"?"lift":t==="rest"?null:"cardio";
-    if(!kind)continue;
+    if(!kind||progOptional(d))continue;   // rest days and optional sessions are never "due"
     if(kind==="lift")liftPlanned++;else cardioPlanned++;
     const done=kind==="lift"?dd.lift[d]:dd.cardio[d];
     if(firstDate==null||d<firstDate)continue; // before logging began: never due
@@ -3042,7 +2983,7 @@ function weekSnapshot(mon,noTrail){
   let verdict,headline;
   const hasAny=cur.vol>0||done>0;
   if(!hasAny&&!due){verdict="none";headline=mon>today?"This week hasn't started.":"Nothing due yet — log a session and the snapshot starts.";}
-  else if(deload){verdict="deload";headline="Deload week — lighter on purpose. Recovery is the work, so this isn't counted as going backward.";}
+  else if(deload){verdict="deload";headline=blk&&blk.taper?"Taper week — lighter on purpose before the final test. This isn't counted as going backward.":"Deload week — lighter on purpose. Recovery is the work, so this isn't counted as going backward.";}
   else if(due>=3&&C!=null&&C<0.5){verdict="slipping";headline=`Only ${done} of ${due} sessions done — consistency is what's slipping, not your strength.`;}
   else if(cmp.length>=3&&down/cmp.length>=0.4&&up/cmp.length<0.25){verdict="slipping";headline=`${down} of ${cmp.length} lifts are down on recent weeks. Check sleep, food and stress before pushing harder.`;}
   else if(!cmp.length){verdict=(C!=null&&C>=0.75)?"baseline":"holding";
@@ -3052,10 +2993,12 @@ function weekSnapshot(mon,noTrail){
   else{verdict="holding";headline=`Steady — ${up} up, ${flat} flat, ${down} down. Add a rep on each set before adding weight.`;}
 
   // ---- what to do next week ----
-  const nb=wmBlockAt(addDays(mon,7));
+  const nb=progAt(addDays(mon,8));
   let next;
-  if(nb&&nb.deload)next="Deload next week: about 10% lighter and one set fewer. Let it consolidate.";
-  else if(nb&&blk&&nb.index!==blk.index)next=`New block next week: ${nb.block.name}. Weights are re-set from your last sessions, so start where the screen says.`;
+  if(nb&&nb.deload)next="Deload next week: about half the sets at last week's loads, 4 reps in reserve. Let it consolidate.";
+  else if(nb&&nb.taper)next="Taper next week: about 60% of the sets at week-16 loads, with one top set per day. Save the effort for the 9 Mar test.";
+  else if(nb&&!blk)next="The programme starts next week. Begin at the start loads the screen shows.";
+  else if(nb&&blk&&nb.phase.id!==blk.phase.id)next=`New phase next week: ${nb.phase.name} (${nb.phase.tag.toLowerCase()}). Weights carry over from your last sessions.`;
   else if(verdict==="slipping")next="Get every session in before chasing load. Hold the weights; don't add.";
   else if(verdict==="growing")next="Keep the double progression going: top of the range on every set, then take the smallest jump.";
   else next="Beat last week by one rep on the first lift of each session.";
@@ -3066,7 +3009,7 @@ function weekSnapshot(mon,noTrail){
 
   // ---- big lifts since logging began ----
   const bigLifts=[];
-  ["Back Squat","Deadlift","Barbell Bench Press","Barbell Overhead Press","Barbell Row","Hip Thrust"].forEach(nm=>{
+  ["DB Bench Press","Weighted Pull-up","Hack Squat","Leg Press","Seated DB Shoulder Press","Incline DB Press"].forEach(nm=>{
     const k=snapKey(nm),wks=Object.keys(byWeek).filter(w=>byWeek[w].keys[k]&&!snapIsDeload(w)&&w<=mon).sort();
     if(wks.length<2)return;
     const first=byWeek[wks[0]].keys[k].best,recent=Math.max(...wks.slice(-4).map(w=>byWeek[w].keys[k].best));
@@ -3091,7 +3034,7 @@ function snapshotCard(mon,compact){
   const sn=weekSnapshot(mon),ui=SNAP_UI[sn.verdict];
   const thisMon=mondayOf(todayISO());
   const c=el("div",{class:"card"});
-  c.appendChild(el("h2",{html:`Weekly snapshot <span class="sub">${mon===thisMon?"this week so far":"week of "+fmtNice(mon)}${sn.block?` · ${sn.block.block.name} wk ${sn.block.week}`:""}</span>`}));
+  c.appendChild(el("h2",{html:`Weekly snapshot <span class="sub">${mon===thisMon?"this week so far":"week of "+fmtNice(mon)}${sn.block?` · ${sn.block.phase.name} wk ${sn.block.week}`:""}</span>`}));
   const top=el("div",{class:"spread",style:"align-items:flex-start"});
   const l=el("div");
   l.appendChild(el("div",{style:"font-size:26px;font-weight:800;color:"+ui.col},`${ui.sym} ${ui.word}`));
@@ -3187,7 +3130,7 @@ function viewReview(root){
     if(n.firstMeal&&n.lastMeal){fastDays++;const fast=24-(toMin(n.lastMeal)-toMin(n.firstMeal))/60;if(fast>=t.fastHours-0.25)fastOk++;}
   });
   // ---- supplements ----
-  let suppTaken=0;days.forEach(d=>{const s=S.supplements[d];if(s)suppTaken+=Object.values(s.taken).filter(Boolean).length;});
+  let suppTaken=0;days.forEach(d=>{const s=S.supplements[d];if(s)suppTaken+=SUPPS.filter(x=>s.taken[x.id]).length;});
   const suppPct=Math.round(suppTaken/(SUPPS.length*7)*100);
   // ---- body ----
   const wk=S.bodyLog.filter(b=>b.date>=mon&&b.date<=sun);
@@ -3221,7 +3164,7 @@ function viewReview(root){
     g2.append(
       stat("Avg kcal",round(sumK/nDays),"/ "+t.kcal),
       stat("Avg protein",round(sumP/nDays),"g / "+t.protein),
-      stat("Avg net carb",round(sumC/nDays),"g"),
+      stat("Avg carbs",round(sumC/nDays),"g"),
       stat("Avg fat",round(sumF/nDays),"g")
     );
     c2.appendChild(g2);
@@ -3259,7 +3202,7 @@ function viewReview(root){
   if(nDays&&sumK/nDays<t.kcal*0.92)flags.push(["warn",`Averaging ${round(sumK/nDays)} kcal vs ${t.kcal} target — you can't build muscle under-fed. Eat the surplus.`]);
   else if(nDays)flags.push(["ok","Calories on target — the surplus is doing its job."]);
   if(suppPct>=90)flags.push(["ok",`Supplement adherence ${suppPct}%.`]);
-  else if(suppPct<70&&suppTaken)flags.push(["warn",`Supplement adherence ${suppPct}% — creatine daily matters most this block; magnesium at 19:30 anchors sleep.`]);
+  else if(suppPct<70&&suppTaken)flags.push(["warn",`Supplement adherence ${suppPct}% — creatine daily matters most.`]);
   const cf=el("div",{class:"card"});
   cf.appendChild(el("h2",null,"Flags & coaching"));
   if(!flags.length)cf.appendChild(el("div",{class:"empty"},"Log a full week to generate flags."));
@@ -3269,9 +3212,31 @@ function viewReview(root){
 
 /* ---------- projection engine: linear regression on body weight ---------- */
 function latestBody(){return S.bodyLog.length?S.bodyLog[S.bodyLog.length-1]:null;}
+/* Lean-bulk calorie advice from the last two weeks of weigh-ins. Band 0.10–0.25 kg a week: under 0.10 → +150 kcal,
+   over 0.35 → −150 kcal, nothing before programme week 3. At the 15% body-fat ceiling the surplus stops, whatever the week. */
+function trend2w(){ // least-squares kg/week over the last 14 days, or null with fewer than 2 weigh-ins about a week apart
+  const today=todayISO(),since=addDays(today,-14);
+  const p=S.bodyLog.filter(b=>b.weight&&b.date>=since&&b.date<=today).map(b=>({x:daysBetween(since,b.date),y:b.weight}));
+  if(p.length<2||p[p.length-1].x-p[0].x<5)return null;
+  const n=p.length;let sx=0,sy=0,sxy=0,sxx=0;
+  p.forEach(q=>{sx+=q.x;sy+=q.y;sxy+=q.x*q.y;sxx+=q.x*q.x;});
+  const den=n*sxx-sx*sx;return den?(n*sxy-sx*sy)/den*7:null;
+}
+function calAdvice(rate){
+  const bfRow=S.bodyLog.slice().reverse().find(x=>x.bodyFat!=null),bf=bfRow?bfRow.bodyFat:null;
+  if(bf!=null&&bf>=BULK_RATE.bfCeiling)return {cls:"bad",msg:`Body fat is ${bf}%, at the ${BULK_RATE.bfCeiling}% ceiling. Stop the surplus, eat at maintenance until 9 Mar.`};
+  if(rate==null)return null;
+  const today=todayISO(),b=progAt(today),wk=b?b.week:(today<progStart()?0:99);
+  const txt=`${rate>=0?"+":""}${round(rate,2)} kg/wk over the last 2 weeks`;
+  if(wk<3)return {cls:"ok",msg:`Trend ${txt}. No calorie changes before week 3.`};
+  if(rate<BULK_RATE.lo)return {cls:"warn",msg:`Trend ${txt}, under ${BULK_RATE.lo.toFixed(2)}. Add ${BULK_RATE.kcalStep} kcal a day.`};
+  if(rate>BULK_RATE.cutAbove)return {cls:"warn",msg:`Trend ${txt}, over ${BULK_RATE.cutAbove.toFixed(2)}. Take ${BULK_RATE.kcalStep} kcal a day off.`};
+  if(rate>BULK_RATE.hi)return {cls:"ok",msg:`Trend ${txt}, a little above the ${BULK_RATE.lo.toFixed(2)} to ${BULK_RATE.hi.toFixed(2)} band. No change yet; watch it for another week.`};
+  return {cls:"ok",msg:`Trend ${txt}, inside the ${BULK_RATE.lo.toFixed(2)} to ${BULK_RATE.hi.toFixed(2)} lean-gain band. Keep calories where they are.`};
+}
 function projection(){
   const pts=S.bodyLog.filter(b=>b.weight).map(b=>({x:daysBetween(BASELINE.date,b.date),y:b.weight}));
-  if(pts.length<2)return {ok:false};
+  if(pts.length<2)return {ok:false,rate2w:null,advice:calAdvice(null)};
   // least squares
   const n=pts.length;let sx=0,sy=0,sxy=0,sxx=0;
   pts.forEach(p=>{sx+=p.x;sy+=p.y;sxy+=p.x*p.y;sxx+=p.x*p.x;});
@@ -3280,6 +3245,7 @@ function projection(){
   const goalDayIdx=daysBetween(BASELINE.date,S.profile.goalDate);
   const projWeightAtGoal=slope*goalDayIdx+intercept;
   const rateTxt=`${ratePerWeek>=0?"+":""}${round(ratePerWeek,2)} kg/wk`;
+  const rate2w=trend2w();
   const ph=activePhase(todayISO());
   const mode=ph?ph.mode:"gain";
   let msg,cls;
@@ -3295,12 +3261,11 @@ function projection(){
     else if(ratePerWeek>0.25){cls="warn";msg=`Gaining ${round(ratePerWeek,2)} kg/wk — more than a nudge. Pull ~150 kcal back.`;}
     else{cls="warn";msg=`Losing ${round(-ratePerWeek,2)} kg/wk — drifting into a cut. Add ~150 kcal to hold.`;}
   } else {
-    // gain: lean-bulk band
-    if(ratePerWeek<BULK_RATE.lo){cls="warn";msg=`Weight trend ${rateTxt} — too flat to grow. Add ~150 kcal of carbs and keep lifting; projected ${round(projWeightAtGoal,1)}kg by ${fmtNice(S.profile.goalDate)}.`;}
-    else if(ratePerWeek<=BULK_RATE.hi){cls="ok";msg=`Gaining ${round(ratePerWeek,2)} kg/wk — inside the lean-gain band (${BULK_RATE.lo}-${BULK_RATE.hi}). Projected ${round(projWeightAtGoal,1)}kg by ${fmtNice(S.profile.goalDate)}; target ~${TARGET_WEIGHT}kg.`;}
-    else{cls="warn";msg=`Gaining ${round(ratePerWeek,2)} kg/wk — faster than the lean band (max ${BULK_RATE.hi}); the excess is mostly fat. Pull ~150 kcal back.`;}
+    // gain: lean-bulk band, judged on the last two weeks
+    const adv=calAdvice(rate2w);
+    cls=adv?adv.cls:"ok";msg=adv?adv.msg:"Log weigh-ins across two weeks and the lean-gain trend appears here.";
   }
-  return {ok:true,cls,msg,slope,ratePerWeek,projWeightAtGoal};
+  return {ok:true,cls,msg,slope,ratePerWeek,rate2w,advice:calAdvice(rate2w),projWeightAtGoal};
 }
 
 /* ============================================================
@@ -3397,13 +3362,13 @@ function viewData(root){
   const file=el("input",{type:"file",accept:"application/json"});file.style.display="none";
   imp.onclick=()=>file.click();
   file.onchange=()=>{const f=file.files[0];if(!f)return;const rd=new FileReader();
-    rd.onload=()=>{try{const o=JSON.parse(rd.result);if(!o.version)throw 0;if(confirm("Replace all current data with the imported file?")){S=migrate(o);save();render();toast("Imported");}}catch(e){toast("Invalid file");}};rd.readAsText(f);};
+    rd.onload=()=>{try{const o=JSON.parse(rd.result);if(!o.version)throw 0;if(confirm("Replace all current data with the imported file?")){try{keepBackup(localStorage.getItem(KEY));}catch(e){}S=migrate(o);save();render();toast("Imported");}}catch(e){toast("Invalid file");}};rd.readAsText(f);};
   r.append(exp,imp,file);c.appendChild(r);
   const bakKeys=[];
-  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf(KEY+".bak-")===0)bakKeys.push(k);}}catch(e){}
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.indexOf(KEY+".bak-")===0||k===BACKUP_KEY))bakKeys.push(k);}}catch(e){}
   if(bakKeys.length)c.appendChild(el("div",{class:"small muted",style:"margin-top:10px"},"Safety copies of your data from before each update are kept on this device."));
   bakKeys.sort().forEach(k=>{
-    const rev=k.slice(k.indexOf(".bak-")+5);
+    const rev=k===BACKUP_KEY?"pre-upper-lower-bulk":k.slice(k.indexOf(".bak-")+5);
     const bb=el("button",{class:"btn sm ghost",style:"margin:6px 6px 0 0"},"Download backup · "+rev);
     bb.onclick=()=>{try{const blob=new Blob([localStorage.getItem(k)],{type:"application/json"});
       const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="peaklog-backup-"+rev+".json";a.click();}catch(e){toast("Backup not available");}};
