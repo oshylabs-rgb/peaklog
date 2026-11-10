@@ -1,5 +1,5 @@
 /* Progression tests: start loads, double progression per equipment type, the 7.5% rule, deload and taper
-   weeks (week-6 / week-12 loads, no change to progression state), manual weight control, and history that
+   weeks (week-6 / week-12 / week-16 loads, no change to progression state), manual weight control, and history that
    follows a lift across old names ("last time" keeps working).
    Run: node tests/progression.test.mjs */
 import assert from "node:assert/strict";
@@ -90,16 +90,19 @@ test("deload and taper weeks show the weight last used (week 6 / week 12), not t
   const frozen = A.wmPrescription("hackSquat", [6, 10], { noProg: true });
   eq([frozen.kg, frozen.why], [80, "frozen"]);
   assert.equal(A.tplFor("2026-12-23").exercises[0].wt, 80);                              // week 7 Wed (deload): week-6 load
-  assert.equal(A.tplFor("2027-02-03").exercises[0].wt, 80);                              // week 13 Wed (taper): last regular load
+  assert.equal(A.tplFor("2027-02-03").exercises[0].wt, 80);                              // week 13 Wed (deload): last regular load
+  assert.equal(A.tplFor("2027-03-03").exercises[0].wt, 80);                              // week 17 Wed (taper): last regular load
   assert.equal(A.wmDay("lA", "2026-12-23").noProg, true);
   assert.equal(A.wmDay("lA", "2027-02-03").noProg, true);
+  assert.equal(A.wmDay("lA", "2027-03-03").noProg, true);
+  assert.equal(A.wmDay("lA", "2027-02-10").noProg, false);                               // block 2b: progression back on
   assert.equal(A.wmDay("lA", "2026-12-09").noProg, false);
 });
 test("deload and taper sessions never change progression state", () => {
   const A = fresh();
   addLiftSession(A, "2026-12-01", "uA", [["dbBench", 36, [10, 10, 10]]]);
   const before = JSON.stringify(A.wmPrescription("dbBench"));
-  [["2026-12-22", "wk 7 deload"], ["2027-02-02", "wk 13 taper"]].forEach(([d]) => {
+  [["2026-12-22", "wk 7 deload"], ["2027-02-02", "wk 13 deload"], ["2027-03-02", "wk 17 taper"]].forEach(([d]) => {
     A.setNow(d + "T10:00:00");
     const id = A.wmCreateSession("uA", d);
     const sess = A.S.wm.sessions[id], day = A.wmSessionDay(sess);

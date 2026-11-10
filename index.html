@@ -219,7 +219,7 @@ const TARGET_WEIGHT=+(BASELINE.weight+1.3).toFixed(1); // ~80.7
 // over 0.35 → −150 kcal, none before programme week 3. At 15% body fat the surplus stops.
 const BULK_RATE={lo:0.10, hi:0.25, cutAbove:0.35, kcalStep:150, bfCeiling:15};
 
-// Lean-bulk macros for the 13-week upper/lower programme, every day: 2900 kcal, 165 g protein,
+// Lean-bulk macros for the 17-week upper/lower programme, every day: 2900 kcal, 165 g protein,
 // 80 g fat, 380 g carbs. Water 3000 ml (+500 ml on sauna days). netCarbCeiling = the point the carb
 // bar and flag turn amber/red (target + 50, the same gap as before).
 const TARGETS={kcal:2900, protein:165, netCarbs:380, netCarbCeiling:430, fat:80, water:3000, waterSauna:500,
@@ -259,7 +259,7 @@ function applyPhaseTargets(){
   S.appliedPhase=p.id;save();
 }
 
-/* The lift days are not a fixed template: the 13-week programme (PROG, below the exercise library)
+/* The lift days are not a fixed template: the 17-week programme (PROG, below the exercise library)
    defines them and tplFor(date) turns the programme's day into the shape the Workout tab logs. The
    earlier 6-week rotation and its RDL / deadlift / hip-thrust days are retired; anything logged under
    them stays in S.workouts and S.wm. */
@@ -275,9 +275,9 @@ const PLAN_RULES={
   rules:[
     "Double progression: stay at one weight until every set reaches the top of the rep range, then take one step up and start again from the bottom of the range. Otherwise keep the weight and aim for one more rep than your lowest set last time.",
     "If your reps fall two sessions in a row on a lift, drop its weight by 7.5%.",
-    "RIR (reps in reserve) is how many clean reps you could still do. Intro weeks run 3, then 2 to 1; the build and peak blocks run 2 to 0; the deload runs 4 and the taper 3. Rest times are guidance only.",
+    "RIR (reps in reserve) is how many clean reps you could still do. Intro weeks run 3, then 2 to 1; the build and peak blocks run 2 to 0; the deloads (weeks 7 and 13) run 4 and the taper 3. Rest times are guidance only.",
     "Lean-gain band: 0.10 to 0.25 kg a week. From week 3, if the 2-week trend is under 0.10 add 150 kcal; if it is over 0.35 take 150 kcal off.",
-    "Body-fat ceiling 15%: if you reach it, stop the surplus. Stop the surplus, eat at maintenance until 9 Feb.",
+    "Body-fat ceiling 15%: if you reach it, stop the surplus. Stop the surplus, eat at maintenance until 9 Mar.",
     "Protein: 4 feedings of 35-45 g across the day. If you eat in a 12:00-20:00 window, train about 10:30-11:45 with 25-30 g whey before and eat at 12:00.",
     "Alcohol: 2 drinks at most, none on lifting days and none within 4 h of bed.",
     "Cold rule: "+RECOVERY.cold,
@@ -546,7 +546,7 @@ const CORE={
 
 /* ============================================================
    WORKOUT MODULE — PRD build (approved 3 Aug 2026), now running the
-   13-week upper/lower programme (PROG): programme start loads, double
+   17-week upper/lower programme (PROG): programme start loads, double
    progression, optional rower/treadmill cardio, Sunday fast-day locks.
    No timers: rest, RIR and notes are guidance text only.
    Own state lives in S.wm. Reads the phase config (PHASES /
@@ -568,7 +568,7 @@ const CORE={
    alias = older exercise ids whose logs count as this lift's history ("last time", progression).
    retired = no longer programmed; kept so logged history still resolves. */
 const WM_EXERCISES=[
-  // ---- the 13-week programme (PROG, below) ----
+  // ---- the 17-week programme (PROG, below) ----
   {id:"dbBench",    name:"DB Bench Press",                  mg:"Chest",              eq:"db",equipment:"dumbbell",  incrementKg:2,  grid:2,  repRange:[6,10],  startKg:36,  perHand:true},
   {id:"csDbRow",    name:"Chest-Supported DB Row",          mg:"Back",               eq:"db",equipment:"dumbbell",  incrementKg:2,  grid:2,  repRange:[8,12],  startKg:30,  perHand:true},
   {id:"inclineDB",  name:"Incline DB Press",                mg:"Upper chest",        eq:"db",equipment:"dumbbell",  incrementKg:2,  grid:2,  repRange:[8,12],  startKg:28,  perHand:true},
@@ -695,17 +695,18 @@ delete WM_DAYS.restDay.cardio;   // the programme's rest days are text; the opti
 const WM_ROWER_SEED={lo:120,hi:130};    // 2:00–2:10 /500m seed band
 const WM_ROWER_FLOOR=110;               // 1:50 floor
 
-/* ---------- the programme: 13-week upper/lower lean bulk ----------
-   Starts Tue 10 Nov 2026. A programme week runs Tuesday to Monday (week 1 = 10–16 Nov, week 13 =
-   2–8 Feb 2027); the start date is never snapped to a Monday. The final review + InBody day is 9 Feb.
+/* ---------- the programme: 17-week upper/lower lean bulk ----------
+   Starts Tue 10 Nov 2026. A programme week runs Tuesday to Monday (week 1 = 10–16 Nov, week 17 =
+   2–8 Mar 2027); the start date is never snapped to a Monday. The final review + InBody day is 9 Mar.
    The weekday decides the session (dayByDow, Mon..Sun). A week's phase decides which set column
    (A/B/C) applies, plus the deload (about 50% of column B sets, week-6 loads) and the taper (about
-   60% of column C sets, week-12 loads). overrides = date → day id (Christmas deload and holiday
+   60% of column C sets, the last regular week's loads). The week-13 deload is a normal week at about
+   50% of column C sets. overrides = date → day id (Christmas deload and holiday
    weeks); optional = dates whose session is optional. Slot = [exerciseId, setsA, setsB, setsC,
    rest, RIR, note, estimate?]; rep range, start load and equipment live in the exercise library. */
 const PROG={
-  id:"ul-bulk-2026-11",name:"13-week upper/lower lean bulk",start:"2026-11-10",weeks:13,final:"2027-02-09",
-  scanDays:["2026-11-10","2026-12-08","2027-01-05","2027-02-09"],
+  id:"ul-bulk-2026-11",name:"17-week upper/lower lean bulk",start:"2026-11-10",weeks:17,final:"2027-03-09",
+  scanDays:["2026-11-10","2026-12-08","2027-01-05","2027-02-09","2027-03-09"],
   scanNote:"InBody scan today. Fasted, before training, no sauna or alcohol in the previous 24 h.",
   dayByDow:["restVO2","uA","lA","restZ2","uB","lB","uC"],   // Mon..Sun
   phases:[
@@ -718,15 +719,20 @@ const PROG={
       focus:"About 50% of the column B sets (rounded down, at least 1), week-6 loads, 4 reps in reserve. Sessions only on Tue Upper A, Wed Lower A and an optional Sat Upper B. Every other day is rest."},
     {id:"2",name:"Block 2 Peak volume",tag:"Set column C",from:8,to:12,kind:"peak",col:2,rir:["2 to 0"],
       focus:"Set column C, the most sets of the plan: 2 to 0 reps in reserve. On isolation exercises, the last set gets lengthened partials after you reach the RIR target."},
-    {id:"tp",name:"Taper + test",tag:"About 60% of column C sets",from:13,to:13,kind:"taper",col:2,rir:["3"],
-      focus:"About 60% of the column C sets (rounded, at least 1), 3 reps in reserve, week-12 loads. The first exercise of each day includes one top set to 0 to 1 reps in reserve at the week-12 load."}
+    {id:"dl2",name:"Deload",tag:"About 50% of column C sets",from:13,to:13,kind:"deload",col:2,rir:["4"],
+      focus:"All five sessions at about 50% of the column C sets (rounded down, at least 1), week-12 loads, 4 reps in reserve. Recover before the last block."},
+    {id:"2b",name:"Block 2b Peak volume",tag:"Set column C",from:14,to:16,kind:"peak",col:2,rir:["2 to 0"],
+      focus:"Back to column C for three more weeks: 2 to 0 reps in reserve, lengthened partials on the last set of isolation exercises. Weights carry on from week 12."},
+    {id:"tp",name:"Taper + test",tag:"About 60% of column C sets",from:17,to:17,kind:"taper",col:2,rir:["3"],
+      focus:"About 60% of the column C sets (rounded, at least 1), 3 reps in reserve, week-16 loads. The first exercise of each day includes one top set to 0 to 1 reps in reserve at the week-16 load."}
   ],
   overrides:{   // week 8 (29 Dec to 4 Jan) holiday plan: Upper A, Lower A, rest, rest, Upper B, Lower B, no Upper C
     "2026-12-29":"uA","2026-12-30":"lA","2026-12-31":"restDay","2027-01-01":"restDay","2027-01-02":"uB","2027-01-03":"lB"},
   optional:["2026-12-26"],
   weekNotes:{
     7:"Christmas deload: only Tue 22 Dec Upper A and Wed 23 Dec Lower A, plus an optional Sat 26 Dec Upper B. Every other day is rest.",
-    8:"Holiday week: Tue 29 Dec Upper A, Wed 30 Dec Lower A, Thu 31 Dec and Fri 1 Jan rest, Sat 2 Jan Upper B, Sun 3 Jan Lower B. No Upper C this week."},
+    8:"Holiday week: Tue 29 Dec Upper A, Wed 30 Dec Lower A, Thu 31 Dec and Fri 1 Jan rest, Sat 2 Jan Upper B, Sun 3 Jan Lower B. No Upper C this week.",
+    13:"Deload week: the normal five sessions, about half the sets, week-12 loads, 4 reps in reserve."},
   restNotes:{
     restZ2:"No lifting. Zone 2 bike 30-40 min, talk-test pace.",
     restVO2:"No lifting. VO2max 4x4 on bike: 4 x 4 min at 85-95% HRmax, 3 min easy between, about 35 min total.",
@@ -804,8 +810,8 @@ function wmCanStart(day,date){
 function wmSets(pe,date){return pe.sets+(wmPhase2(date)?1:0);} // Phase 2: +1 set per exercise
 
 /* ---------- the programme calendar: which phase, week and session is a date? ----------
-   The 13 weeks run from the start date (a Tuesday), never from a Monday: week 1 = 10–16 Nov 2026,
-   week 13 = 2–8 Feb 2027. progAt(date) is null before the start and after week 13. */
+   The 17 weeks run from the start date (a Tuesday), never from a Monday: week 1 = 10–16 Nov 2026,
+   week 17 = 2–8 Mar 2027. progAt(date) is null before the start and after week 17. */
 function progStart(){
   try{const p=S.wm.programme;if(p&&p.id===PROG.id&&/^\d{4}-\d\d-\d\d$/.test(p.start))return p.start;}catch(e){}
   return PROG.start;
@@ -836,12 +842,12 @@ function wmDayIdFor(date){
   const d=dow(date),dm=b.phase.dowMap;
   return dm?(dm[d]||"restDay"):PROG.dayByDow[d];
 }
-// sets for one exercise this week: column A / B / C by phase; deload ≈ 50% of B (round down, min 1);
-// taper ≈ 60% of C (round, min 1)
+// sets for one exercise this week: column A / B / C by phase; deload ≈ 50% of the phase's column
+// (B in week 7, C in week 13; round down, min 1); taper ≈ 60% of C (round, min 1)
 function progSets(row,b){
   if(!b)return row[1];
-  if(b.phase.kind==="deload")return Math.max(1,Math.floor(row[2]*0.5));
-  if(b.phase.kind==="taper")return Math.max(1,Math.round(row[3]*0.6));
+  if(b.phase.kind==="deload")return Math.max(1,Math.floor(row[1+b.phase.col]*0.5));   // wk 7: column B, wk 13: column C
+  if(b.phase.kind==="taper")return Math.max(1,Math.round(row[1+b.phase.col]*0.6));
   return row[1+b.phase.col];
 }
 // "2.5-3 min" → 165 s, "60-90 s" → 75 s (only used to estimate session length; nothing counts down)
@@ -865,7 +871,7 @@ function progSlot(row,b,first){
   const ex=wmEx(row[0]),k=b?b.phase.kind:"",notes=[];
   if(row[6])notes.push(row[6]);
   if(k==="peak"&&ex.iso)notes.push(PROG.isoPartials);
-  if(k==="taper"&&first)notes.push("one top set to 0 to 1 reps in reserve at the week-12 load, the other sets at 3");
+  if(k==="taper"&&first)notes.push("one top set to 0 to 1 reps in reserve at the week-16 load, the other sets at 3");
   return {exerciseId:row[0],sets:progSets(row,b),rest:row[4],restSeconds:progRestSec(row[4]),
     rir:progRir(row[5],b,first),note:notes.join(". "),est:!!row[7]};
 }
@@ -1138,12 +1144,12 @@ function wmLogRemaining(sess,pes,reps){
   return n;
 }
 
-// ids are reused from the old stack where the slot is the same (morning stack, first meal, training, evening), so past ticks stay meaningful
+// ids are reused from the old stack where the slot is the same (Space Goods morning stack, first meal, Salte at training), so past
+// ticks stay meaningful. No magnesium and no cacao tea; older "mag"/"cacao" ticks stay in the data and are no longer counted.
 const SUPPS=[
-  {id:"rdust", name:"Espresso (about 230 mg caffeine, before 13:00) + creatine 5 g",       when:"Morning / pre-workout", tm:"morning"},
+  {id:"rdust", name:"Space Goods coffee (before 13:00) + creatine 5 g",                    when:"Morning / pre-workout", tm:"morning"},
   {id:"d3k2",  name:"Vitamin D3 1000-2000 IU (Oct-Apr), Omega-3 1-2 g EPA+DHA (optional)", when:"First meal",            tm:"first meal"},
-  {id:"hdust", name:"Electrolytes on sauna or heavy-sweat days; whey 25-40 g if needed for protein", when:"Training / sauna", tm:"training"},
-  {id:"mag",   name:"Magnesium glycinate 200-400 mg (optional)",                           when:"Evening",               tm:"evening"}
+  {id:"hdust", name:"Salte Electrolytes on sauna or heavy-sweat days; whey 25-40 g if needed for protein", when:"Training / sauna", tm:"training"}
 ];
 
 // the quick-add list: five go-to meals (the older default foods are replaced by update 11; foods you added yourself stay)
@@ -1169,12 +1175,12 @@ const LEGACY_SEED_NAMES=["Whey shake (1 scoop)","4 eggs","Ribeye steak 200g","Sa
 
 /* ---------- store ---------- */
 const KEY="peaklog.v1";
-// raw copy of the stored data, written once, before the update to the 13-week programme changes anything
+// raw copy of the stored data, written once, before the update to the upper/lower programme changes anything
 const BACKUP_KEY="peaklog.backup.pre-upper-lower-bulk";
 function keepBackup(raw){try{if(raw!=null&&localStorage.getItem(BACKUP_KEY)==null)localStorage.setItem(BACKUP_KEY,raw);}catch(e){}}
 let S=load();
 function blank(){
-  return {version:1, planRev:11, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
+  return {version:1, planRev:12, profile:{height:176,age:37,sex:"male",goalDate:GOAL.date,goalBF:GOAL.bf},
     bodyLog:[{date:BASELINE.date,weight:BASELINE.weight,bodyFat:BASELINE.bodyFat,note:"InBody 580 baseline"},
              Object.assign({},PHASE_START_BODY)],
     inbody:[BASELINE],
@@ -1188,6 +1194,7 @@ function load(){
     // one-time safety copy of the raw data before any migration rewrites it
     if((o.planRev||0)<10){try{const bk=KEY+".bak-planRev"+(o.planRev||0);if(localStorage.getItem(bk)==null)localStorage.setItem(bk,r);}catch(e){}}
     if((o.planRev||0)<11)keepBackup(r);
+    if(o.planRev===11){try{const bk=KEY+".bak-planRev11";if(localStorage.getItem(bk)==null)localStorage.setItem(bk,r);}catch(e){}}
     const m=migrate(o);try{localStorage.setItem(KEY,JSON.stringify(m));}catch(e){}
     return m;}}}catch(e){}
   // never replace data we could not read with a blank slate without keeping the original
@@ -1296,6 +1303,14 @@ function migrate(o){ // forward-compatible defaults
     const keep=o.myFoods.filter(f=>LEGACY_SEED_NAMES.indexOf(f.name)<0&&!SEED_FOODS.some(n=>n.name===f.name));
     o.myFoods=SEED_FOODS.map(f=>Object.assign({},f)).concat(keep);
     o.planRev=11;
+  }
+  if(o.planRev<12){
+    // the same plan now runs 17 weeks to 9 Mar 2027 (deload week 13, Block 2b weeks 14-16, taper week 17).
+    // Weeks 1-12 are unchanged. Untouched auto-generated days dated today or later rebuild; logged days stay.
+    const today=todayISO();
+    for(const d in o.workouts){if(d>=today&&isPristine(o.workouts[d]))delete o.workouts[d];}
+    o.wm.programme={id:PROG.id,start:(o.wm.programme&&o.wm.programme.id===PROG.id&&o.wm.programme.start)||PROG.start,weeks:PROG.weeks};
+    o.planRev=12;
   }
   return o;
 }
@@ -1895,7 +1910,7 @@ function viewPlan(root){
   const c=el("div",{class:"card"});
   const wkB=progAt(todayISO());
   c.appendChild(el("h2",{html:`Weekly plan <span class="sub">${wkB?`${wkB.phase.name} · week ${wkB.week} of ${wkB.weeks}`:"outside the programme"}</span>`}));
-  c.appendChild(el("div",{class:"hint"},"This week's sessions, straight from the programme (the Rotation tab has all 13 weeks). Weeks run Tuesday to Monday: Upper A, Lower A, a Zone 2 rest day, Upper B, Lower B, Upper C, then a VO2max rest day. Recovery rules are in the list below."));
+  c.appendChild(el("div",{class:"hint"},"This week's sessions, straight from the programme (the Rotation tab has all 17 weeks). Weeks run Tuesday to Monday: Upper A, Lower A, a Zone 2 rest day, Upper B, Lower B, Upper C, then a VO2max rest day. Recovery rules are in the list below."));
   for(const date of wmWeekDays(todayISO())){
     const t=tplFor(date);const isToday=date===todayISO();
     const pd=el("div",{class:"plan-day"+(isToday?" today":"")});
@@ -1959,7 +1974,7 @@ function viewPlan(root){
     i.oninput=()=>{t[k]=num(i.value);save();};l.appendChild(i);grid.appendChild(l);
   });
   cn.appendChild(grid);
-  cn.appendChild(el("div",{class:"hint"},`Daily targets for the 13-week programme, the same every day. Water gets +${num(t.waterSauna,500)} ml on sauna days (switch on the Nutrition tab). Manual edits here stick. BMR ${BASELINE.bmr} kcal.`));
+  cn.appendChild(el("div",{class:"hint"},`Daily targets for the 17-week programme, the same every day. Water gets +${num(t.waterSauna,500)} ml on sauna days (switch on the Nutrition tab). Manual edits here stick. BMR ${BASELINE.bmr} kcal.`));
   root.appendChild(cn);
 
   // supplement reference
@@ -2679,7 +2694,7 @@ function viewPlanProgramme(root){
     c.appendChild(el("div",{style:"font-weight:800;font-size:18px"},`${b.phase.name} — ${b.phase.tag}`));
     c.appendChild(el("div",{class:"small muted",style:"margin:2px 0 8px"},`${fmtNice(b.weekStart)} → ${fmtNice(b.weekEnd)} · ${PROG.name}`));
     c.appendChild(el("div",{class:"small"},b.phase.focus));
-    // week strip: where you are in the 13 weeks
+    // week strip: where you are in the 17 weeks
     const strip=el("div",{class:"row",style:"margin:12px 0 6px;gap:6px"});
     for(let w=1;w<=PROG.weeks;w++){
       const on=w===b.week;
@@ -2981,7 +2996,7 @@ function weekSnapshot(mon,noTrail){
   const nb=progAt(addDays(mon,8));
   let next;
   if(nb&&nb.deload)next="Deload next week: about half the sets at last week's loads, 4 reps in reserve. Let it consolidate.";
-  else if(nb&&nb.taper)next="Taper next week: about 60% of the sets at week-12 loads, with one top set per day. Save the effort for the 9 Feb test.";
+  else if(nb&&nb.taper)next="Taper next week: about 60% of the sets at week-16 loads, with one top set per day. Save the effort for the 9 Mar test.";
   else if(nb&&!blk)next="The programme starts next week. Begin at the start loads the screen shows.";
   else if(nb&&blk&&nb.phase.id!==blk.phase.id)next=`New phase next week: ${nb.phase.name} (${nb.phase.tag.toLowerCase()}). Weights carry over from your last sessions.`;
   else if(verdict==="slipping")next="Get every session in before chasing load. Hold the weights; don't add.";
@@ -3187,7 +3202,7 @@ function viewReview(root){
   if(nDays&&sumK/nDays<t.kcal*0.92)flags.push(["warn",`Averaging ${round(sumK/nDays)} kcal vs ${t.kcal} target — you can't build muscle under-fed. Eat the surplus.`]);
   else if(nDays)flags.push(["ok","Calories on target — the surplus is doing its job."]);
   if(suppPct>=90)flags.push(["ok",`Supplement adherence ${suppPct}%.`]);
-  else if(suppPct<70&&suppTaken)flags.push(["warn",`Supplement adherence ${suppPct}% — creatine daily matters most; magnesium in the evening helps sleep.`]);
+  else if(suppPct<70&&suppTaken)flags.push(["warn",`Supplement adherence ${suppPct}% — creatine daily matters most.`]);
   const cf=el("div",{class:"card"});
   cf.appendChild(el("h2",null,"Flags & coaching"));
   if(!flags.length)cf.appendChild(el("div",{class:"empty"},"Log a full week to generate flags."));
@@ -3209,7 +3224,7 @@ function trend2w(){ // least-squares kg/week over the last 14 days, or null with
 }
 function calAdvice(rate){
   const bfRow=S.bodyLog.slice().reverse().find(x=>x.bodyFat!=null),bf=bfRow?bfRow.bodyFat:null;
-  if(bf!=null&&bf>=BULK_RATE.bfCeiling)return {cls:"bad",msg:`Body fat is ${bf}%, at the ${BULK_RATE.bfCeiling}% ceiling. Stop the surplus, eat at maintenance until 9 Feb.`};
+  if(bf!=null&&bf>=BULK_RATE.bfCeiling)return {cls:"bad",msg:`Body fat is ${bf}%, at the ${BULK_RATE.bfCeiling}% ceiling. Stop the surplus, eat at maintenance until 9 Mar.`};
   if(rate==null)return null;
   const today=todayISO(),b=progAt(today),wk=b?b.week:(today<progStart()?0:99);
   const txt=`${rate>=0?"+":""}${round(rate,2)} kg/wk over the last 2 weeks`;

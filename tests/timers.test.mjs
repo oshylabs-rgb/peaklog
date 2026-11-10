@@ -54,8 +54,8 @@ test("a lift session left open for three hours is still open: nothing auto-ends 
 });
 test("service worker: new cache name, old caches deleted on activate, every app file precached", () => {
   const name = /const CACHE = "([^"]+)"/.exec(sw)[1];
-  assert.equal(name, "peaklog-v13");
-  assert.notEqual(name, "peaklog-v12");
+  assert.equal(name, "peaklog-v14");
+  assert.ok(!["peaklog-v12", "peaklog-v13"].includes(name));
   assert.ok(/keys\.filter\(k => k !== CACHE\)\.map\(k => caches\.delete\(k\)\)/.test(sw), "activate deletes other caches");
   assert.ok(/skipWaiting/.test(sw) && /clients\.claim/.test(sw));
   const assets = JSON.parse(/const ASSETS = (\[[^\]]*\])/.exec(sw)[1]);

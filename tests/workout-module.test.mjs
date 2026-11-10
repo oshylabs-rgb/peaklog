@@ -1,4 +1,4 @@
-/* Workout-module engine tests: what is left of the original PRD build that the 13-week programme still
+/* Workout-module engine tests: what is left of the original PRD build that the upper/lower programme still
    uses (fast-day locks, Phase 2 flag, set queue, skipped-set flagging, rower pace targeting) plus
    persistence and the library. Run: node tests/workout-module.test.mjs */
 import assert from "node:assert/strict";

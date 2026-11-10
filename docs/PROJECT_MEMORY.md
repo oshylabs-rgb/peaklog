@@ -1,9 +1,9 @@
 # PeakLog — project memory
 
-Last updated: 9 Nov 2026 (13-week upper/lower lean bulk, planRev 11, cache peaklog-v13). Single-file static PWA (`index.html`), localStorage key `peaklog.v1`, no backend. Deploys from GitHub to Vercel (see `DEPLOY.md`). Never store secrets here.
+Last updated: 10 Nov 2026 (17-week upper/lower lean bulk to 9 Mar 2027, planRev 12, cache peaklog-v14). Single-file static PWA (`index.html`), localStorage key `peaklog.v1`, no backend. Deploys from GitHub to Vercel (see `DEPLOY.md`). Never store secrets here.
 
 ## Current objective
-Run the **13-week upper/lower lean bulk** (Tue 10 Nov 2026 to Tue 9 Feb 2027) from the app: the right session on the right day, start loads, double progression, nutrition targets, supplements and recovery rules as text, no timers, and every logged workout, meal, weigh-in and tick kept.
+Run the **17-week upper/lower lean bulk** (Tue 10 Nov 2026 to Tue 9 Mar 2027) from the app: the right session on the right day, start loads, double progression, nutrition targets, supplements and recovery rules as text, no timers, and every logged workout, meal, weigh-in and tick kept.
 
 ## PRD — 13-week programme (9 Nov 2026, on branch `feature/upper-lower-bulk-nov-2026`, not pushed or deployed)
 - **Problem.** The 6-week rotation (Build/Strength/Volume, layouts A/B, Fri/Sun rest chooser, InBody-estimated loads) no longer matched the plan Arnold wants to follow, and workouts ran timers (rest timer, session clock, 45-minute auto-end) he does not want.
@@ -12,7 +12,14 @@ Run the **13-week upper/lower lean bulk** (Tue 10 Nov 2026 to Tue 9 Feb 2027) fr
 - **Scope.** Programme as data (`PROG`), calendar by weekday with date overrides, new progression engine, nutrition/supplement/recovery text, timer removal, planRev-11 migration with backup, tests, service worker bump. UI unchanged apart from text, data and the removed timer elements.
 - **Constraints.** Plain static page, no new libraries, no build step. Programme weeks run Tuesday to Monday; the start date is never snapped to Monday. No push, no merge, no deploy from the build session: Arnold reviews the diff and deploys.
 
-## Decisions (13-week programme, 9 Nov 2026)
+## Change, 10 Nov 2026: plan ends in March (planRev 12)
+- Arnold: replace the plan with one that ends in March; same start (10 Nov), same weekday pattern, same sessions and phase rules; nutrition targets, quick-add meals and recovery text unchanged.
+- **Interpretation (Claude's call, flagged for review):** 17 weeks, final review + InBody Tue 9 Mar 2027 (keeps the Tuesday rhythm and the 4-weekly scans). Weeks 1-12 unchanged. Week 13 (2-8 Feb) becomes a normal deload (all five sessions, about 50% of column C sets, week-12 loads, RIR 4) instead of the taper, because nine straight peak weeks without a deload would pile up fatigue. Weeks 14-16 = Block 2b Peak volume (column C, RIR 2 to 0, partials on isolation lifts). Week 17 (2-8 Mar) = taper + test at the week-16 load. 9 Feb is now an Upper A day with a scan before training.
+- **Supplements:** morning = "Space Goods coffee (before 13:00) + creatine 5 g" (the old 230 mg espresso figure was dropped: the caffeine in Space Goods coffee is not known here, so no number is shown); training = Salte Electrolytes; magnesium removed; no cacao tea. Three rows. Old magnesium ticks stay in the data and are not counted.
+- **Migration 12:** raw copy to `peaklog.v1.bak-planRev11` (shown on the Data tab), `wm.programme.weeks` = 17, untouched Workout-tab days dated today or later rebuilt. Needed only if planRev 11 was already deployed; harmless otherwise. Service worker cache peaklog-v14.
+- Validation 10 Nov: unit tests 86 pass (programme 27, migration 16, progression 12, logging 13, timers 7, workout-module 11); Chromium end-to-end, service worker (v12/v13 caches deleted, offline reload) and tab smoke on 10 Nov, 2 Feb, 9 Feb, 2 Mar, 9 Mar: all pass, zero console errors.
+
+## Decisions (first built as 13 weeks, 9 Nov 2026; the 17-week change above supersedes the dates)
 - **Programme data lives in `PROG`** (phases, day map, overrides, set columns A/B/C, rest, RIR, notes). Rep range, start load and equipment type live on the exercise in `WM_EXERCISES` (`eq` db/mc/bb/bw, `incrementKg`, `grid`). The brief is typed into `tests/programme.test.mjs` independently, so a typo in the data fails a test.
 - **Calendar.** `progAt(date)` gives week and phase from the start date (Tuesday). `wmDayIdFor(date)`: final day 9 Feb, then date overrides (week 8 holiday plan), then the deload week's own weekday map (Tue Upper A, Wed Lower A, optional Sat Upper B, all else rest), then the base weekday map. After 9 Feb and before 10 Nov: plain rest. Review weeks stay Monday-Sunday; a review week reads its programme phase from its Tuesday.
 - **Interpretation: taper top set.** "One top set to RIR 0 to 1 at week-12 load" on the first exercise of each day is read as one of that exercise's 60%-of-column-C sets, not as the only set. Other taper lifts: RIR 3.
@@ -33,7 +40,7 @@ Run the **13-week upper/lower lean bulk** (Tue 10 Nov 2026 to Tue 9 Feb 2027) fr
 
 ## Known limitations / next actions (13-week programme)
 - Start loads marked "Estimate" are guesses until the first log.
-- The programme ends 9 Feb 2027; after it every day is plain rest until a new plan is added.
+- The programme ends 9 Mar 2027; after it every day is plain rest until a new plan is added.
 - The Today card's "Optional easy walk" and "Optional Z2" buttons still start the treadmill logger; the bike sessions on Thu and Mon are logged as minutes on the Workout tab.
 - Older Review weeks show supplement adherence against the new four-row list.
 

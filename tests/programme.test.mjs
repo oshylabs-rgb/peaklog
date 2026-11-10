@@ -1,4 +1,4 @@
-/* Programme tests: the 13-week upper/lower lean bulk, embedded as data. The SPEC table below is typed
+/* Programme tests: the 17-week upper/lower lean bulk, embedded as data. The SPEC table below is typed
    in from the brief on purpose (not read from PROG), so these tests check the data was embedded exactly.
    Run: node tests/programme.test.mjs */
 import assert from "node:assert/strict";
@@ -69,26 +69,28 @@ test("programme starts Tue 10 Nov 2026 and is not snapped to a Monday; weeks run
   assert.equal(b.weekEnd, "2026-11-16");
   eq(A.wmWeekDays("2026-11-12"), dates("2026-11-10", "2026-11-16"));
   eq(A.wmWeekDays("2026-11-09"), dates("2026-11-10", "2026-11-16"));   // before the start: week 1
-  for (let w = 1; w <= 13; w++) {
+  for (let w = 1; w <= 17; w++) {
     const d = A.addDays("2026-11-10", (w - 1) * 7);
     assert.equal(A.dow(A.progAt(d).weekStart), 1, "week " + w + " starts on a Tuesday");
     assert.equal(A.dow(A.progAt(d).weekEnd), 0, "week " + w + " ends on a Monday");
   }
 });
-test("week numbers: week 1 = 10-16 Nov, week 7 = 22-28 Dec, week 8 = 29 Dec-4 Jan, week 13 = 2-8 Feb; 13 weeks exactly", () => {
+test("week numbers: week 1 = 10-16 Nov, week 7 = 22-28 Dec, week 8 = 29 Dec-4 Jan, week 13 = 2-8 Feb, week 17 = 2-8 Mar; 17 weeks exactly", () => {
   eq([week("2026-11-10"), week("2026-11-16"), week("2026-11-17"), week("2026-12-22"), week("2026-12-28"),
-    week("2026-12-29"), week("2027-01-04"), week("2027-02-02"), week("2027-02-08"), week("2027-02-09"), week("2026-11-09")],
-  [1, 1, 2, 7, 7, 8, 8, 13, 13, null, null]);
-  assert.equal(A.PROG.weeks, 13);
+    week("2026-12-29"), week("2027-01-04"), week("2027-02-02"), week("2027-02-08"), week("2027-02-09"), week("2027-03-02"),
+    week("2027-03-08"), week("2027-03-09"), week("2026-11-09")],
+  [1, 1, 2, 7, 7, 8, 8, 13, 13, 14, 17, 17, null, null]);
+  assert.equal(A.PROG.weeks, 17);
+  assert.equal(A.PROG.final, "2027-03-09");
 });
-test("phases: 1a weeks 1-3, 1b weeks 4-6, deload week 7, block 2 weeks 8-12, taper week 13", () => {
+test("phases: 1a weeks 1-3, 1b weeks 4-6, deload week 7, block 2 weeks 8-12, deload week 13, block 2b weeks 14-16, taper week 17", () => {
   const ph = d => A.progAt(d).phase.name;
   eq([ph("2026-11-10"), ph("2026-11-24"), ph("2026-12-01"), ph("2026-12-15"), ph("2026-12-22"), ph("2026-12-29"),
-    ph("2027-01-26"), ph("2027-02-02")],
+    ph("2027-01-26"), ph("2027-02-02"), ph("2027-02-09"), ph("2027-02-23"), ph("2027-03-02")],
   ["Block 1a Intro", "Block 1a Intro", "Block 1b Build", "Block 1b Build", "Deload (Christmas)", "Block 2 Peak volume",
-    "Block 2 Peak volume", "Taper + test"]);
+    "Block 2 Peak volume", "Deload", "Block 2b Peak volume", "Block 2b Peak volume", "Taper + test"]);
 });
-test("acceptance dates: 10 Nov Upper A wk1, 11 Nov Lower A, 12 Nov Zone 2 rest, 14 Nov Lower B, 15 Nov Upper C, 24 Dec rest (deload), 2 Feb taper Upper A", () => {
+test("acceptance dates: 10 Nov Upper A wk1, 11 Nov Lower A, 12 Nov Zone 2 rest, 14 Nov Lower B, 15 Nov Upper C, 24 Dec rest (deload), 2 Feb deload Upper A, 2 Mar taper Upper A", () => {
   assert.equal(label("2026-11-10"), "Upper A: Chest + Back (heavy)");
   assert.equal(week("2026-11-10"), 1);
   assert.equal(A.wmDayIdFor("2026-11-11"), "lA");
@@ -102,7 +104,10 @@ test("acceptance dates: 10 Nov Upper A wk1, 11 Nov Lower A, 12 Nov Zone 2 rest, 
   assert.equal(A.progAt("2026-12-24").phase.kind, "deload");
   assert.equal(A.wmDayIdFor("2027-02-02"), "uA");
   assert.equal(week("2027-02-02"), 13);
-  assert.equal(A.progAt("2027-02-02").phase.kind, "taper");
+  assert.equal(A.progAt("2027-02-02").phase.kind, "deload");
+  assert.equal(A.wmDayIdFor("2027-03-02"), "uA");
+  assert.equal(week("2027-03-02"), 17);
+  assert.equal(A.progAt("2027-03-02").phase.kind, "taper");
   // first exercise of 10 Nov
   const first = dayOf("2026-11-10").exercises[0];
   assert.equal(A.wmEx(first.exerciseId).name, "DB Bench Press");
@@ -115,10 +120,10 @@ test("acceptance dates: 10 Nov Upper A wk1, 11 Nov Lower A, 12 Nov Zone 2 rest, 
 });
 test("weekday pattern holds in every normal week: Tue Upper A, Wed Lower A, Thu Zone 2, Fri Upper B, Sat Lower B, Sun Upper C, Mon VO2max", () => {
   const want = { 1: "uA", 2: "lA", 3: "restZ2", 4: "uB", 5: "lB", 6: "uC", 0: "restVO2" };
-  const special = d => { const w = week(d); return w === 7 || w === 8; };
+  const special = d => { const w = week(d); return w === 7 || w === 8; };   // week 13 deload keeps the normal pattern
   let n = 0;
-  dates("2026-11-10", "2027-02-08").forEach(d => { if (special(d)) return; n++; assert.equal(A.wmDayIdFor(d), want[A.dow(d)], d); });
-  assert.ok(n >= 77);
+  dates("2026-11-10", "2027-03-08").forEach(d => { if (special(d)) return; n++; assert.equal(A.wmDayIdFor(d), want[A.dow(d)], d); });
+  assert.ok(n >= 105);
   assert.equal(dayOf("2026-11-16").note, "No lifting. VO2max 4x4 on bike: 4 x 4 min at 85-95% HRmax, 3 min easy between, about 35 min total.");
 });
 test("week 7 deload (22-28 Dec): Tue Upper A, Wed Lower A, optional Sat 26 Dec Upper B, every other day rest", () => {
@@ -133,20 +138,21 @@ test("week 8 holiday override: Tue 29 Dec Upper A, Wed 30 Dec Lower A, Thu 31 De
   assert.ok(!dates("2026-12-29", "2027-01-04").some(d => A.wmDayIdFor(d) === "uC"));
   eq(["2027-01-08", "2027-01-09", "2027-01-10"].map(d => A.wmDayIdFor(d)), ["uB", "lB", "uC"]);   // week 9 is back to the normal pattern
 });
-test("InBody scan days: 10 Nov, 8 Dec, 5 Jan, 9 Feb carry the scan note; other days do not", () => {
+test("InBody scan days: 10 Nov, 8 Dec, 5 Jan, 9 Feb, 9 Mar carry the scan note; other days do not", () => {
   const scan = "InBody scan today. Fasted, before training, no sauna or alcohol in the previous 24 h.";
-  ["2026-11-10", "2026-12-08", "2027-01-05", "2027-02-09"].forEach(d => {
+  ["2026-11-10", "2026-12-08", "2027-01-05", "2027-02-09", "2027-03-09"].forEach(d => {
     assert.equal(dayOf(d).scan, true, d);
     assert.ok(A.tplFor(d).note.includes("Fasted, before training, no sauna or alcohol in the previous 24 h"), d);
   });
   assert.equal(A.PROG.scanNote, scan);
-  ["2026-11-11", "2026-12-09", "2027-01-06", "2027-02-08"].forEach(d => assert.equal(dayOf(d).scan, false, d));
-  eq([...A.PROG.scanDays], ["2026-11-10", "2026-12-08", "2027-01-05", "2027-02-09"]);
+  ["2026-11-11", "2026-12-09", "2027-01-06", "2027-02-08", "2027-03-08"].forEach(d => assert.equal(dayOf(d).scan, false, d));
+  eq([...A.PROG.scanDays], ["2026-11-10", "2026-12-08", "2027-01-05", "2027-02-09", "2027-03-09"]);
+  assert.equal(A.wmDayIdFor("2027-02-09"), "uA");                     // 9 Feb is now a normal Upper A day with a scan before training
 });
-test("final review day 9 Feb 2027 is a rest/InBody day; the days after are plain rest", () => {
-  assert.equal(A.wmDayIdFor("2027-02-09"), "restFinal");
-  assert.equal(dayOf("2027-02-09").type, "rest");
-  assert.equal(A.wmDayIdFor("2027-02-10"), "restDay");
+test("final review day 9 Mar 2027 is a rest/InBody day; the days after are plain rest", () => {
+  assert.equal(A.wmDayIdFor("2027-03-09"), "restFinal");
+  assert.equal(dayOf("2027-03-09").type, "rest");
+  assert.equal(A.wmDayIdFor("2027-03-10"), "restDay");
   assert.equal(A.wmDayIdFor("2026-11-09"), "restDay");
 });
 
@@ -196,8 +202,8 @@ test("deload week sets are about 50% of column B, rounded down, minimum 1", () =
   });
   eq([...dayOf("2026-12-22").exercises.map(e => e.sets)], [2, 2, 1, 1, 1, 1, 1]);   // B = 4,4,3,3,3,3,3
 });
-test("taper week sets are about 60% of column C, rounded, minimum 1; RIR 3, first exercise has one top set to RIR 0-1 at the week-12 load", () => {
-  dates("2027-02-02", "2027-02-08").forEach(d => {
+test("taper week sets are about 60% of column C, rounded, minimum 1; RIR 3, first exercise has one top set to RIR 0-1 at the week-16 load", () => {
+  dates("2027-03-02", "2027-03-08").forEach(d => {
     const id = A.wmDayIdFor(d);
     if (!SPEC[id]) return;
     const day = dayOf(d);
@@ -205,10 +211,34 @@ test("taper week sets are about 60% of column C, rounded, minimum 1; RIR 3, firs
       const C = SPEC[id][i][2][2];
       assert.equal(pe.sets, Math.max(1, Math.round(C * 0.6)), `${id} #${i}`);
       assert.equal(pe.rir, i === 0 ? "3 (top set 0 to 1)" : "3", `${id} #${i} RIR`);
-      assert.equal(/top set to 0 to 1 reps in reserve at the week-12 load/.test(pe.note), i === 0, `${id} #${i} note`);
+      assert.equal(/top set to 0 to 1 reps in reserve at the week-16 load/.test(pe.note), i === 0, `${id} #${i} note`);
     });
   });
-  eq([...dayOf("2027-02-02").exercises.map(e => e.sets)], [2, 2, 2, 2, 2, 2, 2]);   // C = 4,4,3,4,4,3,3 -> 2.4,2.4,1.8,2.4,2.4,1.8,1.8
+  eq([...dayOf("2027-03-02").exercises.map(e => e.sets)], [2, 2, 2, 2, 2, 2, 2]);   // C = 4,4,3,4,4,3,3 -> 2.4,2.4,1.8,2.4,2.4,1.8,1.8
+});
+test("week 13 deload (2-8 Feb): the normal five sessions at about 50% of column C (round down, min 1), RIR 4, week-12 loads", () => {
+  eq(dates("2027-02-02", "2027-02-08").map(d => A.wmDayIdFor(d)), ["uA", "lA", "restZ2", "uB", "lB", "uC", "restVO2"]);
+  dates("2027-02-02", "2027-02-08").forEach(d => {
+    const id = A.wmDayIdFor(d);
+    if (!SPEC[id]) return;
+    const day = dayOf(d);
+    assert.equal(day.noProg, true, d);
+    day.exercises.forEach((pe, i) => {
+      assert.equal(pe.sets, Math.max(1, Math.floor(SPEC[id][i][2][2] * 0.5)), `${id} #${i}`);
+      assert.equal(pe.rir, "4");
+      assert.ok(!pe.note.includes(PARTIALS));
+    });
+  });
+  eq([...dayOf("2027-02-02").exercises.map(e => e.sets)], [2, 2, 1, 2, 2, 1, 1]);   // C = 4,4,3,4,4,3,3
+  assert.ok(A.tplFor("2027-02-02").note.includes("Deload week"));
+});
+test("block 2b (weeks 14-16) is column C again with RIR 2 to 0 and progression back on", () => {
+  ["2027-02-09", "2027-02-16", "2027-02-23"].forEach(d => {
+    const day = dayOf(d), b = A.progAt(d);
+    assert.equal(b.phase.name, "Block 2b Peak volume");
+    assert.equal(day.noProg, false);
+    day.exercises.forEach((pe, i) => assert.equal(pe.sets, SPEC.uA[i][2][2], d + " #" + i));
+  });
 });
 test("RIR targets: wk1 = 3, wk2-3 = 2 to 1, build/peak = the lift's own target, deload = 4, taper = 3", () => {
   const bench = d => dayOf(d).exercises[0];
@@ -224,24 +254,26 @@ test("RIR targets: wk1 = 3, wk2-3 = 2 to 1, build/peak = the lift's own target, 
   const ext = d => dayOf(d).exercises.find(e => e.exerciseId === "extRot");
   assert.equal(ext("2026-11-20").rir, "3");
   assert.equal(ext("2026-11-27").rir, "3");
-  eq([...A.PROG.phases.map(p => p.rir)], [["3", "2 to 1", "2 to 1"], ["2 to 0"], ["4"], ["2 to 0"], ["3"]]);
+  eq([...A.PROG.phases.map(p => p.rir)], [["3", "2 to 1", "2 to 1"], ["2 to 0"], ["4"], ["2 to 0"], ["4"], ["2 to 0"], ["3"]]);
+  assert.equal(bench("2027-02-02").rir, "4");                                    // week 13 deload
+  assert.equal(bench("2027-02-09").rir, "2");                                    // block 2b
 });
 test("block 2 isolation lifts carry the lengthened-partials note; no other block does", () => {
   const iso = id => A.wmEx(id).iso;
-  [["2026-12-29", true], ["2027-01-26", true], ["2026-12-01", false], ["2026-11-10", false], ["2026-12-22", false], ["2027-02-02", false]].forEach(([d, want]) => {
+  [["2026-12-29", true], ["2027-01-26", true], ["2027-02-16", true], ["2026-12-01", false], ["2026-11-10", false], ["2026-12-22", false], ["2027-02-02", false], ["2027-03-02", false]].forEach(([d, want]) => {
     dayOf(d).exercises.forEach(pe => assert.equal(pe.note.includes(PARTIALS), !!(want && iso(pe.exerciseId)), `${d} ${pe.exerciseId}`));
   });
   assert.ok(iso("cableLat") && iso("legExt") && iso("hammerCurl"));
   assert.ok(!iso("dbBench") && !iso("hackSquat") && !iso("wPullUp"));
 });
 test("rest guidance and notes are plain text on every planned lift (no numbers that count down)", () => {
-  dates("2026-11-10", "2027-02-08").forEach(d => dayOf(d).exercises && dayOf(d).exercises.forEach(pe => {
+  dates("2026-11-10", "2027-03-08").forEach(d => dayOf(d).exercises && dayOf(d).exercises.forEach(pe => {
     assert.equal(typeof pe.rest, "string"); assert.equal(typeof pe.note, "string"); assert.equal(typeof pe.rir, "string");
   }));
 });
 test("no Romanian deadlift, hip thrust or deadlift in any planned session on any date", () => {
   const bad = /deadlift|romanian|hip thrust|\brdl\b/i;
-  dates("2026-11-01", "2027-02-20").forEach(d => {
+  dates("2026-11-01", "2027-03-20").forEach(d => {
     const t = A.tplFor(d);
     t.exercises.forEach(e => assert.ok(!bad.test(e.name), d + " " + e.name));
     (dayOf(d).exercises || []).forEach(pe => assert.ok(!bad.test(pe.exerciseId + " " + A.wmEx(pe.exerciseId).name), d));
@@ -261,7 +293,7 @@ test("tplFor builds the Workout-tab day from the programme: sets x range @ start
   const t = A.tplFor("2026-11-10");
   assert.equal(t.type, "Upper A: Chest + Back (heavy)");
   eq([t.exercises[0].sets, t.exercises[0].reps, t.exercises[0].wt, t.exercises[0].perHand], [3, "6-10", 36, true]);
-  assert.ok(t.note.startsWith("Block 1a Intro · week 1 of 13. RIR 3."));
+  assert.ok(t.note.startsWith("Block 1a Intro · week 1 of 17. RIR 3."));
   const z2 = A.tplFor("2026-11-12");
   assert.equal(z2.rest, true);
   assert.equal(z2.cardio.type, "Zone 2 bike");
@@ -290,12 +322,12 @@ test("nutrition targets: 2900 kcal, 165 g protein, 80 g fat, 380 g carbs, water 
   A.getNutrition(d).sauna = false;
   assert.equal(A.waterTarget("2026-11-11"), 3000);
 });
-test("supplements: the four new rows; MCT, ACV and keto items are gone", () => {
+test("supplements: Space Goods coffee + creatine, D3/omega-3, Salte Electrolytes; no magnesium, cacao tea, MCT, ACV or keto items", () => {
   eq(A.SUPPS.map(s => [s.when, s.name]), [
-    ["Morning / pre-workout", "Espresso (about 230 mg caffeine, before 13:00) + creatine 5 g"],
+    ["Morning / pre-workout", "Space Goods coffee (before 13:00) + creatine 5 g"],
     ["First meal", "Vitamin D3 1000-2000 IU (Oct-Apr), Omega-3 1-2 g EPA+DHA (optional)"],
-    ["Training / sauna", "Electrolytes on sauna or heavy-sweat days; whey 25-40 g if needed for protein"],
-    ["Evening", "Magnesium glycinate 200-400 mg (optional)"]]);
+    ["Training / sauna", "Salte Electrolytes on sauna or heavy-sweat days; whey 25-40 g if needed for protein"]]);
+  assert.ok(!/magnesium|cacao|cocoa/i.test(JSON.stringify(A.SUPPS)));
   const text = JSON.stringify(A.SUPPS) + JSON.stringify(A.PLAN_RULES) + JSON.stringify(A.SEED_FOODS);
   assert.ok(!/MCT|apple cider|\bACV\b|keto/i.test(text));
 });
@@ -316,7 +348,7 @@ test("guide text: protein feedings, eating window, alcohol, cold rule, sauna, sl
   assert.ok(r.includes("No cold-water immersion or cold shower within 6 h after lifting. Cold only on rest days or before training."));
   assert.ok(r.includes("2-4 times a week, 15-20 min at 80-90 C after lifting or on rest days, 0.5-1 L water with electrolytes"));
   assert.ok(r.includes("In bed by 23:15, 7+ h sleep"));
-  assert.ok(r.includes("Stop the surplus, eat at maintenance until 9 Feb"));
+  assert.ok(r.includes("Stop the surplus, eat at maintenance until 9 Mar"));
   assert.equal(A.PLAN_RULES.increments, "DB +2 kg · machines/cables +2.5 kg (Leg Press and Hack Squat +10 kg) · barbell +2.5 kg · added-bodyweight +2.5 kg");
 });
 test("calorie advice: band 0.10-0.25, +150 under 0.10 and -150 over 0.35, nothing before week 3, body-fat ceiling 15%", () => {
@@ -330,7 +362,7 @@ test("calorie advice: band 0.10-0.25, +150 under 0.10 and -150 over 0.35, nothin
   B.S.bodyLog[1].weight = 80.6;                                                      // +0.3 kg/wk: above the band, under 0.35
   assert.ok(!/150/.test(B.calAdvice(B.trend2w()).msg));
   B.S.bodyLog[1].bodyFat = 15;                                                       // ceiling
-  assert.ok(B.calAdvice(B.trend2w()).msg.includes("Stop the surplus, eat at maintenance until 9 Feb"));
+  assert.ok(B.calAdvice(B.trend2w()).msg.includes("Stop the surplus, eat at maintenance until 9 Mar"));
   // before week 3 there is no suggestion, even for a flat trend
   const E = loadApp({ now: "2026-11-18T10:00:00" });               // programme week 2
   E.S.bodyLog = [{ date: "2026-11-04", weight: 80, bodyFat: 12, note: "" }, { date: "2026-11-18", weight: 80, bodyFat: 12, note: "" }];
